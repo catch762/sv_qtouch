@@ -27,6 +27,8 @@ void test2()
 {
     auto root = getroot();
 
+    auto fail = root->tryGetChild(7);
+
     // Create model and view
     DataTreeModel *model = new DataTreeModel(root);
     QTreeView *treeView = new QTreeView();
@@ -41,15 +43,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    SV_LOG("just a msg")
-
-    SV_LOG("cattt|", "just another msg")
-
-    SV_WARN("warning")
-
-    SV_ERROR("module", "error")
-
-    SV_ASSERT(5==6)
+    SV_LOG("--- app launch --- " + getCurrentTimeHMS())
 
     test2();
 
