@@ -1,0 +1,9 @@
+[submodule "deps/sv_common"]
+	path = deps/sv_common
+	url = git@github.com:catch762/sv_common.git
+[submodule "deps/sv_qtcommon"]
+	path = deps/sv_qtcommon
+	url = git@github.com:catch762/sv_qtcommon.git
+[submodule "deps/sv_datalayer"]
+	path = deps/sv_datalayer
+	url = git@github.com:catch762/sv_datalayer.git

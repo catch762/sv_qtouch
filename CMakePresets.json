@@ -1,0 +1,40 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "mingw-qt-debug",
+      "displayName": "MinGW Qt Debug",
+      "description": "MinGW Qt Debug",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build/mingw-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_PREFIX_PATH": "C:/SvQt/6.10.2/mingw_64",
+        "CMAKE_TOOLCHAIN_FILE": "C:/SvQt/6.10.2/mingw_64/lib/cmake/Qt6/Qt6ConfigExtras.cmake"
+      },
+      "environment": {
+        "PATH": "C:/SvQt/Tools/mingw1310_64/bin;C:/SvQt/6.10.2/mingw_64/bin;$penv{PATH}"
+      }
+    },
+    {
+      "name": "mingw-qt-release",
+      "inherits": "mingw-qt-debug",
+      "displayName": "MinGW Qt Release",
+	    "description": "MinGW Qt Release",
+      "binaryDir": "${sourceDir}/build/mingw-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "mingw-qt-debug",
+      "configurePreset": "mingw-qt-debug"
+    },
+    {
+      "name": "mingw-qt-release", 
+      "configurePreset": "mingw-qt-release"
+    }
+  ]
+}

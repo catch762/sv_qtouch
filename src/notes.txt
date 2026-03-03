@@ -1,0 +1,19 @@
+Need to learn or refresh:
+
+- move semantics
+- string view
+
+
+
+
+adding submodule:
+git submodule add git@github.com:catch762/sv_common.git deps/sv_common
+git submodule update --init
+
+it does not keep the files in the actual repo. files get here after:
+git clone --recurse-submodules https://github.com/you/core-project.git
+
+if u wanna update to latest remote version:
+git submodule update --remote deps/sv_common
+git add deps/sv_common
+//and then push core repo.
