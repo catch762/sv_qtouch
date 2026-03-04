@@ -5,7 +5,6 @@ Need to learn or refresh:
 
 
 
-
 adding submodule:
 git submodule add git@github.com:catch762/sv_common.git deps/sv_common
 git submodule update --init
@@ -17,3 +16,10 @@ if u wanna update to latest remote version:
 git submodule update --remote deps/sv_common
 git add deps/sv_common
 //and then push core repo.
+
+
+=============
+
+there will be few variants for same data like vec2
+
+isnt logger a << ?
