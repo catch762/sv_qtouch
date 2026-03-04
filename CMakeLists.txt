@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
+include(cmake/CPM.cmake)
+
 project(sv_qtouch LANGUAGES CXX)
 
 set(CMAKE_PREFIX_PATH "C:/SvQt/6.10.2/mingw_64")
@@ -15,18 +17,18 @@ qt_standard_project_setup()
 # My sources: add all .h/.cpp in /src and its subdirectories
 file(GLOB_RECURSE MY_SOURCES src/*.cpp src/*.h)
 
-# magic_enum lib dependency
-file(GLOB_RECURSE MAGICENUM_SOURCES thirdparty/magic_enum/*.hpp)
+# all thirdparty deps are included via CPM, to default location
 
+# all deps that are my own modules are added as git submodules.
+# note that all my modules include their deps as PUBLIC, so im not listing their deps 
+# in target_link_libraries below
 add_subdirectory(deps/sv_common)
 add_subdirectory(deps/sv_qtcommon)
 add_subdirectory(deps/sv_datalayer)
 
-qt_add_executable(${CMAKE_PROJECT_NAME} ${MY_SOURCES} ${MAGICENUM_SOURCES})
+qt_add_executable(${CMAKE_PROJECT_NAME} ${MY_SOURCES})
 
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE thirdparty)
-
-
 
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Core sv_common sv_qtcommon sv_datalayer)
 
