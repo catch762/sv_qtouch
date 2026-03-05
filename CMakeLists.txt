@@ -31,6 +31,7 @@ file(GLOB_RECURSE SV_QTOUCH_SOURCES src/*.cpp src/*.h)
 #         when you include sv_component in target_link_libraries, you dont need to also include
 #         things that component depends on.
 
+# Listing all sv_components:
 add_subdirectory(deps/sv_common)
 add_subdirectory(deps/sv_qtcommon)
 add_subdirectory(deps/sv_datalayer)
