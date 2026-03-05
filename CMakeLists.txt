@@ -1,34 +1,41 @@
 cmake_minimum_required(VERSION 3.16)
-
-include(cmake/CPM.cmake)
-
 project(sv_qtouch LANGUAGES CXX)
-
-set(CMAKE_PREFIX_PATH "C:/SvQt/6.10.2/mingw_64")
-
+include(cmake/CPM.cmake)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_EXTENSIONS OFF)
 
+# QT set up
+set(CMAKE_PREFIX_PATH "C:/SvQt/6.10.2/mingw_64")
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
-
 qt_standard_project_setup()
 
-# My sources: add all .h/.cpp in /src and its subdirectories
-file(GLOB_RECURSE MY_SOURCES src/*.cpp src/*.h)
+# This project sources: adding all .h/.cpp in /src and its subdirectories
+file(GLOB_RECURSE SV_QTOUCH_SOURCES src/*.cpp src/*.h)
 
-# all thirdparty deps are included via CPM, to default location
+# Besides QT, here's how all other dependencies work:
+#
+# 1) All thirdparty components
+#       - Simply added via CPM (with default path - so multiple components use one copy)
+# 2) All sv_components (my own modules)
+#       - Added as submodules to /deps. Like this:
+#           - git submodule add git@github.com:catch762/sv_common.git deps/sv_common
+#           - git submodule update --init
+#           - then in root project CMakeLists do:
+#               - add_subdirectory(deps/sv_common)
+#               - add lib name to target_link_libraries()
+#       - Their thirdparty dependencies added via CPM, as usual
+#       - When sv_component is depending on other sv_component, it adds its name to self CMakeLists
+#         target_link_libraries() but doesnt do anything else. It is root project CMakeLists' job
+#         to actually add that dependency.
+#       - sv_component's deps listed in target_link_libraries() are always PUBLIC - this means
+#         when you include sv_component in target_link_libraries, you dont need to also include
+#         things that component depends on.
 
-# all deps that are my own modules are added as git submodules.
-# note that all my modules include their deps as PUBLIC, so im not listing their deps 
-# in target_link_libraries below
 add_subdirectory(deps/sv_common)
 add_subdirectory(deps/sv_qtcommon)
 add_subdirectory(deps/sv_datalayer)
 
-qt_add_executable(${CMAKE_PROJECT_NAME} ${MY_SOURCES})
-
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE thirdparty)
+qt_add_executable(${CMAKE_PROJECT_NAME} ${SV_QTOUCH_SOURCES})
 
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::Core sv_common sv_qtcommon sv_datalayer)
 
@@ -36,7 +43,8 @@ set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
     WIN64_EXECUTABLE ON
 )
 
-# Setting up deployment, only for Windows
+
+# Setting up deployment target, only for Windows. You must manually build release version first.
 if(WIN32)
     # After qt_standard_project_setup() there should be ${QT_DEPLOY_TOOL}
     # but for some reason its empty, so heres workaround.
