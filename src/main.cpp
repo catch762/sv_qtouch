@@ -22,27 +22,12 @@ void test3()
     DataLayerSystem::instance().registerWidgetMaker<QString>(
         [](DataNodeShared node) -> QWidget*
         {
-            if (!node)
+            if (!DataLayerSystem::instance().checkIsProperNodeForCreatingWidgetOfType<QString>(node))
             {
-                SV_ERROR("WidgetMakers", "Failed to make widget: null node passed in");
                 return nullptr;
             }
 
-            auto leafValue = node->tryGetLeafvalue();
-            if (!leafValue)
-            {
-                SV_ERROR("WidgetMakers", "Failed to make widget: node isnt even leaf, its: " + node->stdBasicInfo());
-                return nullptr;
-            }
-
-            if (qMetaTypeId<QString>() != leafValue->typeId())
-            {
-                //todo better log
-                SV_ERROR("WidgetMakers", "Failed to make widget: its a leaf but types mismatch");
-                return nullptr;
-            }
-
-            auto *widget = new QLineEdit(leafValue->toString());
+            auto *widget = new QLineEdit(node->tryGetLeafvalue()->toString());
 
             auto nodeWeak = DataNodeWeak(node);
 
