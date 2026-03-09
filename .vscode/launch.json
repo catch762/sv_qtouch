@@ -18,7 +18,13 @@
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "C:/SvQt/Tools/mingw1310_64/bin/gdb.exe",
-            "console": "internalConsole",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false,
+                "traceResponse": false,
+                "engineLogging": false,
+                "threadExit": false
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -48,7 +54,13 @@
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "C:/SvQt/Tools/mingw1310_64/bin/gdb.exe",
-            "console": "internalConsole",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false,
+                "traceResponse": false,
+                "engineLogging": false,
+                "threadExit": false
+            },
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
