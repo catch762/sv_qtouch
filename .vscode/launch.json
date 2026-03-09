@@ -1,18 +1,24 @@
-/*{
+{
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch MinGW Qt Debug",
+            "name": "Debug (gdb)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${command:cmake.launchTargetPath}",
+            "program": "${workspaceFolder}/build/mingw-debug/sv_qtouch.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/SvQt/Tools/mingw1310_64/bin;C:/SvQt/6.10.2/mingw_64/bin;${env:PATH}"
+                }
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "C:/SvQt/Tools/mingw1310_64/bin/gdb.exe",
+            "console": "internalConsole",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -20,19 +26,34 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "CMake: build"
+            "preLaunchTask": "The Debug Task"
         },
         {
-            "name": "Launch MinGW Qt Release", 
+            "name": "Release (gdb)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${command:cmake.launchTargetPath}",
+            "program": "${workspaceFolder}/build/mingw-release/sv_qtouch.exe",
             "args": [],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/SvQt/Tools/mingw1310_64/bin;C:/SvQt/6.10.2/mingw_64/bin;${env:PATH}"
+                }
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "C:/SvQt/Tools/mingw1310_64/bin/gdb.exe"
+            "miDebuggerPath": "C:/SvQt/Tools/mingw1310_64/bin/gdb.exe",
+            "console": "internalConsole",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "The Release Task"
         }
     ]
-}*/
+}
