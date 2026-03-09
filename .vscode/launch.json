@@ -35,6 +35,7 @@
             "sourceFileMap": {
                 "c:/home/code/sv_qtouch": "${workspaceFolder}"
             },
+            "symbolLoadInfo": { "loadAll": false },
             "preLaunchTask": "The Debug Task"
         },
         {
@@ -71,6 +72,8 @@
             "sourceFileMap": {
                 "/c/home/code/sv_qtouch": "${workspaceFolder}"
             },
+            //didnt test but helps debug version for sure
+            "symbolLoadInfo": { "loadAll": false }, 
             "preLaunchTask": "The Release Task"
         }
     ]
