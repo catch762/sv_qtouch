@@ -7,7 +7,6 @@
             "command": "cmake",
             "args": [
                 "--build", "build/mingw-debug",
-                "--config", "Debug",
                 "--parallel"
             ],
             "group": {
@@ -28,7 +27,6 @@
             "command": "cmake",
             "args": [
                 "--build", "build/mingw-release",
-                "--config", "Release",
                 "--parallel"
             ],
             "group": "build",

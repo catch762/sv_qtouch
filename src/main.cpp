@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     Logger::instance().logAppLaunchMessage();
 
     dl_testing();
-    //test3();
+    test3();
 
     auto res = app.exec();
     qDebug() << "app.exec() returned " << res;

@@ -26,6 +26,9 @@
                     "ignoreFailures": true
                 }
             ],
+            "sourceFileMap": {
+                "c:/home/code/sv_qtouch": "${workspaceFolder}"
+            },
             "preLaunchTask": "The Debug Task"
         },
         {
@@ -53,6 +56,9 @@
                     "ignoreFailures": true
                 }
             ],
+            "sourceFileMap": {
+                "/c/home/code/sv_qtouch": "${workspaceFolder}"
+            },
             "preLaunchTask": "The Release Task"
         }
     ]
