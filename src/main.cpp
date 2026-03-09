@@ -59,9 +59,11 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    SV_LOG("\n\n--- app launch --- " + getCurrentTimeHMS() + "\n")
+    //SV_LOG("\n\n--- app launch --- " + getCurrentTimeHMS() + "\n")
+    Logger::instance().logAppLaunchMessage();
 
-    test3();
+    dl_testing();
+    //test3();
 
     auto res = app.exec();
     qDebug() << "app.exec() returned " << res;
