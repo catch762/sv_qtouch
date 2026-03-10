@@ -2,8 +2,7 @@ Need to learn or refresh:
 
 - move semantics
 - string view
-
-
+- the {}, initializer lists
 
 adding submodule:
 git submodule add git@github.com:catch762/sv_common.git deps/sv_common

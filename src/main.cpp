@@ -18,40 +18,7 @@ void test3()
     root->addChild(child);
     child->addChild(grandchild);
 
-
-    DataLayerSystem::instance().registerWidgetMaker<QString>(
-        [](DataNodeShared node) -> QWidget*
-        {
-            if (!DataLayerSystem::instance().checkIsProperNodeForCreatingWidgetOfType<QString>(node))
-            {
-                return nullptr;
-            }
-
-            auto *widget = new QLineEdit(node->tryGetLeafvalue()->toString());
-
-            auto nodeWeak = DataNodeWeak(node);
-
-            //todo check if 3rd param...
-            QObject::connect(widget, &QLineEdit::textChanged, widget, [nodeWeak](const QString &s)
-            {
-                if (auto nodeShared = nodeWeak.lock())
-                {
-                    if (auto leaf = nodeShared->tryGetLeafvalue())
-                    {
-                        *leaf = s;
-                    }
-                    else
-                    {
-                        SV_ASSERT(false);
-                    }
-                }
-            });
-
-            return widget;
-        }
-    );
-
-    auto w = DataLayerSystem::instance().getWidgetForNode(grandchild);
+    auto w = WidgetMakerSystem::instance().makeWidgetForNode(grandchild);
     w->show();
 }
 
@@ -59,10 +26,9 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    //SV_LOG("\n\n--- app launch --- " + getCurrentTimeHMS() + "\n")
     Logger::instance().logAppLaunchMessage();
 
-    dl_testing();
+    //dl_testing();
     test3();
 
     auto res = app.exec();
