@@ -7,7 +7,7 @@
 //#include "sv_common.h"
 //#include "sv_qtcommon.h"
 #include "sv_datalayer.h"
-
+#include "DataLayerUtils.h"
 
 void test3()
 {
@@ -28,8 +28,9 @@ int main(int argc, char *argv[])
 
     Logger::instance().logAppLaunchMessage();
 
-    //dl_testing();
-    test3();
+    AdhocTesting::runTest();
+
+    //test3();
 
     auto res = app.exec();
     qDebug() << "app.exec() returned " << res;
