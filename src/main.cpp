@@ -9,16 +9,14 @@
 #include "sv_datalayer.h"
 #include "DataLayerUtils.h"
 
-void test3()
+void test_widgets()
 {
-    auto root       = std::make_shared<DataNode>(QString("root"), DataNode::NodeType::Composite);
-    auto child      = std::make_shared<DataNode>(QString("child"), DataNode::NodeType::Composite);
-    auto grandchild = std::make_shared<DataNode>(QString("grandchild"), DataNode::NodeType::Leaf);
-    *grandchild->tryGetLeafvalue() = QString("okookko");
-    root->addChild(child);
-    child->addChild(grandchild);
+    auto root   = DataNode::makeComposite("root");
+    auto child  = root->addComposite("child");
+    auto grand0 = child->addLeaf("grand0_name", QString("qstring text"));
+    auto grand1 = child->addLeaf("grand1_name", LimitedDouble{});
 
-    auto w = WidgetMakerSystem::instance().makeWidgetForNode(grandchild);
+    auto w = WidgetMakerSystem::instance().makeWidgetForNode(grand1);
     w->show();
 }
 
@@ -28,10 +26,13 @@ int main(int argc, char *argv[])
 
     Logger::instance().logAppLaunchMessage();
 
-    AdhocTesting::runTest();
+    //AdhocTesting::runTest();
 
-    //test3();
+    test_widgets();
 
     auto res = app.exec();
-    qDebug() << "app.exec() returned " << res;
+    
+    //todo add log 
+    qDebug() << "exit " << res;
+    return res;
 }

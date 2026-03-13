@@ -22,11 +22,7 @@ git add deps/sv_common
 there will be few variants for same data like vec2
 
 isnt logger a << ?
+Plus the QString, man...
 
-
-template<typename TKey1, typename TKey1Tag, typename TKey2, typename TKey2Tag, typename TVal>
-using bimapTwoKeysOneVal = boost::bimaps::bimap<
-    boost::bimaps::tagged<TKey1, TKey1Tag>,
-    boost::bimaps::tagged<TKey2, TKey2Tag>,
-    boost::bimaps::with_info<TVal>
->;
+json helpers must be macro, cuz its abt logs.
+-------
