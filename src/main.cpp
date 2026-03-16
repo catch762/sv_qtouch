@@ -18,7 +18,7 @@ void test_widgets()
         LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
     });
 
-    auto w = WidgetMakerSystem::instance().makeWidgetForNode(grand2);
+    auto w = WidgetMakerSystem::instance().makeWidgetForNode(root);
     w->show();
 }
 
