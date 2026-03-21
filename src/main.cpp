@@ -7,16 +7,22 @@
 //#include "sv_common.h"
 //#include "sv_qtcommon.h"
 #include "sv_datalayer.h"
+#include "TypesAndWidgets/LimitedValue/Internal/BaseXYPadWidget.h"
 
 void test_widgets()
 {
     auto root   = DataNode::makeComposite("root");
-    auto child  = root->addComposite("child");
-    auto grand0 = child->addLeaf("grand0_name", QString("qstring text"));
-    auto grand1 = child->addLeaf("grand1_name", LimitedDouble{6, 5, 7});
-    auto grand2 = child->addLeaf("grand2_name", LimitedDoubleVec{
+
+    auto childKek = root->addLeaf("childKek", LimitedDoubleVec{
         LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
     });
+
+    //auto child  = root->addComposite("child");
+    //auto grand0 = child->addLeaf("grand0_name", QString("qstring text"));
+    //auto grand1 = child->addLeaf("grand1_name", LimitedDouble{6, 5, 7});
+    //auto grand2 = child->addLeaf("grand2_name", LimitedDoubleVec{
+    //    LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
+    //});
 
     auto w = WidgetMakerSystem::instance().makeWidgetForNode(root);
     w->show();
@@ -38,6 +44,24 @@ void test_vec()
     widget->show();
 }
 
+void testpad()
+{
+    auto M = new QWidget;
+    auto lay = new QHBoxLayout(M);
+
+    auto w = new BaseXYPadWidget();
+    lay->addWidget(w);
+
+    lay->addWidget(new QLineEdit("hellooooo"));
+
+    auto b = new QPushButton("Kek");
+    b->setMaximumWidth(150);
+
+    lay->addWidget(b);
+
+    M->show();
+}
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -47,7 +71,10 @@ int main(int argc, char *argv[])
     //AdhocTesting::runTest();
 
     test_widgets();
+
     //test_vec();
+
+    //testpad();
 
     auto res = app.exec();
     
