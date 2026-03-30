@@ -8,6 +8,10 @@
 //#include "sv_qtcommon.h"
 #include "sv_datalayer.h"
 #include "TypesAndWidgets/LimitedValue/Internal/BaseXYPadWidget.h"
+#include "TypesAndWidgets/LimitedValue/Internal/XYPadWithPresetsWidget.h"
+
+
+
 
 void test_widgets()
 {
@@ -46,10 +50,14 @@ void test_vec()
 
 void testpad()
 {
+    auto w = new XYPadWithPresetsWidget();
+    w->show();
+    return;
+
     auto M = new QWidget;
     auto lay = new QHBoxLayout(M);
 
-    auto w = new BaseXYPadWidget();
+    
     lay->addWidget(w);
 
     lay->addWidget(new QLineEdit("hellooooo"));
@@ -71,6 +79,8 @@ int main(int argc, char *argv[])
     //AdhocTesting::runTest();
 
     test_widgets();
+
+    //makePaletteDisplayWidget(app.palette())->show();
 
     //test_vec();
 
