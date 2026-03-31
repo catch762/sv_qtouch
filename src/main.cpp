@@ -76,7 +76,9 @@ int main(int argc, char *argv[])
 
     Logger::instance().logAppLaunchMessage();
 
-    //AdhocTesting::runTest();
+    SV_LOG(std::format("{}", std::vector<double>{3.0, 4.0, 5.0}));
+
+    AdhocTesting::runTest();
 
     test_widgets();
 
