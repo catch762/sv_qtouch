@@ -46,6 +46,13 @@ void test_vec()
     widget->setValue(vec);
 
     widget->show();
+
+
+    {
+        QVariant v = QVariant::fromValue(widget);
+        QVariant v2 = QVariant::fromValue((QWidget*)widget);
+        SV_LOG(std::format("Ok its {} {} and {}", qVariantInfo(v) , qVariantInfo(v2), v.canConvert<XYPadWithPresetsWidget*>() ));
+    }
 }
 
 void testpad()
@@ -76,15 +83,13 @@ int main(int argc, char *argv[])
 
     Logger::instance().logAppLaunchMessage();
 
-    SV_LOG(std::format("{}", std::vector<double>{3.0, 4.0, 5.0}));
+    //AdhocTesting::runTest();
 
-    AdhocTesting::runTest();
-
-    test_widgets();
+    //test_widgets();
 
     //makePaletteDisplayWidget(app.palette())->show();
 
-    //test_vec();
+    test_vec();
 
     //testpad();
 
