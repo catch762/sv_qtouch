@@ -4,6 +4,8 @@ include(cmake/CPM.cmake)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options(-fconcepts-diagnostics-depth=2)
+
 # QT set up
 set(CMAKE_PREFIX_PATH "C:/SvQt/6.10.2/mingw_64")
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)

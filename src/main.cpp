@@ -28,8 +28,14 @@ void test_widgets()
     //    LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
     //});
 
-    auto w = WidgetMakerSystem::instance().makeWidgetForNode(root);
-    w->show();
+    //auto w = WidgetMakerSystem::instance().makeWidgetForLeafNode(root);
+    //w->show();
+
+    auto w = WidgetMakerSystem::instance().makeWidgetForLeafNode(childKek);
+    if (auto p = getWidgetFromQVariant(w))
+    {
+        p->show();
+    }
 }
 
 void test_vec()
@@ -77,6 +83,54 @@ void testpad()
     M->show();
 }
 
+DataNodeShared makeSimpleTree()
+{
+    auto root   = DataNode::makeComposite("root");
+
+    auto child_a = root->addLeaf("child_a", LimitedDoubleVec{
+        LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
+    });
+
+    auto child_b = root->addLeaf("child_b", LimitedDoubleVec{
+        LimitedDouble{}, LimitedDouble{}, LimitedDouble{}
+    });
+
+    return root;
+}
+
+void test_nodes_and_widgets()
+{
+    auto root = makeSimpleTree();
+
+    auto treeJsonWithoutWidgets = SerializerForDataNodeTreeAndItsWidgets().toJson(root);
+
+    if (false)
+    {
+        SV_LOG("BEGIN treeJsonWithoutWidgets");
+        SV_LOG(jsonValueToString(treeJsonWithoutWidgets).toStdString());
+        SV_LOG("END treeJsonWithoutWidgets");
+    }
+
+    root.reset();
+
+    SerializerForDataNodeTreeAndItsWidgets s;
+    auto newRoot = s.fromJson(treeJsonWithoutWidgets);
+    auto newRootWidget = s.getRootWidget();
+    if (qVariantHasWidget(newRootWidget))
+    {
+        auto widget = getWidgetFromQVariant(newRootWidget);
+        widget->show();
+    }
+
+    /*
+    auto w = WidgetMakerSystem::instance().makeWidgetForLeafNode(childKek);
+    if (auto p = getWidgetFromQVariant(w))
+    {
+        p->show();
+    }
+    */
+}
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -89,13 +143,14 @@ int main(int argc, char *argv[])
 
     //makePaletteDisplayWidget(app.palette())->show();
 
-    test_vec();
+    test_nodes_and_widgets();
+    //test_vec();
 
     //testpad();
 
     auto res = app.exec();
     
-    //todo add log 
-    qDebug() << "exit " << res;
+    Logger::instance().logAppExitMessage(res);
+
     return res;
 }
