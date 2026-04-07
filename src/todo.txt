@@ -1,0 +1,4 @@
+-empty label if no content in LimdoubleVec, Comp Node widget etc
+-try Serializer with funcs that are there but disabled enable_if by default
+-DataNode: implement 2-index map, but preferably from boost, remove tsl one.
+-move deps to simple subfolders
