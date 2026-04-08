@@ -10,7 +10,7 @@
 #include "TypesAndWidgets/LimitedValue/Internal/BaseXYPadWidget.h"
 #include "TypesAndWidgets/LimitedValue/Internal/XYPadWithPresetsWidget.h"
 
-
+#include "WidgetsForNodeManager.h"
 
 
 void test_widgets()
@@ -31,7 +31,7 @@ void test_widgets()
     //auto w = WidgetMakerSystem::instance().makeWidgetForLeafNode(root);
     //w->show();
 
-    auto w = WidgetMakerSystem::instance().makeWidgetForLeafNode(childKek);
+    auto w = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(childKek);
     if (auto p = getWidgetFromQVariant(w))
     {
         p->show();
@@ -98,7 +98,7 @@ DataNodeShared makeSimpleTree()
     return root;
 }
 
-void test_nodes_and_widgets()
+void test_nodes_and_widgets_ThroughJson()
 {
     auto root = makeSimpleTree();
 
@@ -113,23 +113,67 @@ void test_nodes_and_widgets()
 
     root.reset();
 
-    SerializerForDataNodeTreeAndItsWidgets s;
-    auto newRoot = s.fromJson(treeJsonWithoutWidgets);
-    auto newRootWidget = s.getRootWidget();
+    SV_LOG("Deserializing from json beign: ");
+
+    auto [newRoot, newRootWidget] = SerializerForDataNodeTreeAndItsWidgets().fromJson(treeJsonWithoutWidgets);
+
     if (qVariantHasWidget(newRootWidget))
     {
         auto widget = getWidgetFromQVariant(newRootWidget);
         widget->show();
     }
+    else SV_ERROR("Well newRootWidget is empty");
 
-    /*
-    auto w = WidgetMakerSystem::instance().makeWidgetForLeafNode(childKek);
-    if (auto p = getWidgetFromQVariant(w))
+
+    auto fullTreeJson = SerializerForDataNodeTreeAndItsWidgets().toJson(newRoot);
+
+    if (true)
     {
-        p->show();
+        SV_LOG("BEGIN fullTreeJson");
+        SV_LOG(jsonValueToString(fullTreeJson).toStdString());
+        SV_LOG("END fullTreeJson");
     }
-    */
+
+    SV_LOG("test_nodes_and_widgets_ThroughJson end;");
 }
+
+void test_nodes_and_widgets()
+{
+    auto root = makeSimpleTree();
+
+    auto widgetRoot = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(root);
+    if (qVariantHasWidget(widgetRoot))
+    {
+        auto widget = getWidgetFromQVariant(widgetRoot);
+        widget->show();
+    }
+    else SV_ERROR("Well widgetRoot is empty");
+
+    auto fullTreeJson = SerializerForDataNodeTreeAndItsWidgets().toJson(root);
+
+    if (true)
+    {
+        SV_LOG("BEGIN fullTreeJson");
+        SV_LOG(jsonValueToString(fullTreeJson).toStdString());
+        SV_LOG("END fullTreeJson");
+    }
+
+    root.reset();
+    delete getWidgetFromQVariant(widgetRoot);
+    WidgetsForNodeManager::clear();
+
+    QVariantHoldingWidget rootWidget;
+    std::tie(root, rootWidget) = SerializerForDataNodeTreeAndItsWidgets().fromJson(fullTreeJson);
+
+    if (auto w = getWidgetFromQVariant(rootWidget))
+    {
+        w->show();
+    }
+    else SV_ERROR("Eh, its null ?");
+
+    SV_LOG("test_nodes_and_widgets end;");
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -144,6 +188,7 @@ int main(int argc, char *argv[])
     //makePaletteDisplayWidget(app.palette())->show();
 
     test_nodes_and_widgets();
+
     //test_vec();
 
     //testpad();

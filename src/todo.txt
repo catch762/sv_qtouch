@@ -2,3 +2,11 @@
 -try Serializer with funcs that are there but disabled enable_if by default
 -DataNode: implement 2-index map, but preferably from boost, remove tsl one.
 -move deps to simple subfolders
+
+-WidgetsForNodeManager: add entry struct and additional qpointer to see deleted widgets
+
+
+
+
+bugs:
+-LimdoubleVec: swap to -1,-1: 2x sliders are not disabled
