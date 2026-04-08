@@ -140,7 +140,7 @@ void test_nodes_and_widgets_ThroughJson()
 void test_nodes_and_widgets()
 {
     auto root = makeSimpleTree();
-
+    
     auto widgetRoot = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(root);
     if (qVariantHasWidget(widgetRoot))
     {
@@ -149,27 +149,38 @@ void test_nodes_and_widgets()
     }
     else SV_ERROR("Well widgetRoot is empty");
 
-    auto fullTreeJson = SerializerForDataNodeTreeAndItsWidgets().toJson(root);
+    
 
-    if (true)
+    auto next = [=]() mutable
     {
-        SV_LOG("BEGIN fullTreeJson");
-        SV_LOG(jsonValueToString(fullTreeJson).toStdString());
-        SV_LOG("END fullTreeJson");
-    }
+        auto fullTreeJson = SerializerForDataNodeTreeAndItsWidgets().toJson(root);
 
-    root.reset();
-    delete getWidgetFromQVariant(widgetRoot);
-    WidgetsForNodeManager::clear();
+        if (true)
+        {
+            SV_LOG("BEGIN fullTreeJson");
+            SV_LOG(jsonValueToString(fullTreeJson).toStdString());
+            SV_LOG("END fullTreeJson");
+        }
 
-    QVariantHoldingWidget rootWidget;
-    std::tie(root, rootWidget) = SerializerForDataNodeTreeAndItsWidgets().fromJson(fullTreeJson);
+        root.reset();
+        delete getWidgetFromQVariant(widgetRoot);
+        WidgetsForNodeManager::clear();
 
-    if (auto w = getWidgetFromQVariant(rootWidget))
-    {
-        w->show();
-    }
-    else SV_ERROR("Eh, its null ?");
+        QVariantHoldingWidget rootWidget;
+        std::tie(root, rootWidget) = SerializerForDataNodeTreeAndItsWidgets().fromJson(fullTreeJson);
+
+        if (auto w = getWidgetFromQVariant(rootWidget))
+        {
+            w->show();
+        }
+        else SV_ERROR("Eh, rootWidget null ?");
+    };
+
+    auto b = new QPushButton("SAVE, DELETE ALL AND RELOAD");
+    b->setFixedSize(300, 200);
+    b->show();
+    QObject::connect(b, &QPushButton::clicked, next);
+
 
     SV_LOG("test_nodes_and_widgets end;");
 }
