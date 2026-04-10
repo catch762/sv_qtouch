@@ -5,7 +5,7 @@
 
 -WidgetsForNodeManager: add entry struct and additional qpointer to see deleted widgets
 
-
+-rename WidgetOptions to wisgetstate
 
 
 bugs:
