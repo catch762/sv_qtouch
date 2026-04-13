@@ -6,7 +6,4 @@
 -WidgetsForNodeManager: add entry struct and additional qpointer to see deleted widgets
 
 -rename WidgetOptions to wisgetstate
-
-
-bugs:
--LimdoubleVec: swap to -1,-1: 2x sliders are not disabled
+                    

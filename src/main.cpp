@@ -7,10 +7,10 @@
 //#include "sv_common.h"
 //#include "sv_qtcommon.h"
 #include "sv_datalayer.h"
-#include "TypesAndWidgets/LimitedValue/Internal/BaseXYPadWidget.h"
-#include "TypesAndWidgets/LimitedValue/Internal/XYPadWithPresetsWidget.h"
+#include "DataTypesAndTheirWidgets/LimitedValue/Internal/BaseXYPadWidget.h"
+#include "DataTypesAndTheirWidgets/LimitedValue/Internal/XYPadWithPresetsWidget.h"
 
-#include "WidgetsForNodeManager.h"
+#include "WidgetLogic/WidgetsForNodeManager.h"
 
 
 void test_widgets()
@@ -185,47 +185,6 @@ void test_nodes_and_widgets()
     SV_LOG("test_nodes_and_widgets end;");
 }
 
-QWidget* createThemeIconsWidget() {
-    auto widget = new QWidget();
-    auto mainLayout = new QVBoxLayout(widget);
-
-    auto scroll = new QScrollArea();
-    scroll->setWidgetResizable(true);
-    auto scrollWidget = new QWidget();
-    scroll->setWidget(scrollWidget);
-    mainLayout->addWidget(scroll);
-
-    auto layout = new QVBoxLayout(scrollWidget);
-
-    const int cols = 8;
-    auto rowLayout = new QHBoxLayout();
-    int col = 0;
-
-    // Iterate over all QIcon::ThemeIcon values (0 to 149 as per Qt 6.10.2 docs)
-    for (int i = 0; i < 150; ++i) {
-        QIcon icon = QIcon::fromTheme(static_cast<QIcon::ThemeIcon>(i));
-        if (!icon.isNull()) {
-            auto label = new QLabel();
-            label->setPixmap(icon.pixmap(32, 32));
-            label->setFixedSize(48, 48);
-            label->setAlignment(Qt::AlignCenter);
-            label->setToolTip(QString("ThemeIcon(%1)").arg(i));
-            rowLayout->addWidget(label);
-            ++col;
-            if (col >= cols) {
-                layout->addLayout(rowLayout);
-                rowLayout = new QHBoxLayout();
-                col = 0;
-            }
-        }
-    }
-    if (col > 0) {
-        layout->addLayout(rowLayout);
-    }
-
-    return widget;
-}
-
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -242,7 +201,7 @@ int main(int argc, char *argv[])
     //test_widgets();
 
     //makePaletteDisplayWidget(app.palette())->show();
-    createThemeIconsWidget()->show();
+    //createThemeIconsWidget()->show();
 
     test_nodes_and_widgets();
 
