@@ -7,92 +7,22 @@
 //#include "sv_common.h"
 //#include "sv_qtcommon.h"
 #include "sv_datalayer.h"
-#include "DataTypesAndTheirWidgets/LimitedValue/Internal/BaseXYPadWidget.h"
-#include "DataTypesAndTheirWidgets/LimitedValue/Internal/XYPadWithPresetsWidget.h"
+#include "DataTypesAndTheirWidgets/DataTypesAndTheirWidgets.h"
 
 #include "WidgetLogic/WidgetsForNodeManager.h"
 
 
-void test_widgets()
-{
-    auto root   = DataNode::makeComposite("root");
-
-    auto childKek = root->addLeaf("childKek", LimitedDoubleVec{
-        LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
-    });
-
-    //auto child  = root->addComposite("child");
-    //auto grand0 = child->addLeaf("grand0_name", QString("qstring text"));
-    //auto grand1 = child->addLeaf("grand1_name", LimitedDouble{6, 5, 7});
-    //auto grand2 = child->addLeaf("grand2_name", LimitedDoubleVec{
-    //    LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
-    //});
-
-    //auto w = WidgetMakerSystem::instance().makeWidgetForLeafNode(root);
-    //w->show();
-
-    auto w = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(childKek);
-    if (auto p = getWidgetFromQVariant(w))
-    {
-        p->show();
-    }
-}
-
-void test_vec()
-{
-    LimitedDoubleVec vec{ LimitedDouble{}, LimitedDouble{2,2,2}};
-    auto widget = new LimitedDoubleVecWidget(vec);
-    QObject::connect(widget, &LimitedDoubleVecWidget::valueChanged, [](const auto &vec)
-    {
-        SV_LOG("Valchanged, size " + std::to_string(vec.size()));
-    });
-
-    //vec.push_back(LimitedDouble());
-    vec.pop_back();
-    widget->setValue(vec);
-
-    widget->show();
-
-
-    {
-        QVariant v = QVariant::fromValue(widget);
-        QVariant v2 = QVariant::fromValue((QWidget*)widget);
-        SV_LOG(std::format("Ok its {} {} and {}", qVariantInfo(v) , qVariantInfo(v2), v.canConvert<XYPadWithPresetsWidget*>() ));
-    }
-}
-
-void testpad()
-{
-    auto w = new XYPadWithPresetsWidget();
-    w->show();
-    return;
-
-    auto M = new QWidget;
-    auto lay = new QHBoxLayout(M);
-
-    
-    lay->addWidget(w);
-
-    lay->addWidget(new QLineEdit("hellooooo"));
-
-    auto b = new QPushButton("Kek");
-    b->setMaximumWidth(150);
-
-    lay->addWidget(b);
-
-    M->show();
-}
 
 DataNodeShared makeSimpleTree()
 {
     auto root   = DataNode::makeComposite("root");
 
-    auto child_a = root->addLeaf("child_a", LimitedDoubleVec{
-        LimitedDouble{6, 5, 7}, LimitedDouble{50, 0, 100}, LimitedDouble{}
+    auto child_a = root->addLeaf("child_a", LimitedIntVec{
+        LimitedInt{6, 5, 7}, LimitedInt{50, 0, 100}, LimitedInt{}
     });
 
     auto child_b = root->addLeaf("child_b", LimitedDoubleVec{
-        LimitedDouble{}, LimitedDouble{}, LimitedDouble{}
+        LimitedDouble{}, LimitedDouble{1,2,3}, LimitedDouble{}
     });
 
     return root;
@@ -191,10 +121,12 @@ int main(int argc, char *argv[])
 
     Logger::instance().logAppLaunchMessage();
 
-    QPalette p = app.palette();
-    //QPalette p = QPalette();
-    p.setColor(QPalette::Accent, QColor("#1499ff")); 
-    app.setPalette(p);
+    if(false)
+    {
+        QPalette p = app.palette();
+        p.setColor(QPalette::Accent, QColor("#1499ff")); 
+        app.setPalette(p);
+    }
 
     //AdhocTesting::runTest();
 

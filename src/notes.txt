@@ -4,6 +4,9 @@ Need to learn or refresh:
 - string view
 - the {}, initializer lists
 
+- std::decay_t<decltype
+std::visit([](auto&& point) why ???
+
 adding submodule:
 git submodule add git@github.com:catch762/sv_common.git deps/sv_common
 git submodule update --init
