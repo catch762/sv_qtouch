@@ -11,7 +11,7 @@
 
 #include "WidgetLogic/WidgetsForNodeManager.h"
 
-
+#include "DataTypesAndTheirWidgets/Example.h"
 
 DataNodeShared makeSimpleTree()
 {
@@ -115,6 +115,13 @@ void test_nodes_and_widgets()
     SV_LOG("test_nodes_and_widgets end;");
 }
 
+void testjustvec()
+{
+    auto w = new VectorWidget;
+    w->setValue(LimitedIntVec{LimitedInt{}, LimitedInt{5,6,7}, LimitedInt{}});
+    w->show();
+}
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -135,7 +142,8 @@ int main(int argc, char *argv[])
     //makePaletteDisplayWidget(app.palette())->show();
     //createThemeIconsWidget()->show();
 
-    test_nodes_and_widgets();
+    //test_nodes_and_widgets();
+    testjustvec();
 
     //test_vec();
 
