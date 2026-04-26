@@ -16,6 +16,7 @@
             "problemMatcher": ["$gcc"],
             "detail": "cmake --build build/mingw-debug --config Debug --parallel",
             "options": {
+                "cwd": "${workspaceFolder}",
                 "env": {
                     "PATH": "C:/SvQt/Tools/mingw1310_64/bin;C:/SvQt/6.10.2/mingw_64/bin;${env:PATH}"
                 }
@@ -33,6 +34,7 @@
             "problemMatcher": ["$gcc"],
             "detail": "cmake --build build/mingw-release --config Release --parallel",
             "options": {
+                "cwd": "${workspaceFolder}",
                 "env": {
                     "PATH": "C:/SvQt/Tools/mingw1310_64/bin;C:/SvQt/6.10.2/mingw_64/bin;${env:PATH}"
                 }

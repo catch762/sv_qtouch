@@ -8,22 +8,20 @@
 //#include "sv_qtcommon.h"
 #include "sv_datalayer.h"
 #include "DataTypesAndTheirWidgets/DataTypesAndTheirWidgets.h"
-
+#include "DataTypesAndTheirWidgets/Bool/BoolVecWidget.h"
 #include "WidgetLogic/WidgetsForNodeManager.h"
 
-#include "DataTypesAndTheirWidgets/Example.h"
+#include "GlslStructParser.h"
 
 DataNodeShared makeSimpleTree()
 {
     auto root   = DataNode::makeComposite("root");
 
     auto child_a = root->addLeaf("child_a", LimitedIntVec{
-        LimitedInt{6, 5, 7}, LimitedInt{50, 0, 100}, LimitedInt{}
+        LimitedInt{50, 0, 100}, LimitedInt{}
     });
 
-    auto child_b = root->addLeaf("child_b", LimitedDoubleVec{
-        LimitedDouble{}, LimitedDouble{1,2,3}, LimitedDouble{}
-    });
+    auto child_b = root->addLeaf("child_b", BoolVec{true,false,false,true,true});
 
     return root;
 }
@@ -115,13 +113,6 @@ void test_nodes_and_widgets()
     SV_LOG("test_nodes_and_widgets end;");
 }
 
-void testjustvec()
-{
-    auto w = new VectorWidget;
-    w->setValue(LimitedIntVec{LimitedInt{}, LimitedInt{5,6,7}, LimitedInt{}});
-    w->show();
-}
-
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -143,7 +134,12 @@ int main(int argc, char *argv[])
     //createThemeIconsWidget()->show();
 
     //test_nodes_and_widgets();
-    testjustvec();
+    //booltest();
+    
+    GlslStructParser::Test();
+    
+    
+    //testjustvec();
 
     //test_vec();
 
