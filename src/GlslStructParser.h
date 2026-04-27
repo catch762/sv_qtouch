@@ -7,205 +7,128 @@ public:
     static void Test()
     {
         GlslStructParser parser;
-        parser.ParseFile("C:/home/code/sv_qtouch/glsl_example.h");
+        auto res = parser.parseFiles({"C:/home/code/sv_qtouch/glsl_example.h"});
+
+        SV_LOG(std::format("Result: {}", res ? res->toString() : std::string("failure")));
     }
-
-    void ParseFile(const QString& filePath)
+    struct VarListEntry
     {
-        QFile file(filePath);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        enum MacroType
         {
-            SV_ERROR(std::format("GlslStructParser: ParseFile failed, cannot open file: {}", filePath));
-            return;
-        }
+            ScalarVariable, //e.g. 'float'
+            Struct
+        };
 
-        QTextStream in(&file);
-        while (!in.atEnd())
-        {
-            if (!processLine(in.readLine()))
-            {
-                SV_ERROR("GlslStructParser: ParseFile failed and terminated.");
-            }
-        }
+        MacroType   macroType;
+        QString     varType;
+        QString     varName;
+        QStringOpt  uiMacroArg;
+
+        std::string toString() const;
     };
+    SV_DECL_OPT(VarListEntry);
 
-private:
-    enum State
-    {
-        LookingForStruct,
-        ParsingStructMembers
-    };
-
-    //returns success; failure will halt entire parsing operation.
-    bool processLine(QString line)
-    {
-        line = line.trimmed();
-
-        //SV_LOG(std::format("LINE: {}", line));
-
-        if (state == State::LookingForStruct)
-        {
-            return processPotentialStructDeclBegin(line);
-        }
-        else if (state == State::ParsingStructMembers)
-        {
-            return processStructMemberLine(line);
-        }
-        else SV_UNREACHABLE();
-    }
-
-    bool processPotentialStructDeclBegin(const QString& line)
-    {
-        if( line.startsWith(StructDeclBegin) )
-        {
-            auto structName = tryExtractStructNameFromDeclBeginLine(line);
-            if (!structName) return false;
-
-            currentStructName = *structName;
-            state = State::ParsingStructMembers;
-
-            SV_LOG("FOUND STRUCT: " + currentStructName.toStdString());
-        }
-        return true;
-    }
-
-    QStringOpt tryExtractStructNameFromDeclBeginLine(const QString& line)
-    {
-        int declBeginIndex = line.indexOf(StructDeclBegin);
-        if (declBeginIndex == -1)
-        {
-            onLineError("Didnt find struct declaration begin", line);
-            return {};
-        }
-
-        QString everythingAfter = line.mid(declBeginIndex + StructDeclBegin.length());
-        int parenthIndex = everythingAfter.indexOf('(');
-        if (parenthIndex == -1)
-        {
-            onLineError("After struct declaration begin did not find a ( parenthesis", line);
-            return {};
-        }
-
-        QString structName = everythingAfter.left(parenthIndex).trimmed();
-        if (structName.isEmpty())
-        {
-            onLineError("Empty struct name", line);
-            return {};
-        }
-
-        return structName;
-    }
-
-    //returns success;
     struct StructMember
     {
         QString varType;
         QString varName;
         QStringOpt uiMacroArg; //not including quotes
 
-        std::string toString()
-        {
-            return std::format("StructMember[varType={} varName={} ui={}]", varType, varName, uiMacroArg);
-        }
+        std::string toString() const;
     };
+    
     SV_DECL_OPT(StructMember);
 
-    bool processStructMemberLine(const QString& line)
+    struct StructDefinition
     {
-        auto member = parseStructMemberLine(line);
-        if(!member) return false;
+        QString name;
+        std::vector<StructMember> members;
 
-        SV_LOG(member->toString());
-        return true;
-    }
+        std::string toString() const;
+        bool isValid() const;
+    };
 
-    StructMemberOpt parseStructMemberLine(const QString& line)
+    struct ParseResult
     {
-        // Input looks like this:
-        //
-        // Ordinary line:
-        //      float, manphase, ui("...")
-        // Last line, note the ) symbol instead of comma:
-        //      ivec3, renmode) ui("...")
+        std::vector<StructDefinition>   structDefinitions;
+        std::vector<VarListEntry>       varListEntries;
 
-        if (!line.contains(Comma))
-        {
-            onLineError("No ',' commas at all", line);
-            return {};
-        }
+        std::string toString() const;
+    };
+    SV_DECL_OPT(ParseResult);
 
-        const auto variableType = line.section(Comma, 0,0).trimmed();
-        const auto theRest = line.section(Comma,1).trimmed();
-        if (variableType.isEmpty() || theRest.isEmpty())
-        {
-            onLineError("Bad content", line);
-            return {};
-        }
+    ParseResultOpt parseFiles(const std::vector<QString>& filePaths);
 
-        const auto secondSeparators = ",)";
-        const auto secondSep = firstPosOfAnyCharFromList(theRest, secondSeparators);
-        if(secondSep == -1)
-        {
-            onLineError(QString("After first comma, there were no separators found: [%1]").arg(secondSeparators), line);
-            return {};
-        }
-
-        if (theRest[secondSep] == ')')
-        {
-            //This is last member.
-            state = State::LookingForStruct;
-        }
-
-        const auto variableName = theRest.left(secondSep).trimmed();
-        if (variableName.isEmpty())
-        {
-            onLineError("Bad variableName content", line);
-            return {};
-        }
-
-        //everything after second separator; it may optionally contain the ui("...") macro part; it may also be empty
-        const auto lastPart = theRest.mid(secondSep+1);
-
-        StructMember member;
-        member.varType = variableType;
-        member.varName = variableName;
-        member.uiMacroArg = tryParseUIMacroContent(theRest);
-
-        return member;
-    }
-
-    void onLineError(const QString &error, const QString &line)
+private:
+    enum State
     {
-        SV_ERROR(std::format("Error [{}] on a line: {}", error, line));
-    }
+        LookingForStructDeclOrVarList,
+        ParsingMemberVariablesOfStructDecl,
+        ParsingEntriesOfVarList,
+        FinishedParsingVarList //this means entire parsing operation is over, we are done with the file.
+    };
+
+    enum ParseFileResult
+    {
+        Error,
+        FileProcessed,
+        FileProcessedAndEverythingIsFinished
+    };
+    ParseFileResult ParseFile(const QString& filePath);
+
+    //returns success; failure will halt entire parsing operation.
+    bool processLine(QString line);
+
+    bool lineIsStructDeclarationBegin(const QString& line);
+    bool lineIsVarListBegin(const QString& line);
+    bool lineIsVarListEnd(const QString& line);
+
+    
+
+    bool processVarListEntryLine(const QString& line);
+
+    // Example lines:
+    //      VAR(vec4, te)		ui("...")
+	//	    STR(RenFin, renfin) ui("...")
+    VarListEntryOpt parseVarListEntryLine(const QString& line);
+
+    bool processStructDeclBegin(const QString& line);
+
+    QStringOpt tryExtractStructNameFromDeclBeginLine(const QString& line);
+
+    bool processStructMemberLine(const QString& line);
+
+    StructMemberOpt parseStructMemberLine(const QString& line, bool& out_isLastMember);
+
+    void onLineError(const QString &error, const QString &line);
 
     // If text contains ui("12whatever34"), it will return 12whatever34, without quotes.
     // Warning:
     //  ui( "spaces within macro are ok" )
     //  ui ("but space after ui will NOT work")
-    QStringOpt tryParseUIMacroContent(const QString& text)
-    {
-        auto indexUiBegin = text.indexOf(UiBegin);
-        if (indexUiBegin == -1) return {};
+    QStringOpt tryParseUIMacroContent(const QString& text);
 
-        auto theRest = text.mid(indexUiBegin + UiBegin.length()).trimmed();
-        if(theRest.isEmpty()) return {};
-
-        std::pair<int,int> quotes = getFirstTwoUnescapedQuotesIndexes(theRest);
-        if (quotes.first < 0 || quotes.second < 0) return {};
-
-        auto argumentBetweenQuotes = theRest.mid(quotes.first + 1, quotes.second - quotes.first - 1).trimmed();
-        if (argumentBetweenQuotes.isEmpty()) return {};
-
-        return argumentBetweenQuotes;
-    }
+    void resetState();
 
 private:
-    static inline const QChar   Comma = ',';
-    static inline const QString StructDeclBegin = "#define STRMETA_";
-    static inline const QString UiBegin = "ui(";
+    static inline const QString StructDeclBegin         = "#define STRMETA_";
+    static inline const QString VarListBegin            = "SUP_VARS_BEGIN";
+    static inline const QString VarListEnd              = "SUP_VARS_END";
+    static inline const QString VarListEntryStructMacro = "STR";
+    static inline const QString VarListEntryVarMacro    = "VAR";
+    static inline const QString VarListEntrySkipText    = "#line";
+    static inline const QString UiBegin                 = "ui(";
+    static inline const QChar   Comma                   = ',';
 
 private:
-    State state = State::LookingForStruct;
-    QString currentStructName;
+    State state = State::LookingForStructDeclOrVarList;
+    
+    StructDefinition currentStruct; //if we are in State::ParsingMemberVariablesOfStructDecl, we are filling this.
+
+    ParseResult parseResult;
 };
+
+SV_DECL_STD_FORMATTER(GlslStructParser::VarListEntry, obj.toString());
+SV_DECL_STD_FORMATTER(GlslStructParser::StructMember, obj.toString());
+SV_DECL_STD_FORMATTER(GlslStructParser::StructDefinition, obj.toString());
+SV_DECL_STD_FORMATTER(GlslStructParser::ParseResult, obj.toString());
