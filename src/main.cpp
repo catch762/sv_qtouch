@@ -12,6 +12,7 @@
 #include "WidgetLogic/WidgetsForNodeManager.h"
 
 #include "SUP_Data/SUP_DataParser.h"
+#include "TreeAndWidgetsBuilder.h"
 
 DataNodeShared makeSimpleTree()
 {
@@ -113,6 +114,21 @@ void test_nodes_and_widgets()
     SV_LOG("test_nodes_and_widgets end;");
 }
 
+NodeAndWidgetPair test_SUP()
+{
+    if(auto data = SUP_DataParser().parseFiles({"C:/home/code/sv_qtouch/glsl_example_simple.h"}))
+    {
+        SV_LOG(std::format("Parsed data successfully: {}", data->toString()));
+
+        TreeAndWidgetsBuilder builder;
+        return builder.buildTreeAndWidgets(*data);
+    }
+    else
+    {
+        SV_ERROR("Couldnt parse data from glsl");
+    }
+}
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -126,24 +142,7 @@ int main(int argc, char *argv[])
         app.setPalette(p);
     }
 
-    //AdhocTesting::runTest();
-
-    //test_widgets();
-
-    //makePaletteDisplayWidget(app.palette())->show();
-    //createThemeIconsWidget()->show();
-
-    //test_nodes_and_widgets();
-    //booltest();
-    
-    SUP_DataParser::Test();
-    
-    
-    //testjustvec();
-
-    //test_vec();
-
-    //testpad();
+    auto node = test_SUP();
 
     auto res = app.exec();
     

@@ -4,12 +4,12 @@ std::string SUP_VarListEntry::toString() const
 {
     return std::format("SUP_VarListEntry[{} {} {} ui({})]",
                                 macroType == MacroType::ScalarVariable ? "Scalar" : "Struct",
-                                varType, varName, uiMacroArg);
+                                var.type, var.name, uiMacroArg);
 }
 
 std::string SUP_StructMember::toString() const
 {
-    return std::format("[{} {} ui({})]", varType, varName, uiMacroArg);
+    return std::format("[{} {} ui({})]", var.type, var.name, uiMacroArg);
 }
 
 std::string SUP_StructDefinition::toString() const
@@ -35,7 +35,7 @@ std::string SUP_Data::toString() const
                                     "Struct Definitions ({}):\n", structDefinitions.size());
     for (auto &structDef : structDefinitions)
     {
-        res += structDef.toString() + "\n";
+        res += structDef.second.toString() + "\n";
     }
 
     res += std::format("--------------\nVarList entries ({}):\n", varListEntries.size());
@@ -47,4 +47,9 @@ std::string SUP_Data::toString() const
 
     res += "] SUP_Data END";
     return res;
+}
+
+const SUP_StructDefinition *SUP_Data::getStruct(const QString &name) const
+{
+    return getValue(structDefinitions, name);
 }

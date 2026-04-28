@@ -175,27 +175,19 @@ SUP_VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
         return {};
     }
 
-    //2. var type
+    //2. var type and name
     if (varType.isEmpty())
     {
         SV_ERROR(std::format("Empty var type within VarList entry line [{}]", line));
         return {};
     }
-    else
-    {
-        res.varType = varType;
-    }
-
-    //3. var name
     if (varName.isEmpty())
     {
         SV_ERROR(std::format("Empty var name within VarList entry line [{}]", line));
         return {};
     }
-    else
-    {
-        res.varName = varName;
-    }
+
+    res.var = {varType, varName};
 
     //4. optional ui macro arg
     res.uiMacroArg = tryParseUIMacroContent(theRest);
@@ -259,15 +251,19 @@ bool SUP_DataParser::processStructMemberLine(const QString& line)
     {
         state = State::LookingForStructDeclOrVarList;
 
-        if (currentStruct.isValid())
+        if (!currentStruct.isValid())
         {
-            parseResult.structDefinitions.push_back(currentStruct);
-            //SV_LOG(std::format("Parsed and saved struct: {}", currentStruct));
+            SV_ERROR(std::format("Finalized parsing struct [{}] members, but resulting struct is not valid", currentStruct.name));
+            return false;
         }
-        else
+
+        if (parseResult.getStruct(currentStruct.name) != nullptr)
         {
-            SV_ERROR("Finalized parsing struct members, but resulting struct is not valid, so saving nothing.");
+            SV_ERROR(std::format("Finalized parsing struct [{}] members, but such struct name already exists", currentStruct.name));
+            return false;
         }
+
+        parseResult.structDefinitions[currentStruct.name] = currentStruct;
 
         currentStruct = SUP_StructDefinition();
     }
@@ -327,8 +323,7 @@ SUP_StructMemberOpt SUP_DataParser::parseStructMemberLine(const QString& line, b
     const auto lastPart = theRest.mid(secondSep+1);
 
     SUP_StructMember member;
-    member.varType = variableType;
-    member.varName = variableName;
+    member.var = {variableType, variableName};
     member.uiMacroArg = tryParseUIMacroContent(theRest);
 
     return member;

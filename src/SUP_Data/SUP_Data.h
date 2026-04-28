@@ -10,10 +10,16 @@
 // When we parse data from GLSL, we are looking for specific macros defined in SUP.
 // Hence i named the structs SUP_Something, rather than GLSL_Something - it reflects the intent better.
 //******************************************************************************************************
+
+struct VarTypeAndName
+{
+    QString type;
+    QString name;
+};
+
 struct SUP_StructMember
 {
-    QString varType;
-    QString varName;
+    VarTypeAndName var;
     QStringOpt uiMacroArg; //not including quotes
 
     std::string toString() const;
@@ -41,8 +47,7 @@ struct SUP_VarListEntry
     };
 
     MacroType   macroType;
-    QString     varType;
-    QString     varName;
+    VarTypeAndName var;
     QStringOpt  uiMacroArg; //not including quotes
 
     std::string toString() const;
@@ -55,7 +60,7 @@ SV_DECL_STD_FORMATTER(SUP_VarListEntry, obj.toString());
 //********************************************************************
 struct SUP_Data
 {
-    std::vector<SUP_StructDefinition>   structDefinitions;
+    std::map<QString, SUP_StructDefinition>   structDefinitions;
 
     // Final GLSL project uniform data layout - declaring variables, which are either: 
     //  - of native type such as 'float' or 'vec4'
@@ -63,6 +68,7 @@ struct SUP_Data
     std::vector<SUP_VarListEntry>       varListEntries;     
 
     std::string toString() const;
+    const SUP_StructDefinition* getStruct(const QString& name) const; //returns nullptr if not found
 };
 SV_DECL_OPT(SUP_Data);
 SV_DECL_STD_FORMATTER(SUP_Data, obj.toString());

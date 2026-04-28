@@ -12,6 +12,7 @@ public:
         SV_LOG(std::format("Result: {}", res ? res->toString() : std::string("failure")));
     }
     
+    //can make it static
     SUP_DataOpt parseFiles(const std::vector<QString>& filePaths);
 
 private:
