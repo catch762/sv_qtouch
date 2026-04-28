@@ -1,6 +1,6 @@
 #pragma once
 #include "sv_qtcommon.h"
-
+#include "SUP_Data.h"
 class SUP_DataParser
 {
 public:
@@ -11,53 +11,8 @@ public:
 
         SV_LOG(std::format("Result: {}", res ? res->toString() : std::string("failure")));
     }
-    struct VarListEntry
-    {
-        enum MacroType
-        {
-            ScalarVariable, //e.g. 'float'
-            Struct
-        };
-
-        MacroType   macroType;
-        QString     varType;
-        QString     varName;
-        QStringOpt  uiMacroArg;
-
-        std::string toString() const;
-    };
-    SV_DECL_OPT(VarListEntry);
-
-    struct StructMember
-    {
-        QString varType;
-        QString varName;
-        QStringOpt uiMacroArg; //not including quotes
-
-        std::string toString() const;
-    };
     
-    SV_DECL_OPT(StructMember);
-
-    struct StructDefinition
-    {
-        QString name;
-        std::vector<StructMember> members;
-
-        std::string toString() const;
-        bool isValid() const;
-    };
-
-    struct ParseResult
-    {
-        std::vector<StructDefinition>   structDefinitions;
-        std::vector<VarListEntry>       varListEntries;
-
-        std::string toString() const;
-    };
-    SV_DECL_OPT(ParseResult);
-
-    ParseResultOpt parseFiles(const std::vector<QString>& filePaths);
+    SUP_DataOpt parseFiles(const std::vector<QString>& filePaths);
 
 private:
     enum State
@@ -90,7 +45,7 @@ private:
     // Example lines:
     //      VAR(vec4, te)		ui("...")
 	//	    STR(RenFin, renfin) ui("...")
-    VarListEntryOpt parseVarListEntryLine(const QString& line);
+    SUP_VarListEntryOpt parseVarListEntryLine(const QString& line);
 
     bool processStructDeclBegin(const QString& line);
 
@@ -98,7 +53,7 @@ private:
 
     bool processStructMemberLine(const QString& line);
 
-    StructMemberOpt parseStructMemberLine(const QString& line, bool& out_isLastMember);
+    SUP_StructMemberOpt parseStructMemberLine(const QString& line, bool& out_isLastMember);
 
     void onLineError(const QString &error, const QString &line);
 
@@ -123,12 +78,7 @@ private:
 private:
     State state = State::LookingForStructDeclOrVarList;
     
-    StructDefinition currentStruct; //if we are in State::ParsingMemberVariablesOfStructDecl, we are filling this.
+    SUP_StructDefinition currentStruct; //if we are in State::ParsingMemberVariablesOfStructDecl, we are filling this.
 
-    ParseResult parseResult;
+    SUP_Data parseResult;
 };
-
-SV_DECL_STD_FORMATTER(SUP_DataParser::VarListEntry, obj.toString());
-SV_DECL_STD_FORMATTER(SUP_DataParser::StructMember, obj.toString());
-SV_DECL_STD_FORMATTER(SUP_DataParser::StructDefinition, obj.toString());
-SV_DECL_STD_FORMATTER(SUP_DataParser::ParseResult, obj.toString());

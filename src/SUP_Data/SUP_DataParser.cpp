@@ -3,56 +3,8 @@
 #include "Formatters.h"
 #include <QScopeGuard>
 
-std::string SUP_DataParser::VarListEntry::toString() const
-{
-    return std::format("VarListEntry[{} {} {} ui({})]",
-                                macroType == MacroType::ScalarVariable ? "Scalar" : "Struct",
-                                varType, varName, uiMacroArg);
-}
 
-std::string SUP_DataParser::StructMember::toString() const
-{
-    return std::format("[{} {} ui({})]", varType, varName, uiMacroArg);
-}
-
-std::string SUP_DataParser::StructDefinition::toString() const
-{
-    auto res = std::format("struct {} {{\n", name);
-    for (auto &m : members)
-    {
-        res += std::format("    {}\n", m);
-    }
-    res += "}";
-
-    return res;
-}
-
-bool SUP_DataParser::StructDefinition::isValid() const
-{
-    return !name.isEmpty() && !members.empty();
-}
-
-std::string SUP_DataParser::ParseResult::toString() const
-{
-    std::string res = std::format(  "SUP_DataParser::ParseResult BEGIN [\n"
-                                    "Struct Definitions ({}):\n", structDefinitions.size());
-    for (auto &structDef : structDefinitions)
-    {
-        res += structDef.toString() + "\n";
-    }
-
-    res += std::format("--------------\nVarList entries ({}):\n", varListEntries.size());
-
-    for (auto &varlistEntry : varListEntries)
-    {
-        res += varlistEntry.toString() + "\n";
-    }
-
-    res += "] SUP_DataParser::ParseResult END";
-    return res;
-}
-
-SUP_DataParser::ParseResultOpt SUP_DataParser::parseFiles(const std::vector<QString>& filePaths)
+SUP_DataOpt SUP_DataParser::parseFiles(const std::vector<QString>& filePaths)
 {
     //No matter what, after this operation, class will be in clean state, ready for next operation
     auto onExitFromThisFunction = qScopeGuard([this]
@@ -192,7 +144,7 @@ bool SUP_DataParser::processVarListEntryLine(const QString& line)
     return true;
 }
 
-SUP_DataParser::VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
+SUP_VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
 {
     auto parts = splitStringBySeparators(line, {"(", ",", ")"}, true);
     if (!parts)
@@ -208,14 +160,14 @@ SUP_DataParser::VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QStr
     const auto& theRest   = (*parts)[3];
 
     //1. macro type
-    VarListEntry res;
+    SUP_VarListEntry res;
     if (macroName == VarListEntryVarMacro)
     {
-        res.macroType = VarListEntry::MacroType::ScalarVariable;
+        res.macroType = SUP_VarListEntry::MacroType::ScalarVariable;
     }
     else if (macroName == VarListEntryStructMacro)
     {
-        res.macroType = VarListEntry::MacroType::Struct;
+        res.macroType = SUP_VarListEntry::MacroType::Struct;
     }
     else
     {
@@ -317,7 +269,7 @@ bool SUP_DataParser::processStructMemberLine(const QString& line)
             SV_ERROR("Finalized parsing struct members, but resulting struct is not valid, so saving nothing.");
         }
 
-        currentStruct = StructDefinition();
+        currentStruct = SUP_StructDefinition();
     }
 
     if(!member) return false;
@@ -326,7 +278,7 @@ bool SUP_DataParser::processStructMemberLine(const QString& line)
     return true;
 }
 
-SUP_DataParser::StructMemberOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool& out_isLastMember)
+SUP_StructMemberOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool& out_isLastMember)
 {
     // Input looks like this:
     //
@@ -374,7 +326,7 @@ SUP_DataParser::StructMemberOpt SUP_DataParser::parseStructMemberLine(const QStr
     //everything after second separator; it may optionally contain the ui("...") macro part; it may also be empty
     const auto lastPart = theRest.mid(secondSep+1);
 
-    StructMember member;
+    SUP_StructMember member;
     member.varType = variableType;
     member.varName = variableName;
     member.uiMacroArg = tryParseUIMacroContent(theRest);
@@ -407,6 +359,6 @@ QStringOpt SUP_DataParser::tryParseUIMacroContent(const QString& text)
 void SUP_DataParser::resetState()
 {
     state = State::LookingForStructDeclOrVarList;
-    currentStruct = StructDefinition();
-    parseResult = ParseResult();
+    currentStruct = SUP_StructDefinition();
+    parseResult = SUP_Data();
 }
