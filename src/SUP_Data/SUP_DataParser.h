@@ -46,7 +46,7 @@ private:
     // Example lines:
     //      VAR(vec4, te)		ui("...")
 	//	    STR(RenFin, renfin) ui("...")
-    SUP_VarListEntryOpt parseVarListEntryLine(const QString& line);
+    SUP_VariableOpt parseVarListEntryLine(const QString& line);
 
     bool processStructDeclBegin(const QString& line);
 
@@ -54,7 +54,7 @@ private:
 
     bool processStructMemberLine(const QString& line);
 
-    SUP_StructMemberOpt parseStructMemberLine(const QString& line, bool& out_isLastMember);
+    SUP_VariableOpt parseStructMemberLine(const QString& line, bool& out_isLastMember);
 
     void onLineError(const QString &error, const QString &line);
 

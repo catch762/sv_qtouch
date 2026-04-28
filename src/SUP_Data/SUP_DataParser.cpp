@@ -144,7 +144,7 @@ bool SUP_DataParser::processVarListEntryLine(const QString& line)
     return true;
 }
 
-SUP_VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
+SUP_VariableOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
 {
     auto parts = splitStringBySeparators(line, {"(", ",", ")"}, true);
     if (!parts)
@@ -160,20 +160,7 @@ SUP_VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
     const auto& theRest   = (*parts)[3];
 
     //1. macro type
-    SUP_VarListEntry res;
-    if (macroName == VarListEntryVarMacro)
-    {
-        res.macroType = SUP_VarListEntry::MacroType::ScalarVariable;
-    }
-    else if (macroName == VarListEntryStructMacro)
-    {
-        res.macroType = SUP_VarListEntry::MacroType::Struct;
-    }
-    else
-    {
-        SV_ERROR(std::format("Unrecognized macro [{}] of VarList entry line [{}]", macroName, line));
-        return {};
-    }
+    //actually we ignore it.
 
     //2. var type and name
     if (varType.isEmpty())
@@ -187,12 +174,7 @@ SUP_VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
         return {};
     }
 
-    res.var = {varType, varName};
-
-    //4. optional ui macro arg
-    res.uiMacroArg = tryParseUIMacroContent(theRest);
-
-    return res;
+    return SUP_Variable{varType, varName, tryParseUIMacroContent(theRest)};
 }
 
 bool SUP_DataParser::processStructDeclBegin(const QString& line)
@@ -274,7 +256,7 @@ bool SUP_DataParser::processStructMemberLine(const QString& line)
     return true;
 }
 
-SUP_StructMemberOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool& out_isLastMember)
+SUP_VariableOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool& out_isLastMember)
 {
     // Input looks like this:
     //
@@ -322,11 +304,7 @@ SUP_StructMemberOpt SUP_DataParser::parseStructMemberLine(const QString& line, b
     //everything after second separator; it may optionally contain the ui("...") macro part; it may also be empty
     const auto lastPart = theRest.mid(secondSep+1);
 
-    SUP_StructMember member;
-    member.var = {variableType, variableName};
-    member.uiMacroArg = tryParseUIMacroContent(theRest);
-
-    return member;
+    return SUP_Variable{variableType, variableName, tryParseUIMacroContent(theRest)};;
 }
 
 void SUP_DataParser::onLineError(const QString &error, const QString &line)

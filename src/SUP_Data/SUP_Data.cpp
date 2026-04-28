@@ -1,15 +1,12 @@
 #include "SUP_Data.h"
 
-std::string SUP_VarListEntry::toString() const
+std::string SUP_Variable::toString() const
 {
-    return std::format("SUP_VarListEntry[{} {} {} ui({})]",
-                                macroType == MacroType::ScalarVariable ? "Scalar" : "Struct",
-                                var.type, var.name, uiMacroArg);
-}
-
-std::string SUP_StructMember::toString() const
-{
-    return std::format("[{} {} ui({})]", var.type, var.name, uiMacroArg);
+    return std::format("SUP_Var[{}, {}{}]",
+        type,
+        name,
+        uiMacroArg ? std::format(", ui(\"{}\")", uiMacroArg) : std::string("")
+    );
 }
 
 std::string SUP_StructDefinition::toString() const
@@ -53,3 +50,5 @@ const SUP_StructDefinition *SUP_Data::getStruct(const QString &name) const
 {
     return getValue(structDefinitions, name);
 }
+
+

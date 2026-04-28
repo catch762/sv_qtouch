@@ -114,9 +114,9 @@ void test_nodes_and_widgets()
     SV_LOG("test_nodes_and_widgets end;");
 }
 
-NodeAndWidgetPair test_SUP()
+NodeAndWidgetPairOpt test_SUP()
 {
-    if(auto data = SUP_DataParser().parseFiles({"C:/home/code/sv_qtouch/glsl_example_simple.h"}))
+    if(auto data = SUP_DataParser().parseFiles({"C:/home/code/sv_qtouch/doc/glsl_example_simple.h"}))
     {
         SV_LOG(std::format("Parsed data successfully: {}", data->toString()));
 

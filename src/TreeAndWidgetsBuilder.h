@@ -24,7 +24,7 @@ public:
         int entryIdx = 0;
         for (auto &varlistEntry : data.varListEntries)
         {
-            auto nodeAndWidget = buildTreeAndWidgetsForVarListEntry(data, varlistEntry);
+            auto nodeAndWidget = buildTreeAndWidgetsForVariable(data, varlistEntry);
             if (!nodeAndWidget)
             {
                 SV_ERROR(std::format("Failed building NodeAndWidgetPair for entry [{}], {}", entryIdx, varlistEntry));
@@ -45,21 +45,9 @@ public:
     }
 
 private:
-    NodeAndWidgetPairOpt buildTreeAndWidgetsForVarListEntry(const SUP_Data& data, const SUP_VarListEntry& entry)
+    NodeAndWidgetPairOpt buildTreeAndWidgetsForVariable(const SUP_Data& data, const SUP_Variable& var)
     {
-        if (entry.macroType == SUP_VarListEntry::MacroType::ScalarVariable)
-        {
-            return {};
-        }
-        else if (entry.macroType == SUP_VarListEntry::MacroType::Struct)
-        {
-            return buildTreeAndWidgetsForStruct(data, entry);
-        }
-        else SV_UNREACHABLE();
-    }
-
-    NodeAndWidgetPairOpt buildTreeAndWidgetsForStruct(const SUP_Data& data, const SUP_VarListEntry& structEntry)
-    {
+        /*
         SV_ASSERT(structEntry.macroType == SUP_VarListEntry::MacroType::Struct);
 
         auto* structDef = data.getStruct(structEntry.varType);
@@ -72,7 +60,8 @@ private:
 
         for (const SUP_StructMember& member : structDef->members)
         {
-            
+
         }
+        */
     }
 };
