@@ -1,21 +1,21 @@
-#include "GlslStructParser.h"
+#include "SUP_DataParser.h"
 #include "StdFormattersForQt.h"
 #include "Formatters.h"
 #include <QScopeGuard>
 
-std::string GlslStructParser::VarListEntry::toString() const
+std::string SUP_DataParser::VarListEntry::toString() const
 {
     return std::format("VarListEntry[{} {} {} ui({})]",
                                 macroType == MacroType::ScalarVariable ? "Scalar" : "Struct",
                                 varType, varName, uiMacroArg);
 }
 
-std::string GlslStructParser::StructMember::toString() const
+std::string SUP_DataParser::StructMember::toString() const
 {
     return std::format("[{} {} ui({})]", varType, varName, uiMacroArg);
 }
 
-std::string GlslStructParser::StructDefinition::toString() const
+std::string SUP_DataParser::StructDefinition::toString() const
 {
     auto res = std::format("struct {} {{\n", name);
     for (auto &m : members)
@@ -27,14 +27,14 @@ std::string GlslStructParser::StructDefinition::toString() const
     return res;
 }
 
-bool GlslStructParser::StructDefinition::isValid() const
+bool SUP_DataParser::StructDefinition::isValid() const
 {
     return !name.isEmpty() && !members.empty();
 }
 
-std::string GlslStructParser::ParseResult::toString() const
+std::string SUP_DataParser::ParseResult::toString() const
 {
-    std::string res = std::format(  "GlslStructParser::ParseResult BEGIN [\n"
+    std::string res = std::format(  "SUP_DataParser::ParseResult BEGIN [\n"
                                     "Struct Definitions ({}):\n", structDefinitions.size());
     for (auto &structDef : structDefinitions)
     {
@@ -48,11 +48,11 @@ std::string GlslStructParser::ParseResult::toString() const
         res += varlistEntry.toString() + "\n";
     }
 
-    res += "] GlslStructParser::ParseResult END";
+    res += "] SUP_DataParser::ParseResult END";
     return res;
 }
 
-GlslStructParser::ParseResultOpt GlslStructParser::parseFiles(const std::vector<QString>& filePaths)
+SUP_DataParser::ParseResultOpt SUP_DataParser::parseFiles(const std::vector<QString>& filePaths)
 {
     //No matter what, after this operation, class will be in clean state, ready for next operation
     auto onExitFromThisFunction = qScopeGuard([this]
@@ -66,35 +66,35 @@ GlslStructParser::ParseResultOpt GlslStructParser::parseFiles(const std::vector<
 
         if (result == ParseFileResult::Error)
         {
-            SV_ERROR(std::format("GlslStructParser: parseFile({}) triggered error, terminating parsing.", filePath));
+            SV_ERROR(std::format("SUP_DataParser: parseFile({}) triggered error, terminating parsing.", filePath));
             return {};
         }
         else if (result == ParseFileResult::FileProcessedAndEverythingIsFinished)
         {
-            SV_LOG(std::format("GlslStructParser parse {} Files operation succeeded, data is obtained.", filePaths.size()));
+            SV_LOG(std::format("SUP_DataParser parse {} Files operation succeeded, data is obtained.", filePaths.size()));
             return std::move(parseResult);
         }
     }
 
     SV_ASSERT(state != State::FinishedParsingVarList);
 
-    SV_ERROR(std::format("GlslStructParser parsed all files without errors, but could not obtain data we are looking for. File list: {}",
+    SV_ERROR(std::format("SUP_DataParser parsed all files without errors, but could not obtain data we are looking for. File list: {}",
                             filePaths));
     return {};
 }
 
-GlslStructParser::ParseFileResult GlslStructParser::ParseFile(const QString& filePath)
+SUP_DataParser::ParseFileResult SUP_DataParser::ParseFile(const QString& filePath)
 {
     if (state == State::FinishedParsingVarList)
     {
-        SV_LOG("GlslStructParser already finished processing, so ParseFile command is ignored.");
+        SV_LOG("SUP_DataParser already finished processing, so ParseFile command is ignored.");
         return ParseFileResult::FileProcessedAndEverythingIsFinished;
     }
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        SV_ERROR(std::format("GlslStructParser: ParseFile failed, cannot open file: {}", filePath));
+        SV_ERROR(std::format("SUP_DataParser: ParseFile failed, cannot open file: {}", filePath));
         return ParseFileResult::Error;
     }
 
@@ -104,7 +104,7 @@ GlslStructParser::ParseFileResult GlslStructParser::ParseFile(const QString& fil
     {
         if (!processLine(in.readLine()))
         {
-            SV_ERROR("GlslStructParser: ParseFile failed and terminated.");
+            SV_ERROR("SUP_DataParser: ParseFile failed and terminated.");
             return ParseFileResult::Error;
         }
 
@@ -112,7 +112,7 @@ GlslStructParser::ParseFileResult GlslStructParser::ParseFile(const QString& fil
 
         if (state == State::FinishedParsingVarList)
         {
-            SV_LOG(std::format("GlslStructParser, during processing a file, successfully obtained all the data we wanted.", linesProcessed));
+            SV_LOG(std::format("SUP_DataParser, during processing a file, successfully obtained all the data we wanted.", linesProcessed));
             return ParseFileResult::FileProcessedAndEverythingIsFinished;
         }
     }
@@ -120,7 +120,7 @@ GlslStructParser::ParseFileResult GlslStructParser::ParseFile(const QString& fil
     return ParseFileResult::FileProcessed;
 };
 
-bool GlslStructParser::processLine(QString line)
+bool SUP_DataParser::processLine(QString line)
 {
     line = line.trimmed();
 
@@ -149,28 +149,28 @@ bool GlslStructParser::processLine(QString line)
     }
     else if (state == State::FinishedParsingVarList)
     {
-        SV_WARN("Parsing line requested, but GlslStructParser already finished processing. Doing nothing.");
+        SV_WARN("Parsing line requested, but SUP_DataParser already finished processing. Doing nothing.");
         return true;
     }
     else SV_UNREACHABLE();
 }
 
-bool GlslStructParser::lineIsStructDeclarationBegin(const QString& line)
+bool SUP_DataParser::lineIsStructDeclarationBegin(const QString& line)
 {
     return line.startsWith(StructDeclBegin);
 }
-bool GlslStructParser::lineIsVarListBegin(const QString& line)
+bool SUP_DataParser::lineIsVarListBegin(const QString& line)
 {
     return line.startsWith(VarListBegin);
 }
-bool GlslStructParser::lineIsVarListEnd(const QString& line)
+bool SUP_DataParser::lineIsVarListEnd(const QString& line)
 {
     return line.startsWith(VarListEnd);
 }
 
 
 
-bool GlslStructParser::processVarListEntryLine(const QString& line)
+bool SUP_DataParser::processVarListEntryLine(const QString& line)
 {
     if (lineIsVarListEnd(line))
     {
@@ -192,12 +192,12 @@ bool GlslStructParser::processVarListEntryLine(const QString& line)
     return true;
 }
 
-GlslStructParser::VarListEntryOpt GlslStructParser::parseVarListEntryLine(const QString& line)
+SUP_DataParser::VarListEntryOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
 {
     auto parts = splitStringBySeparators(line, {"(", ",", ")"}, true);
     if (!parts)
     {
-        SV_ERROR("GlslStructParser failed to process VarList entry line.");
+        SV_ERROR("SUP_DataParser failed to process VarList entry line.");
         return {};
     }
     SV_ASSERT(parts->size()==4);
@@ -251,7 +251,7 @@ GlslStructParser::VarListEntryOpt GlslStructParser::parseVarListEntryLine(const 
     return res;
 }
 
-bool GlslStructParser::processStructDeclBegin(const QString& line)
+bool SUP_DataParser::processStructDeclBegin(const QString& line)
 {
     auto structName = tryExtractStructNameFromDeclBeginLine(line);
     if (!structName) return false;
@@ -263,7 +263,7 @@ bool GlslStructParser::processStructDeclBegin(const QString& line)
     return true;
 }
 
-QStringOpt GlslStructParser::tryExtractStructNameFromDeclBeginLine(const QString& line)
+QStringOpt SUP_DataParser::tryExtractStructNameFromDeclBeginLine(const QString& line)
 {
     int declBeginIndex = line.indexOf(StructDeclBegin);
     if (declBeginIndex == -1)
@@ -290,7 +290,7 @@ QStringOpt GlslStructParser::tryExtractStructNameFromDeclBeginLine(const QString
     return structName;
 }
 
-bool GlslStructParser::processStructMemberLine(const QString& line)
+bool SUP_DataParser::processStructMemberLine(const QString& line)
 {
     bool isLastMember;
     auto member = parseStructMemberLine(line, isLastMember);
@@ -326,7 +326,7 @@ bool GlslStructParser::processStructMemberLine(const QString& line)
     return true;
 }
 
-GlslStructParser::StructMemberOpt GlslStructParser::parseStructMemberLine(const QString& line, bool& out_isLastMember)
+SUP_DataParser::StructMemberOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool& out_isLastMember)
 {
     // Input looks like this:
     //
@@ -382,12 +382,12 @@ GlslStructParser::StructMemberOpt GlslStructParser::parseStructMemberLine(const 
     return member;
 }
 
-void GlslStructParser::onLineError(const QString &error, const QString &line)
+void SUP_DataParser::onLineError(const QString &error, const QString &line)
 {
     SV_ERROR(std::format("Error [{}] on a line: {}", error, line));
 }
 
-QStringOpt GlslStructParser::tryParseUIMacroContent(const QString& text)
+QStringOpt SUP_DataParser::tryParseUIMacroContent(const QString& text)
 {
     auto indexUiBegin = text.indexOf(UiBegin);
     if (indexUiBegin == -1) return {};
@@ -404,7 +404,7 @@ QStringOpt GlslStructParser::tryParseUIMacroContent(const QString& text)
     return argumentBetweenQuotes;
 }
 
-void GlslStructParser::resetState()
+void SUP_DataParser::resetState()
 {
     state = State::LookingForStructDeclOrVarList;
     currentStruct = StructDefinition();

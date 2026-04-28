@@ -11,7 +11,7 @@
 #include "DataTypesAndTheirWidgets/Bool/BoolVecWidget.h"
 #include "WidgetLogic/WidgetsForNodeManager.h"
 
-#include "GlslStructParser.h"
+#include "SUP_Data/SUP_DataParser.h"
 
 DataNodeShared makeSimpleTree()
 {
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     //test_nodes_and_widgets();
     //booltest();
     
-    GlslStructParser::Test();
+    SUP_DataParser::Test();
     
     
     //testjustvec();

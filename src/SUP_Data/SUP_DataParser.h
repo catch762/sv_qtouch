@@ -1,12 +1,12 @@
 #pragma once
 #include "sv_qtcommon.h"
 
-class GlslStructParser
+class SUP_DataParser
 {
 public:
     static void Test()
     {
-        GlslStructParser parser;
+        SUP_DataParser parser;
         auto res = parser.parseFiles({"C:/home/code/sv_qtouch/glsl_example.h"});
 
         SV_LOG(std::format("Result: {}", res ? res->toString() : std::string("failure")));
@@ -128,7 +128,7 @@ private:
     ParseResult parseResult;
 };
 
-SV_DECL_STD_FORMATTER(GlslStructParser::VarListEntry, obj.toString());
-SV_DECL_STD_FORMATTER(GlslStructParser::StructMember, obj.toString());
-SV_DECL_STD_FORMATTER(GlslStructParser::StructDefinition, obj.toString());
-SV_DECL_STD_FORMATTER(GlslStructParser::ParseResult, obj.toString());
+SV_DECL_STD_FORMATTER(SUP_DataParser::VarListEntry, obj.toString());
+SV_DECL_STD_FORMATTER(SUP_DataParser::StructMember, obj.toString());
+SV_DECL_STD_FORMATTER(SUP_DataParser::StructDefinition, obj.toString());
+SV_DECL_STD_FORMATTER(SUP_DataParser::ParseResult, obj.toString());
