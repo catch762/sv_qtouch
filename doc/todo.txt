@@ -6,4 +6,5 @@
 -WidgetsForNodeManager: add entry struct and additional qpointer to see deleted widgets
 
 -rename WidgetOptions to wisgetstate
-                    
+
+-for singletons, add DISABLE_COPY_AND_ASSIGNMENT and see if need to disable move as well

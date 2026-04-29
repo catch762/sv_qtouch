@@ -9,7 +9,7 @@
 
 
 #define STRMETA_Hello(V,N) STRMAIN_ARG2(Hello,V,N,\
-float, 	a,		ui("")\
+float, 	a,		ui("lims = [0, 1, 0.5]")\
 vec4,	b)		ui("")
 STRDECL(Hello)
 

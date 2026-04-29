@@ -45,23 +45,5 @@ public:
     }
 
 private:
-    NodeAndWidgetPairOpt buildTreeAndWidgetsForVariable(const SUP_Data& data, const SUP_Variable& var)
-    {
-        /*
-        SV_ASSERT(structEntry.macroType == SUP_VarListEntry::MacroType::Struct);
-
-        auto* structDef = data.getStruct(structEntry.varType);
-        if (!structDef)
-        {
-            SV_ERROR(std::format("TreeAndWidgetsBuilder: VarList had structure type [{}], but no such struct definition",
-                                    structEntry.varType));
-            return {};
-        }
-
-        for (const SUP_StructMember& member : structDef->members)
-        {
-
-        }
-        */
-    }
+    NodeAndWidgetPairOpt buildTreeAndWidgetsForVariable(const SUP_Data& data, const SUP_Variable& var);
 };
