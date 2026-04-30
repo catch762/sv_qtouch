@@ -1,40 +1,34 @@
 #include "TreeAndWidgetsBuilder.h"
 #include "GLSLNativeTypes.h"
 #include "SerializationLogic/SerializationSystem.h"
+#include "WidgetLogic/WidgetMakerSystem.h"
 
 NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const SUP_Data &data, const SUP_Variable &var)
 {
-    if (auto typeId = GLSLNativeTypes::getTypeIndex(var.name))
+    if (SUP_VariableConversion::instance().hasConverterForType(var.type))
     {
-        if (auto serializerEntry = SerializationSystem::instance().getSerializerByIndex(*typeId))
+        auto res = SUP_VariableConversion::instance().convert(var.type, var.uiMacroArg);
+
+        if (!res)
         {
-            QVariant defaultValueOfThisType = serializerEntry->defaultValueMaker();
-
-            auto node = new DataNode(var.name, DataNode::NodeType::Leaf);
-            *node->tryGetLeafvalue() = defaultValueOfThisType;
-
-
-//okay json to both from ui................
-
-
-
+            //SV_ERROR("During building widgets, SUP_VariableConversion returned error. Aborting.");
+            return {};
         }
+
+        auto node = DataNode::makeLeaf(var.name, res->value);
+        auto widget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, res->jsonForWidget);
+        if (!qVariantHasWidget(widget))
+        {
+            //SV_ERROR("During building widgets, failed to make widget for node. Aborting.");
+            return {};
+        }
+        else getWidgetFromQVariant(widget)->show();
+
+        return NodeAndWidgetPair{node, widget};
     }
-
-    /*
-    SV_ASSERT(structEntry.macroType == SUP_VarListEntry::MacroType::Struct);
-
-    auto* structDef = data.getStruct(structEntry.varType);
-    if (!structDef)
+    else
     {
-        SV_ERROR(std::format("TreeAndWidgetsBuilder: VarList had structure type [{}], but no such struct definition",
-                                structEntry.varType));
+        SV_WARN("no conv for " + var.type.toStdString());
         return {};
     }
-
-    for (const SUP_StructMember& member : structDef->members)
-    {
-
-    }
-    */
 }

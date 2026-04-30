@@ -142,7 +142,11 @@ int main(int argc, char *argv[])
         app.setPalette(p);
     }
 
-    auto node = test_SUP();
+    auto reswwww = test_SUP();
+    //if(auto res = test_SUP())
+    //{
+    //    getWidgetFromQVariant(res->widget)->show();
+    //}
 
     auto res = app.exec();
     

@@ -14,6 +14,14 @@ vec4,	b)		ui("")
 STRDECL(Hello)
 
 SUP_VARS_BEGIN
+		VAR(float, a)	ui("")
+		VAR(vec3, b)	ui("")
+		VAR(int, c)		ui("")
+		VAR(vec4, d)	ui("[10, 30, 20]")
+SUP_VARS_END
+
+
+SUP_VARS_BEGIN
 		STR(Hello, hello) 	ui("")
 #line	ooo(Hello)
 		VAR(vec4, theVar)	ui("")

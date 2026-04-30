@@ -41,7 +41,7 @@ public:
 
     OutputOpt convert(const QString& glslTypeName, const QStringOpt& uiMacroString)
     {
-        if (auto converter = getValue(converters, glslTypeName))
+        if (auto* converter = getValue(converters, glslTypeName))
         {
             return (*converter)(uiMacroString);
         }
@@ -62,11 +62,34 @@ public:
         converters[glslTypeName] = converter;
     }
 
+    static SUP_VariableConversion& instance()
+    {
+        static SUP_VariableConversion res;
+        return res;
+    }
+
+    bool hasConverterForType(const QString& glslTypeName)
+    {
+        return converters.contains(glslTypeName);
+    }
+
 private:
     SUP_VariableConversion()
     {
-        registerConverter("float", convertToLimited<double, 1>);
+        registerConverter("float",  convertToLimited<double, 1>);
+        registerConverter("vec2",   convertToLimited<double, 2>);
+        registerConverter("vec3",   convertToLimited<double, 3>);
+        registerConverter("vec4",   convertToLimited<double, 4>);
+
+        registerConverter("int",    convertToLimited<int, 1>);
+        registerConverter("ivec2",  convertToLimited<int, 2>);
+        registerConverter("ivec3",  convertToLimited<int, 3>);
+        registerConverter("ivec4",  convertToLimited<int, 4>);
     }
+
+    SUP_VariableConversion(const SUP_VariableConversion&) = delete;
+    SUP_VariableConversion& operator=(const SUP_VariableConversion&) = delete;
+
 
     // array of arrays
     // vec3 
@@ -126,13 +149,8 @@ private:
             SV_ERROR(std::format("Failed parsing uiMacroString: {}. uiMacroString = {}", err, uiMacroString));
         };
 
-        auto jsonArray = jsonStringToArray(*uiMacroString);
-        if (!jsonArray || jsonArray->empty())
-        {
-            logMacroStringErr("couldnt get array");
-            return {};
-        }
-        const bool isArrayOfArrays = jsonArray->at(0).isArray();
+        auto jsonArray = uiMacroString ? jsonStringToArray(*uiMacroString) : QJsonArrayOpt();
+        const bool isArrayOfArrays = jsonArray && jsonArray->at(0).isArray();
 
         if (componentCount == 1)
         {
@@ -142,6 +160,11 @@ private:
             {
                 //return whatever was default-constructed.
                 return Output{ QVariant::fromValue(limitedValue) };
+            }
+            else if (!jsonArray || jsonArray->empty())
+            {
+                logMacroStringErr("couldnt get array");
+                return {};
             }
 
             auto threeDoubles = getThreeDoubles(*jsonArray);
@@ -163,6 +186,11 @@ private:
             {
                 //return whatever was default-constructed.
                 return Output{ QVariant::fromValue(limitedVec) };
+            }
+            else if (!jsonArray || jsonArray->empty())
+            {
+                logMacroStringErr("couldnt get array");
+                return {};
             }
 
             for (int i = 0; i < componentCount; ++i)
