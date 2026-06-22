@@ -1,0 +1,101 @@
+#pragma once
+#include "sv_qtcommon.h"
+#include <QMainWindow>
+
+#include "SUP_Data/SUP_DataParser.h"
+#include "TreeAndWidgetsBuilder.h"
+
+
+class PresetTab;
+class TopLevelWidgetsContainer;
+class QTouchApp : public QMainWindow
+{
+public:
+    QTouchApp(QWidget *parent = nullptr);
+
+    bool loadTreeAndWidgetsFromCode(const QStringVec& codeFilePaths);
+    bool loadTreeAndWidgetsFromPresetFile(const QString& filePath);
+
+    //returns success
+    bool openProjectDir(const QDir& newProjectDir);
+
+private slots:
+    void onPresetMixingActivated(const QString& presetFilenameA, const QString& presetFilenameB, double morphAtoB01);
+    void onPresetSavingRequested(const QString& presetFilename);
+    
+private:
+    struct LoadedPreset
+    {
+    public:
+        DataNodeShared rootNode;
+        QString fileName; //yes, just filename from presets subdir, not path
+
+    public:
+        enum Result
+        {
+            Error,
+            JustLoadedThisFile,
+            AlreadyHadThisFile
+        };
+        Result loadFileIfItsNotLoadedYet(const QDir& presetsDir, const QString& presetFileName);
+        void clear();
+    };
+
+    enum TreeType
+    {
+        Standalone,
+        IsMixResult
+    };
+    void setTreeType(TreeType type);
+
+    struct BasicDataTree
+    {
+        DataNodeShared rootNode;
+        QVariantHoldingWidgetVec topLevelWidgets;
+    };
+
+    
+
+    void deleteExistingTreeAndAllWidgets();
+    
+    static std::optional< std::tuple<DataNodeShared, QVariantHoldingWidgetVec> > createTreeAndWidgetsFromFile(const QString& filePath);
+
+    
+
+    //**** 1) Checking if project is opened ****
+    bool projectIsOpened();
+    //returns same as 'projectIsOpened()' and if its not, prints error
+    bool requireProjectIsOpenedFor(const char* forOperation, bool withMsgBox = true);
+
+    //**** 2) So, if project IS opened, these dirs will have value, otherwise they wont ****
+    QDirOpt getProjectDir();
+    QDirOpt    getPresetsSubdir();
+
+//Menu bar and its actions:
+private:
+    void initMenuBar();
+    void createOrOpenProjectAction();
+    void closeProject();
+
+    QAction* closeProjectAction = nullptr;
+    QAction* loadCodeAction = nullptr;
+
+private:
+    QDirOpt projectDir; //no value means no project is opened
+
+    TreeType rootType = TreeType::Standalone; //Standalone  -> rootNode is data tree on its own, standard mode
+                                              //IsMixResult -> rootNode is mix of preset A and B
+    DataNodeShared  rootNode;  //invisible root, no widget is created for this root node
+                               //widgets for all immediate children of 'rootNode' are stored in 'widgetsView'
+
+    //When we switch off mixing mode - we just leave them be, so we dont
+    //have to load same files later, if we need to.
+    LoadedPreset presetForMixing_A;
+    LoadedPreset presetForMixing_B;
+
+private:
+    QWidget*                    centralWidget   = nullptr;
+    QHBoxLayout*                centralLayout   = nullptr;
+    TopLevelWidgetsContainer*       widgetsView = nullptr;
+    PresetTab*                  presetTab       = nullptr;
+};

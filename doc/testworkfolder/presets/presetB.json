@@ -1,0 +1,94 @@
+{
+    "children": [
+        {
+            "children": [
+                {
+                    "leafValue": {
+                        "_type": "LimitedValue<int>",
+                        "left": 2,
+                        "right": 1,
+                        "val": 2
+                    },
+                    "name": "a",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                },
+                {
+                    "leafValue": {
+                        "_type": "std::vector<LimitedValue<double>>",
+                        "values": [
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 0,
+                                "right": 1,
+                                "val": 0.765
+                            },
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 0,
+                                "right": 1,
+                                "val": 0.676
+                            },
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 0,
+                                "right": 1,
+                                "val": 0.765
+                            },
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 0,
+                                "right": 1,
+                                "val": 0.838
+                            }
+                        ]
+                    },
+                    "name": "b",
+                    "widgets": {
+                        "_DNWW_isExpanded": true,
+                        "modeIsXY": false
+                    }
+                }
+            ],
+            "name": "hello"
+        },
+        {
+            "leafValue": {
+                "_type": "std::vector<LimitedValue<double>>",
+                "values": [
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 0.988
+                    },
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 1
+                    },
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 1
+                    },
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 1
+                    }
+                ]
+            },
+            "name": "theVar",
+            "widgets": {
+                "_DNWW_isExpanded": true,
+                "modeIsXY": false
+            }
+        }
+    ],
+    "name": ""
+}

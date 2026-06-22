@@ -1,0 +1,12 @@
+-empty label if no content in LimdoubleVec, Comp Node widget etc
+-try Serializer with funcs that are there but disabled enable_if by default
+-DataNode: implement 2-index map, but preferably from boost, remove tsl one.
+-move deps to simple subfolders
+
+-WidgetsForNodeManager: add entry struct and additional qpointer to see deleted widgets
+
+-rename WidgetOptions to wisgetstate
+
+-for singletons, add DISABLE_COPY_AND_ASSIGNMENT and see if need to disable move as well
+
+-SUP: macros for enum, and auto parse it in widget maker ui string
