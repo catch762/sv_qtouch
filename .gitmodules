@@ -1,0 +1,3 @@
+[submodule "deps/sv_common"]
+	path = deps/sv_common
+	url = https://github.com/catch762/sv_common
