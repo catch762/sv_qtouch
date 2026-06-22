@@ -38,6 +38,7 @@ add_subdirectory(deps/sv_datalayer)
 qt_add_executable(sv_qtouch_app ${SV_QTOUCH_SOURCES})
 
 # Automatically handle full deployment (DLLs + Platforms + Styles) post-build
+#todo replace with variable
 if(WIN32)
     add_custom_command(TARGET sv_qtouch_app POST_BUILD
         COMMAND "C:/SvQt/6.10.3/msvc2022_64/bin/windeployqt.exe"
