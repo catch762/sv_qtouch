@@ -6,6 +6,17 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+#if(MSVC)
+#    add_compile_options(/Zc:preprocessor)
+#endif()
+
+# ✅ CHANGE 1: Use global variables so ALL targets in subdirectories inherit these options
+#if(MSVC)
+#    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} /Zc:preprocessor /Zc:lambda")
+#    string(APPEND CMAKE_CXX_FLAGS " /Zc:preprocessor /Zc:lambda")
+#endif()
+
+
 # Thats all i need for qt i assume
 set(CMAKE_PREFIX_PATH "C:/SvQt/6.10.3/msvc2022_64")
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
@@ -21,6 +32,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/deps/doctest)
 
 # Listing all sv_components:
 add_subdirectory(deps/sv_common)
+add_subdirectory(deps/sv_qtcommon)
+add_subdirectory(deps/sv_datalayer)
 
 qt_add_executable(sv_qtouch_app ${SV_QTOUCH_SOURCES})
 
@@ -37,7 +50,7 @@ if(WIN32)
 endif()
 
 # 5. Link Qt modules
-target_link_libraries(sv_qtouch_app PRIVATE Qt6::Widgets Qt6::Core sv_common)
+target_link_libraries(sv_qtouch_app PRIVATE Qt6::Widgets Qt6::Core sv_common sv_qtcommon sv_datalayer)
 
 # 6. Explicitly enforce the MSVC C++20 flag for this target
 if(MSVC)

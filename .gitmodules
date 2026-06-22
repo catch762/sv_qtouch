@@ -1,3 +1,9 @@
 [submodule "deps/sv_common"]
 	path = deps/sv_common
 	url = https://github.com/catch762/sv_common
+[submodule "deps/sv_qtcommon"]
+	path = deps/sv_qtcommon
+	url = https://github.com/catch762/sv_qtcommon
+[submodule "deps/sv_datalayer"]
+	path = deps/sv_datalayer
+	url = https://github.com/catch762/sv_datalayer
