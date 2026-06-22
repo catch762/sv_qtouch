@@ -7,7 +7,8 @@
       "project": "CMakeLists.txt",
       "projectTarget": "sv_qtouch_app.exe",
       "name": "sv_qtouch_app.exe",
-	  "currentDir": "${workspaceRoot}"
+      "currentDir": "${workspaceRoot}",
+      "env": "intel-amd64-windows"
     }
   ]
 }
