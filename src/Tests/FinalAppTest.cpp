@@ -1,6 +1,6 @@
 #include "sv_qtcommon.h"
 #include "../QTouchApp.h"
-#include "doctest.h"
+#include "doctest/doctest.h"
 
 TEST_CASE("Running entire app" * doctest::skip())
 {

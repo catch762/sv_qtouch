@@ -1,7 +1,7 @@
 #pragma once
 #define DOCTEST_CONFIG_IMPLEMENT
 #define DOCTEST_CONFIG_COLORS_ANSI
-#include "doctest.h"
+#include "doctest/doctest.h"
 
 int runTests(int argc, char** argv, bool &out_shouldExit)
 {

@@ -1,5 +1,5 @@
 #include "../SUP_NativeGLSLTypeConverter.h"
-#include "doctest.h"
+#include "doctest/doctest.h"
 
 
 std::string contextInfo(const QString& typeName, const QStringOpt& uiMacroString = {})

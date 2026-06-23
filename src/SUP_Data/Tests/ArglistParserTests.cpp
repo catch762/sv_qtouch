@@ -1,5 +1,5 @@
 #include "../SUP_ArglistParser.h"
-#include "doctest.h"
+#include "doctest/doctest.h"
 
 using namespace sup_expr_helpers;
 using namespace basictoken_helpers;
