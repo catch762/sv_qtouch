@@ -2,7 +2,7 @@
 #include "SUP_Data/SUP_NativeGLSLTypeConverter.h"
 #include "SerializationLogic/SerializationSystem.h"
 #include "WidgetLogic/WidgetMakerSystem.h"
-#include "WidgetLogic/DataNodeWrapperWidget.h"
+#include "WidgetLogic/NodeWidget.h"
 
 TreeAndTopLevelWidgetsOpt TreeAndWidgetsBuilder::buildTreeAndWidgets(const SUP_Data &data)
 {
@@ -91,7 +91,7 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
             memberWidgets.push_back(memberNodeAndWidget->widget);
         }
 
-        auto *finalWrapperWidget = new DataNodeWrapperWidget(memberWidgets, true, var.name, getWidgetOptionsFromString(var.uiMacroArg));
+        auto *finalWrapperWidget = new NodeWidget(memberWidgets, true, var.name, getWidgetOptionsFromString(var.uiMacroArg));
 
         return NodeAndWidgetPair{node, QVariant::fromValue(finalWrapperWidget)};
     }
