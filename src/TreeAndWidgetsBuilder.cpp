@@ -91,7 +91,7 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
             memberWidgets.push_back(memberNodeAndWidget->widget);
         }
 
-        auto *finalWrapperWidget = new NodeWidget(memberWidgets, true, var.name, getWidgetOptionsFromString(var.uiMacroArg));
+        auto *finalWrapperWidget = NodeWidget::makeNodeWidgetForCompositeNode(memberWidgets, node, var.name, getWidgetOptionsFromString(var.uiMacroArg));
 
         return NodeAndWidgetPair{node, QVariant::fromValue(finalWrapperWidget)};
     }
