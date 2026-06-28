@@ -204,7 +204,7 @@ void QTouchApp::deleteExistingTreeAndAllWidgets()
     WidgetsForNodeManager::clear();
 }
 
-std::optional<std::tuple<DataNodeShared, QVariantHoldingWidgetVec>> QTouchApp::createTreeAndWidgetsFromFile(const QString &filePath)
+std::optional<std::tuple<DataNodeShared, NodeWidgetVec>> QTouchApp::createTreeAndWidgetsFromFile(const QString &filePath)
 {
     auto json = loadJsonFromFile(filePath);
     if (!json)

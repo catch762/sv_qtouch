@@ -29,7 +29,7 @@ class TopLevelWidgetsContainer : public QWidget
 public:
     TopLevelWidgetsContainer(QWidget* parent = nullptr);
 
-    void setTopLevelWidgets(QVariantHoldingWidgetVec&& newTopLevelWidgets);
+    void setTopLevelWidgets(NodeWidgetVec&& newTopLevelWidgets);
     void deleteAllTopLevelWidgets();
 
     void addTab();
@@ -51,7 +51,7 @@ private:
     QPushButton*    addTabButton     = nullptr;
 
 private:
-    QVariantHoldingWidgetVec topLevelWidgets;
+    NodeWidgetVec topLevelWidgets;
 };
 
 //******************************************************

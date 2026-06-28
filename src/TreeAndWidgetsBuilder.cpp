@@ -30,7 +30,7 @@ TreeAndTopLevelWidgetsOpt TreeAndWidgetsBuilder::buildTreeAndWidgets(const SUP_D
     }
 
     DataNodeShared root = DataNode::makeComposite();
-    QVariantHoldingWidgetVec topLevelWidgets;
+    NodeWidgetVec topLevelWidgets;
 
     for(auto &nodeAndWidget : topLevelItems)
     {
@@ -56,12 +56,12 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
         SV_ASSERT(node);
 
         auto widget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, res->jsonForWidget);
-        if (!qVariantHasWidget(widget))
+        if (!widget)
         {
             SV_ERROR(std::format("buildTreeAndWidgetsForVariable: failed to make widget for {} representing seemingly native {}", node, var));
             return {};
         }
-        else getWidgetFromQVariant(widget)->show(); //todo check if this is needed
+        else widget->show(); //todo check if this is needed -- HEY I THINK ITS HARMFUL
 
         return NodeAndWidgetPair{node, widget};
     }
@@ -76,7 +76,7 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
             return {};
         }
 
-        std::vector<QVariantHoldingWidget> memberWidgets;
+        NodeWidgetVec memberWidgets;
 
         for (const auto& member : structDefinition->members)
         {
@@ -93,6 +93,6 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
 
         auto *finalWrapperWidget = NodeWidget::makeNodeWidgetForCompositeNode(memberWidgets, node, var.name, getWidgetOptionsFromString(var.uiMacroArg));
 
-        return NodeAndWidgetPair{node, QVariant::fromValue(finalWrapperWidget)};
+        return NodeAndWidgetPair{node, finalWrapperWidget};
     }
 }

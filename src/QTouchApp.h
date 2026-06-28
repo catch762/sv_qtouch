@@ -48,17 +48,9 @@ private:
     };
     void setTreeType(TreeType type);
 
-    struct BasicDataTree
-    {
-        DataNodeShared rootNode;
-        QVariantHoldingWidgetVec topLevelWidgets;
-    };
-
-    
-
     void deleteExistingTreeAndAllWidgets();
     
-    static std::optional< std::tuple<DataNodeShared, QVariantHoldingWidgetVec> > createTreeAndWidgetsFromFile(const QString& filePath);
+    static std::optional< std::tuple<DataNodeShared, NodeWidgetVec> > createTreeAndWidgetsFromFile(const QString& filePath);
 
     
 

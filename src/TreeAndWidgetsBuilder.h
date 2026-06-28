@@ -24,8 +24,8 @@
 // 1. DataNodeShared is 'root', containing all actual sub nodes that were created
 //    from code / deserializing process. Just so we unite them all in one node, and
 //    not in vector of nodes. There is no widget for 'root'.
-// 2. QVariantHoldingWidgetVec is vector of widgets for all immediate children of 'root'
-using TreeAndTopLevelWidgets = std::pair<DataNodeShared, QVariantHoldingWidgetVec>;
+// 2. NodeWidgetVec is vector of widgets for all immediate children of 'root'
+using TreeAndTopLevelWidgets = std::pair<DataNodeShared, NodeWidgetVec>;
 SV_DECL_OPT(TreeAndTopLevelWidgets);
 
 class TreeAndWidgetsBuilder

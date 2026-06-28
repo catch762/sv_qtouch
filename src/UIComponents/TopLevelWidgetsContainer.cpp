@@ -1,5 +1,5 @@
 #include "TopLevelWidgetsContainer.h"
-
+#include "WidgetLogic/NodeWidget.h"
 
 TopLevelWidgetsContainer::TopLevelWidgetsContainer(QWidget *parent) : QWidget(parent)
 {
@@ -60,7 +60,7 @@ TabOfTopLevelWidgets *TopLevelWidgetsContainer::getTab(int index)
     return dynamic_cast<TabOfTopLevelWidgets*>(widget); //there cant be anything else, but just in case.
 }
 
-void TopLevelWidgetsContainer::setTopLevelWidgets(QVariantHoldingWidgetVec &&newTopLevelWidgets)
+void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWidgets)
 {
     SV_LOG(std::format("Setting {} widgets", newTopLevelWidgets.size()));
 
@@ -74,9 +74,9 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(QVariantHoldingWidgetVec &&new
         return;
     }
 
-    for(auto &widgetvariant : topLevelWidgets)
+    for(auto widget : topLevelWidgets)
     {
-        if (auto widget = getWidgetFromQVariant(widgetvariant))
+        if (widget)
         {
             SV_LOG("Adding widget to tab...");
             widget->show();
