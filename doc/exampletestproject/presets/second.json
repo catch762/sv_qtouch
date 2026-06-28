@@ -1,0 +1,251 @@
+{
+    "children": [
+        {
+            "children": [
+                {
+                    "leafValue": {
+                        "_type": "LimitedValue<int>",
+                        "left": 10,
+                        "right": 20,
+                        "val": 11
+                    },
+                    "name": "a",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                },
+                {
+                    "leafValue": {
+                        "_type": "std::vector<Enum,std::allocator<Enum>>",
+                        "values": [
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "a"
+                                    ],
+                                    [
+                                        1,
+                                        "d"
+                                    ],
+                                    [
+                                        2,
+                                        "ddd"
+                                    ]
+                                ],
+                                "index": 0
+                            },
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "x"
+                                    ],
+                                    [
+                                        1,
+                                        "xx"
+                                    ],
+                                    [
+                                        2,
+                                        "ss"
+                                    ],
+                                    [
+                                        3,
+                                        "dd"
+                                    ],
+                                    [
+                                        4,
+                                        "ff"
+                                    ],
+                                    [
+                                        5,
+                                        "eeeeeee"
+                                    ]
+                                ],
+                                "index": 0
+                            },
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "x"
+                                    ],
+                                    [
+                                        1,
+                                        "xx"
+                                    ],
+                                    [
+                                        2,
+                                        "ss"
+                                    ],
+                                    [
+                                        3,
+                                        "dd"
+                                    ],
+                                    [
+                                        4,
+                                        "ff"
+                                    ],
+                                    [
+                                        5,
+                                        "eeeeeee"
+                                    ]
+                                ],
+                                "index": 0
+                            },
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "x"
+                                    ],
+                                    [
+                                        1,
+                                        "xx"
+                                    ],
+                                    [
+                                        2,
+                                        "ss"
+                                    ],
+                                    [
+                                        3,
+                                        "dd"
+                                    ],
+                                    [
+                                        4,
+                                        "ff"
+                                    ],
+                                    [
+                                        5,
+                                        "eeeeeee"
+                                    ]
+                                ],
+                                "index": 0
+                            }
+                        ]
+                    },
+                    "name": "xxx",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                },
+                {
+                    "leafValue": {
+                        "_type": "Enum",
+                        "entries": [
+                            [
+                                0,
+                                "hey"
+                            ],
+                            [
+                                1,
+                                "bro"
+                            ],
+                            [
+                                2,
+                                "a"
+                            ],
+                            [
+                                3,
+                                "bbbbbbbbbbbbbbbbbbbb"
+                            ],
+                            [
+                                4,
+                                "c"
+                            ],
+                            [
+                                5,
+                                "ddd"
+                            ],
+                            [
+                                6,
+                                "e"
+                            ]
+                        ],
+                        "index": 0
+                    },
+                    "name": "b",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                },
+                {
+                    "leafValue": {
+                        "_type": "std::vector<LimitedValue<double>,std::allocator<LimitedValue<double>>>",
+                        "values": [
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 0,
+                                "right": 5,
+                                "val": 5
+                            },
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 10,
+                                "right": 20,
+                                "val": 16.375
+                            },
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 10,
+                                "right": 20,
+                                "val": 13.875
+                            },
+                            {
+                                "_type": "LimitedValue<double>",
+                                "left": 10,
+                                "right": 20,
+                                "val": 10
+                            }
+                        ]
+                    },
+                    "name": "c",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                }
+            ],
+            "name": "hello"
+        },
+        {
+            "leafValue": {
+                "_type": "std::vector<LimitedValue<double>,std::allocator<LimitedValue<double>>>",
+                "values": [
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 1
+                    },
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 1
+                    },
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 1
+                    },
+                    {
+                        "_type": "LimitedValue<double>",
+                        "left": 0,
+                        "right": 1,
+                        "val": 1
+                    }
+                ]
+            },
+            "name": "theVar",
+            "widgets": {
+                "_DNWW_isExpanded": false
+            }
+        }
+    ],
+    "name": ""
+}
