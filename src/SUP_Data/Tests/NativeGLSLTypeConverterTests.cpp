@@ -30,42 +30,42 @@ TEST_CASE("Converting types from just name, no uimacrostring")
         auto result = conv.convert("vec2", {});
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedDoubleVec>());
-        CHECK(result->value.value<LimitedDoubleVec>().size() == 2);
+        CHECK(anyGet<LimitedDoubleVec>(result->value)->size() == 2);
     }
     SUBCASE("Converting ivec2")
     {
         auto result = conv.convert("ivec2", {});
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedIntVec>());
-        CHECK(result->value.value<LimitedIntVec>().size() == 2);
+        CHECK(anyGet<LimitedIntVec>(result->value)->size() == 2);
     }
     SUBCASE("Converting vec3")
     {
         auto result = conv.convert("vec3", {});
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedDoubleVec>());
-        CHECK(result->value.value<LimitedDoubleVec>().size() == 3);
+        CHECK(anyGet<LimitedDoubleVec>(result->value)->size() == 3);
     }
     SUBCASE("Converting ivec3")
     {
         auto result = conv.convert("ivec3", {});
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedIntVec>());
-        CHECK(result->value.value<LimitedIntVec>().size() == 3);
+        CHECK(anyGet<LimitedIntVec>(result->value)->size() == 3);
     }
     SUBCASE("Converting vec4")
     {
         auto result = conv.convert("vec4", {});
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedDoubleVec>());
-        CHECK(result->value.value<LimitedDoubleVec>().size() == 4);
+        CHECK(anyGet<LimitedDoubleVec>(result->value)->size() == 4);
     }
     SUBCASE("Converting ivec4")
     {
         auto result = conv.convert("ivec4", {});
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedIntVec>());
-        CHECK(result->value.value<LimitedIntVec>().size() == 4);
+        CHECK(anyGet<LimitedIntVec>(result->value)->size() == 4);
     }
 }
 
@@ -78,7 +78,7 @@ TEST_CASE("Converting scalar types from name AND uimacrostring")
         auto result = conv.convert("float", "[10, 30.5, 20.75]");
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedDouble>());
-        auto actualValue = result->value.value<LimitedDouble>();
+        auto actualValue = *anyGet<LimitedDouble>(result->value);
         auto expectValue = LimitedDouble(20.75, 10.0, 30.5);
 
         INFO(std::format("expected {} != actual {}", expectValue, actualValue));
@@ -89,7 +89,7 @@ TEST_CASE("Converting scalar types from name AND uimacrostring")
         auto result = conv.convert("int", "[-100, 100, 0]");
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedInt>());
-        auto actualValue = result->value.value<LimitedInt>();
+        auto actualValue = *anyGet<LimitedInt>(result->value);
         auto expectValue = LimitedInt(0, -100, 100);
 
         INFO(std::format("expected {} != actual {}", expectValue, actualValue));
@@ -106,7 +106,7 @@ TEST_CASE("Converting vector types from name AND uimacrostring")
         auto result = conv.convert("vec2", "[[-500, -600, -550], [0,2,1]]");
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedDoubleVec>());
-        auto actualValue = result->value.value<LimitedDoubleVec>();
+        auto actualValue = *anyGet<LimitedDoubleVec>(result->value);
         auto expectValue = LimitedDoubleVec{
             LimitedDouble(-550, -500, -600),
             LimitedDouble(1, 0, 2)
@@ -121,7 +121,7 @@ TEST_CASE("Converting vector types from name AND uimacrostring")
         auto result = conv.convert("ivec3", "[[-500, -600, -550], [0,2,1], [7,9,8]]");
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedIntVec>());
-        auto actualValue = result->value.value<LimitedIntVec>();
+        auto actualValue = *anyGet<LimitedIntVec>(result->value);
         auto expectValue = LimitedIntVec{
             LimitedInt(-550, -500, -600),
             LimitedInt(1, 0, 2),
@@ -137,7 +137,7 @@ TEST_CASE("Converting vector types from name AND uimacrostring")
         auto result = conv.convert("vec4", "[[-500, -600, -550], [0,2,1], [7,9,8]]");
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<LimitedDoubleVec>());
-        auto actualValue = result->value.value<LimitedDoubleVec>();
+        auto actualValue = *anyGet<LimitedDoubleVec>(result->value);
         auto expectValue = LimitedDoubleVec{
             LimitedDouble(-550, -500, -600),
             LimitedDouble(1, 0, 2),
@@ -159,7 +159,7 @@ TEST_CASE("Converting to enums")
         auto result = conv.convert("int", "rad = [10, 'hi', 'kek', 100, >, 'uhh', 'ehh']");
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<Enum>());
-        auto actualValue = result->value.value<Enum>();
+        auto actualValue = *anyGet<Enum>(result->value);
         auto expectValue = Enum{
             {
                 {10, "hi"},
@@ -179,7 +179,7 @@ TEST_CASE("Converting to enums")
         auto result = conv.convert("ivec4", "rad = [['yo'], [10, 'hi', 'kek', 100, >, 'uhh', 'ehh']]");
         REQUIRE(result);
         REQUIRE(result->variantHoldsType<EnumVec>());
-        auto actualValue = result->value.value<EnumVec>();
+        auto actualValue = *anyGet<EnumVec>(result->value);
 
         auto last3items =   Enum
                             {
