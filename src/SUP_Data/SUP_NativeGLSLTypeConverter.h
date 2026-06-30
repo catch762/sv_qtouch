@@ -34,13 +34,13 @@ class SUP_NativeGLSLTypeConverter
 public:
     struct Output
     {
-        QVariant value;
+        std::any value;
         QJsonObjectWithWidgetOptionsOpt jsonForWidget;
 
         template<typename T>
         bool variantHoldsType()
         {
-            return value.typeId() == qtTypeId<T>();
+            return anyHoldsType<T>(value);
         }
     };
     SV_DECL_OPT(Output);
@@ -228,7 +228,7 @@ private:
             if (!settings)
             {
                 //return whatever was default-constructed.
-                return Output{ QVariant::fromValue(limitedValue) };
+                return Output{ std::any(limitedValue) };
             }
 
             auto threeNumbers = getThreeNumbers<UnderlyingType>(*settings);
@@ -241,7 +241,7 @@ private:
             limitedValue = LimitedT{threeNumbers->at(2),
                                     threeNumbers->at(0),
                                     threeNumbers->at(1)};
-            return Output{ QVariant::fromValue(limitedValue) };
+            return Output{ std::any(limitedValue) };
         }
         else
         {
@@ -251,7 +251,7 @@ private:
             if (!settings)
             {
                 //return whatever was default-constructed.
-                return Output{ QVariant::fromValue(limitedVec) };
+                return Output{ std::any(limitedVec) };
             }
 
             for (int i = 0; i < componentCount; ++i)
@@ -275,7 +275,7 @@ private:
                                             threeNumbers->at(1) };
             }
 
-            return Output{ QVariant::fromValue(limitedVec) };
+            return Output{ std::any(limitedVec) };
         }
     }
 
@@ -384,7 +384,7 @@ private:
                 return {};
             }
 
-            return Output{ QVariant::fromValue(std::move(*theEnum)) };
+            return Output{ std::any(std::move(*theEnum)) };
         }
         else
         {
@@ -410,7 +410,7 @@ private:
                 vecOfEnums.push_back(std::move(*theEnum));
             }
 
-            return Output{ QVariant::fromValue(std::move(vecOfEnums)) };
+            return Output{ std::any(std::move(vecOfEnums)) };
         }
     }
 
