@@ -19,7 +19,7 @@
 //
 // So, what this class does is it takes pairs of {glslTypeName, uiMacroString} of each such variable,
 // and it produces Output for them, which is:
-//      - C++ type variable that represents this GLSL type. Its wrapped in QVariant.
+//      - C++ type variable that represents this GLSL type. Its wrapped in std::any.
 //      - Optional JSON with additional widget options, because uiMacroString may contain them.
 //        You supply this JSON when you create the widget.
 //

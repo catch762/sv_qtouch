@@ -101,11 +101,7 @@ int main(int argc, char *argv[])
 
     //testvisitor();
 
-    //auto reswwww = test_SUP();
-    //if(auto res = test_SUP())
-    //{
-    //    getWidgetFromQVariant(res->widget)->show();
-    //}
+
 
     auto res = app.exec();
     
