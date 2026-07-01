@@ -24,7 +24,7 @@
 //        You supply this JSON when you create the widget.
 //
 // The reason i chose to output this data specifically, is because WidgetMakerSystem needs this data
-// to create the widget (QVariant with any supported type, and JSON options for the widget)
+// to create the widget (std::any with any supported type, and JSON options for the widget)
 //
 // [!] This class only works with NATIVE scalar GLSL types, like float or vec4, it does not handle structs.
 //

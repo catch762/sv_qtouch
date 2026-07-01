@@ -1,0 +1,251 @@
+{
+    "children": [
+        {
+            "children": [
+                {
+                    "leafValue": {
+                        "_type": "LimitedInt",
+                        "left": 10,
+                        "right": 20,
+                        "val": 15
+                    },
+                    "name": "a",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                },
+                {
+                    "leafValue": {
+                        "_type": "EnumVec",
+                        "values": [
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "a"
+                                    ],
+                                    [
+                                        1,
+                                        "d"
+                                    ],
+                                    [
+                                        2,
+                                        "ddd"
+                                    ]
+                                ],
+                                "index": 0
+                            },
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "x"
+                                    ],
+                                    [
+                                        1,
+                                        "xx"
+                                    ],
+                                    [
+                                        2,
+                                        "ss"
+                                    ],
+                                    [
+                                        3,
+                                        "dd"
+                                    ],
+                                    [
+                                        4,
+                                        "ff"
+                                    ],
+                                    [
+                                        5,
+                                        "eeeeeee"
+                                    ]
+                                ],
+                                "index": 4
+                            },
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "x"
+                                    ],
+                                    [
+                                        1,
+                                        "xx"
+                                    ],
+                                    [
+                                        2,
+                                        "ss"
+                                    ],
+                                    [
+                                        3,
+                                        "dd"
+                                    ],
+                                    [
+                                        4,
+                                        "ff"
+                                    ],
+                                    [
+                                        5,
+                                        "eeeeeee"
+                                    ]
+                                ],
+                                "index": 4
+                            },
+                            {
+                                "_type": "Enum",
+                                "entries": [
+                                    [
+                                        0,
+                                        "x"
+                                    ],
+                                    [
+                                        1,
+                                        "xx"
+                                    ],
+                                    [
+                                        2,
+                                        "ss"
+                                    ],
+                                    [
+                                        3,
+                                        "dd"
+                                    ],
+                                    [
+                                        4,
+                                        "ff"
+                                    ],
+                                    [
+                                        5,
+                                        "eeeeeee"
+                                    ]
+                                ],
+                                "index": 4
+                            }
+                        ]
+                    },
+                    "name": "xxx",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                },
+                {
+                    "leafValue": {
+                        "_type": "Enum",
+                        "entries": [
+                            [
+                                0,
+                                "hey"
+                            ],
+                            [
+                                1,
+                                "bro"
+                            ],
+                            [
+                                2,
+                                "a"
+                            ],
+                            [
+                                3,
+                                "bbbbbbbbbbbbbbbbbbbb"
+                            ],
+                            [
+                                4,
+                                "c"
+                            ],
+                            [
+                                5,
+                                "ddd"
+                            ],
+                            [
+                                6,
+                                "e"
+                            ]
+                        ],
+                        "index": 1
+                    },
+                    "name": "b",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                },
+                {
+                    "leafValue": {
+                        "_type": "LimitedDoubleVec",
+                        "values": [
+                            {
+                                "_type": "LimitedDouble",
+                                "left": 0,
+                                "right": 5,
+                                "val": 5
+                            },
+                            {
+                                "_type": "LimitedDouble",
+                                "left": 10,
+                                "right": 20,
+                                "val": 19.875
+                            },
+                            {
+                                "_type": "LimitedDouble",
+                                "left": 10,
+                                "right": 20,
+                                "val": 20
+                            },
+                            {
+                                "_type": "LimitedDouble",
+                                "left": 10,
+                                "right": 20,
+                                "val": 20
+                            }
+                        ]
+                    },
+                    "name": "c",
+                    "widgets": {
+                        "_DNWW_isExpanded": true
+                    }
+                }
+            ],
+            "name": "hello"
+        },
+        {
+            "leafValue": {
+                "_type": "LimitedDoubleVec",
+                "values": [
+                    {
+                        "_type": "LimitedDouble",
+                        "left": 0,
+                        "right": 1,
+                        "val": 0.983
+                    },
+                    {
+                        "_type": "LimitedDouble",
+                        "left": 0,
+                        "right": 1,
+                        "val": 0.972
+                    },
+                    {
+                        "_type": "LimitedDouble",
+                        "left": 0,
+                        "right": 1,
+                        "val": 0.989
+                    },
+                    {
+                        "_type": "LimitedDouble",
+                        "left": 0,
+                        "right": 1,
+                        "val": 0.989
+                    }
+                ]
+            },
+            "name": "theVar",
+            "widgets": {
+                "_DNWW_isExpanded": true
+            }
+        }
+    ],
+    "name": ""
+}
