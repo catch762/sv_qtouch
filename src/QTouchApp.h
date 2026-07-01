@@ -15,13 +15,18 @@ public:
 
     bool loadTreeAndWidgetsFromCode(const QStringVec& codeFilePaths);
     bool loadTreeAndWidgetsFromPresetFile(const QString& filePath);
+    bool loadTreeAndWidgetsUsingPresetFileName(const QString& presetFilename);
 
     //returns success
     bool openProjectDir(const QDir& newProjectDir);
 
+    DataNodeShared getRootNode();
+
+    //returns success
+    bool savePreset(const QString& presetFilename);
+
 private slots:
     void onPresetMixingActivated(const QString& presetFilenameA, const QString& presetFilenameB, double morphAtoB01);
-    void onPresetSavingRequested(const QString& presetFilename);
     
 private:
     struct LoadedPreset

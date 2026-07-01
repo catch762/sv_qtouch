@@ -28,7 +28,7 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
         {
             setTreeType(TreeType::Standalone); //yes thats all we do    
         });
-        connect(presetTab, &PresetTab::presetSavingRequested, this, &QTouchApp::onPresetSavingRequested);
+        connect(presetTab, &PresetTab::presetSavingRequested, this, &QTouchApp::savePreset);
         connect(presetTab->getPresetView(), &PresetFileView::presetLoadingRequested,
                 this, [this](const QString& presetFilename)
                 {
@@ -102,14 +102,22 @@ bool QTouchApp::loadTreeAndWidgetsFromPresetFile(const QString &filePath)
     return true;
 }
 
-void QTouchApp::onPresetSavingRequested(const QString &presetFilename)
+bool QTouchApp::loadTreeAndWidgetsUsingPresetFileName(const QString& presetFilename)
 {
-    if (!requireProjectIsOpenedFor("Preset saving")) return;
+    if (!requireProjectIsOpenedFor("loadTreeAndWidgetsUsingPresetFileName")) return false;
+
+    auto filePath = getPresetsSubdir()->absoluteFilePath(presetFilename);
+    return loadTreeAndWidgetsFromPresetFile(filePath);
+}
+
+bool QTouchApp::savePreset(const QString &presetFilename)
+{
+    if (!requireProjectIsOpenedFor("Preset saving")) return false;
 
     if(!rootNode)
     {
         SV_ERROR("Save preset failed: rootNode is empty");
-        return;
+        return false;
     }
 
     //if it existed, we already got confirmation to delete old file
@@ -120,15 +128,17 @@ void QTouchApp::onPresetSavingRequested(const QString &presetFilename)
     if (!json)
     {
         SV_ERROR("Save preset failed: serialization to json has failed")
-        return;
+        return false;
     }
 
     bool saved = saveJsonValueToFile(*json, file.absoluteFilePath());
     if (!saved)
     {
         SV_ERROR("Save preset failed: writing to file has failed");
-        return;
+        return false;
     }
+
+    return true;
 
     SV_LOG(std::format("Successfully saved preset to {}", file.absoluteFilePath()));
 }
@@ -193,6 +203,11 @@ bool QTouchApp::openProjectDir(const QDir &newProjectDir)
 
     SV_LOG(std::format("Successfully opened project folder [{}]", projectDir->absolutePath()));
     return true;
+}
+
+DataNodeShared QTouchApp::getRootNode()
+{
+    return rootNode;
 }
 
 void QTouchApp::deleteExistingTreeAndAllWidgets()
