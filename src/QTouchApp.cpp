@@ -321,7 +321,7 @@ void QTouchApp::onPresetMixingActivated(const QString& presetFilenameA,
     //  - user moves mix slider to a different position.
     //
     // A lot of the operations here are expensive - trees may be large, constructing
-    // or even comparing trees is a heavy task. We have to minimize work, whenever possible.
+    // or even COMPARING trees is a heavy task! We have to minimize work, whenever possible.
     //
     // For example, if user switched preset mixing on, off, and on again - nothing REALLY changes,
     // so we have to reuse existing trees, not reconstruct them.
