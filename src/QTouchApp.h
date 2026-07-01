@@ -25,6 +25,12 @@ public:
     //returns success
     bool savePreset(const QString& presetFilename);
 
+    //**** 1) Checking if project is opened ****
+    bool projectIsOpened();
+    //**** 2) So, if project IS opened, these dirs will have value, otherwise they wont ****
+    QDirOpt getProjectDir();
+    QDirOpt    getPresetsSubdir();
+
 private slots:
     void onPresetMixingActivated(const QString& presetFilenameA, const QString& presetFilenameB, double morphAtoB01);
     
@@ -59,14 +65,11 @@ private:
 
     
 
-    //**** 1) Checking if project is opened ****
-    bool projectIsOpened();
+    
+
     //returns same as 'projectIsOpened()' and if its not, prints error
     bool requireProjectIsOpenedFor(const char* forOperation, bool withMsgBox = true);
 
-    //**** 2) So, if project IS opened, these dirs will have value, otherwise they wont ****
-    QDirOpt getProjectDir();
-    QDirOpt    getPresetsSubdir();
 
 //Menu bar and its actions:
 private:

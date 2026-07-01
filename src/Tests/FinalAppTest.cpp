@@ -63,8 +63,11 @@ TEST_CASE("Running entire app")// * doctest::skip())
         REQUIRE(limVecWidget->getMode() == LimitedValueVecWidget::Mode::ShowXYPad);
     }
 
-
-    //SV_WARN(std::format("Kid: {}", kid));
+    //cleanup preset file that we saved:
+    if (auto presetsDir = app->getPresetsSubdir())
+    {
+        bool deleted = QFile::remove(presetsDir->absoluteFilePath(tempPresetName));
+    }
 
     SV_LOG("Final test succeeded");
 }

@@ -50,7 +50,6 @@ bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
     if (!requireProjectIsOpenedFor("loadTreeAndWidgetsFromCode")) return false;
 
     deleteExistingTreeAndAllWidgets();
-    setTreeType(TreeType::Standalone);
 
     auto parsedVarData = SUP_DataParser().parseFiles(codeFilePaths);
     if (!parsedVarData)
@@ -83,7 +82,6 @@ bool QTouchApp::loadTreeAndWidgetsFromPresetFile(const QString &filePath)
     if (!requireProjectIsOpenedFor("loadTreeAndWidgetsFromPresetFile")) return false;
 
     deleteExistingTreeAndAllWidgets();
-    setTreeType(TreeType::Standalone);
 
     SV_LOG(std::format("Loading preset file: {}", filePath));
     
@@ -217,6 +215,8 @@ void QTouchApp::deleteExistingTreeAndAllWidgets()
     widgetsView->setEnabled(false);
 
     WidgetsForNodeManager::clear();
+
+    setTreeType(TreeType::Standalone);
 }
 
 std::optional<std::tuple<DataNodeShared, NodeWidgetVec>> QTouchApp::createTreeAndWidgetsFromFile(const QString &filePath)
@@ -294,7 +294,7 @@ void QTouchApp::closeProject()
     projectDir = QDir();
 
     deleteExistingTreeAndAllWidgets(); //disables widgetsView
-    setTreeType(TreeType::Standalone);
+    
     centralWidget->setDisabled(true);
 
     closeProjectAction->setDisabled(true);

@@ -89,7 +89,22 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWid
 void TopLevelWidgetsContainer::deleteAllTopLevelWidgets()
 {
     SV_LOG("TopLevelWidgetsContainer::deleteAllTopLevelWidgets()");
-    deleteWidgetsAndClear(topLevelWidgets);
+
+    for (auto widget : topLevelWidgets)
+    {
+        if (widget)
+        {
+            //if i just write 'delete widget;' it crashes and i dont fucking understand why.
+            //it should be perfectly fine either way, but its not.
+            
+            //these two are not needed, apparently
+                //widget->setParent(nullptr);
+                //widget->hide();
+            widget->deleteLater();
+        }
+    }
+
+    topLevelWidgets.clear();
 }
 
 void TopLevelWidgetsContainer::assignTabName(TabOfTopLevelWidgets *tab, int index)
@@ -147,7 +162,7 @@ void TopLevelWidgetsContainer::deleteTabAndMoveWidgetsToOther(int index)
 
     QList<QWidget*> extractedWidgets;
     tab->extractAllWidgets(extractedWidgets);
-    delete tab;
+    tab->deleteLater();
 
     if (!extractedWidgets.empty())
     {
