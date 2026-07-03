@@ -16,6 +16,8 @@ TEST_CASE("Running entire app")// * doctest::skip())
 
     REQUIRE(app->openProjectDir(projdir));
 
+    CHECK(app->projectIsOpened());
+
     REQUIRE(app->loadTreeAndWidgetsFromCode({codeFilePath}));
 
     auto getFinalWidget = [&]()->LimitedValueVecWidget*
