@@ -27,10 +27,11 @@
 //***********************************************************************************
 
 using SUP_Vec4 = std::array<float, 4>;
+SV_DECL_OPT(SUP_Vec4);
 
 template<typename T>
 class TDFormatConverter
 {
 public:
-	static SUP_Vec4 convert(const T& val);
+	static SUP_Vec4Opt convert(const T& val);
 };

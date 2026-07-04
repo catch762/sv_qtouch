@@ -1,5 +1,5 @@
 #pragma once
-#include "TDFormatConverterInterface.h"
+#include "DataToTDFormat/TDFormatConverterInterface.h"
 #include "DataTypesAndTheirWidgets/DataTypesAndTheirWidgets.h"
 
 template<StrictlyIntOrDouble UnderlyingT>
@@ -7,7 +7,7 @@ class TDFormatConverter< LimitedValue<UnderlyingT> >
 {
 public:
 	using ValT = LimitedValue<UnderlyingT>;
-	static SUP_Vec4 convert(const ValT& val)
+	static SUP_Vec4Opt convert(const ValT& val)
 	{
 		SUP_Vec4 vec = {};
 		vec[0] = static_cast<float>(val.value());
@@ -22,7 +22,7 @@ public:
 	using LimValT = LimitedValue<UnderlyingT>;
 	using VecT = std::vector<LimValT>;
 
-	static SUP_Vec4 convert(const VecT& val)
+	static SUP_Vec4Opt convert(const VecT& val)
 	{
 		if (val.size() < 1 || val.size() > 4)
 		{
@@ -45,7 +45,7 @@ template<>
 class TDFormatConverter< Enum >
 {
 public:
-	static SUP_Vec4 convert(const Enum& val)
+	static SUP_Vec4Opt convert(const Enum& val)
 	{
 		intOpt intVal = val.getEnumValue();
 		if (!intVal)
@@ -64,7 +64,7 @@ template<>
 class TDFormatConverter< EnumVec >
 {
 public:
-	static SUP_Vec4 convert(const EnumVec& val)
+	static SUP_Vec4Opt convert(const EnumVec& val)
 	{
 		if (val.size() < 1 || val.size() > 4)
 		{
@@ -83,6 +83,7 @@ public:
 			else
 			{
 				SV_ERROR(std::format("TDFormatConverter cant convert EnumVec's Enum (will use 0) at [{}], it doesnt have valid value: {}", i, val));
+				return {};
 			}
 		}
 

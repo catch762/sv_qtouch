@@ -16,6 +16,7 @@
 #include "QTouchApp.h"
 
 #include "Registrations/Registrations.h"
+#include "Registrations/QTouchRegistrations.h"
 
 #include "BasicTokenizer/AdhocTests.h"
 
@@ -66,6 +67,7 @@ int main(int argc, char *argv[])
     Logger::instance().logAppLaunchMessage();
     
     DatalayerDefaultTypesMetadata::registerEverything();
+    QTouchAppTypesMetadata::registerEverything();
 
     QApplication app(argc, argv);
 

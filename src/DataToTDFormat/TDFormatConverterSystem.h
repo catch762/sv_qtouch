@@ -8,17 +8,16 @@ class TDFormatConverterSystem
 public:
 	static SUP_Vec4 convert(const std::any& any);
 
-private:
-	using Converter = std::function<SUP_Vec4(const std::any& any)>;
+	using Converter = std::function<SUP_Vec4Opt(const std::any& any)>;
 
 	template<typename T>
 	static void registerConverterForType()
 	{
 		SV_ASSERT(typeIsNamed<T>());
 
-		SV_ASSERT(!instance()converters.entryExistsForEither(typeIndex<T>(), typeName<T>()));
+		SV_ASSERT(!instance().converters.entryExistsForEither(typeIndex<T>(), typeName<T>()));
 
-		auto wrappedConverter = [](const std::any& any)->SUP_Vec4
+		auto wrappedConverter = [](const std::any& any)->SUP_Vec4Opt
 		{
 			if (const auto* val = anyGet<T>(any))
 			{
@@ -27,7 +26,7 @@ private:
 			else
 			{
 				SV_ERROR(std::format("TDFormatConverter expected [{}] in any, found {}", typeName<T>(), any));
-				return {}; //zero init
+				return {};
 			}
 		};
 
@@ -35,8 +34,12 @@ private:
 	}
 
 private:
-	TDFormatConverterSystem();
-	static TDFormatConverterSystem& instance();
+	TDFormatConverterSystem() = default;
+	static TDFormatConverterSystem& instance()
+	{
+		static TDFormatConverterSystem system;
+		return system;
+	}
 
 	DISABLE_COPY_AND_ASSIGNMENT(TDFormatConverterSystem);
 
