@@ -1,5 +1,5 @@
 #pragma once
-#include "DataToTDFormat/TDFormatConverterInterface.h"
+#include "../DataToTDFormat/TDFormatConverterInterface.h"
 #include "DataTypesAndTheirWidgets/DataTypesAndTheirWidgets.h"
 
 template<StrictlyIntOrDouble UnderlyingT>

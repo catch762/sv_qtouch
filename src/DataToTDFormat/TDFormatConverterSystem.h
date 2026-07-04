@@ -6,7 +6,18 @@
 class TDFormatConverterSystem
 {
 public:
-	static SUP_Vec4 convert(const std::any& any);
+	static SUP_Vec4Opt convert(const std::any& any)
+	{
+		if (const auto* converter = instance().converters.getEntry(typeIndex(any)))
+		{
+			return (*converter)(any);
+		}
+		else
+		{
+			SV_ERROR(std::format("Didnt find TDFormatConverter for {}", any));
+			return {};
+		}
+	}
 
 	using Converter = std::function<SUP_Vec4Opt(const std::any& any)>;
 
