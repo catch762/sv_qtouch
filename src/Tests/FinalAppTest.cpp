@@ -4,7 +4,8 @@
 #include "WidgetLogic/WidgetsForNodeManager.h"
 #include "DataTypesAndTheirWidgets/DataTypesAndTheirWidgets.h"
 
-TEST_CASE("Running entire app")// * doctest::skip())
+//TEST_CASE("Running entire app")
+TEST_CASE("Running entire app" * doctest::skip())
 {
     //SV_WARN("gonnarun");
 

@@ -9,8 +9,8 @@
 
 /*
 SUP_ADDTODICT_BEGIN
-cr 				= 10,
-camdata 		= [cr, 20, 15],
+cr 				= 111,
+camdata 		= [cr, 333, 222],
 Ny 				= 'no yes'
 SUP_ADDTODICT_END
 */
@@ -18,7 +18,7 @@ SUP_ADDTODICT_END
 
 #define STRMETA_Hello(V,N) STRMAIN_ARG4(Hello,V,N,\
 int, 	a,		ui("camdata")\
-ivec4,	xxx,	ui("rad = [ ['a','d','ddd'], ['x','xx','ss','dd',>,'ff','eeeeeee'] ]")\ 
+ivec4,	xxx,	ui("rad = [ ['a','d','ddd'], ['x','xx','ss','dd',>,'ff','eeeeeee'] ]")\
 int,	b,		ui("rad = ['hey', >,'bro', 'a', 'bbbbbbbbbbbbbbbbbbbb', 'c','ddd','e']")\
 vec4,	c)		ui("[[0, 5, 2], camdata]")
 STRDECL(Hello)

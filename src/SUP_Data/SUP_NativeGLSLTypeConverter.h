@@ -9,7 +9,7 @@
 // So, SUP-conforming GLSL code has lines like these:
 //      VAR(vec4, hello) ui("[10, 30, 20]")
 //
-// These are parsed into simple struct SUP_Variable{type, name, uiMacroString}
+// These are first parsed into simple struct SUP_Variable{type, name, uiMacroString}
 //
 // What this means is:
 //      We have variable of GLSL type 'vec4' and name 'hello' and there is arbitrary text data
@@ -19,14 +19,16 @@
 //
 // So, what this class does is it takes pairs of {glslTypeName, uiMacroString} of each such variable,
 // and it produces Output for them, which is:
-//      - C++ type variable that represents this GLSL type. Its wrapped in std::any.
+//      - C++ type variable that represents this GLSL type, with appropriate initial value. Its wrapped in std::any.
 //      - Optional JSON with additional widget options, because uiMacroString may contain them.
 //        You supply this JSON when you create the widget.
 //
 // The reason i chose to output this data specifically, is because WidgetMakerSystem needs this data
 // to create the widget (std::any with any supported type, and JSON options for the widget)
 //
-// [!] This class only works with NATIVE scalar GLSL types, like float or vec4, it does not handle structs.
+// [!] This class only works with NATIVE scalar GLSL types, like float or ivec4.
+// It does not handle structs.
+// It also doesnt handle bool, because who even needs this type, use int.
 //
 //******************************************************************************************************
 class SUP_NativeGLSLTypeConverter

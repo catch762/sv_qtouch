@@ -1,35 +1,4 @@
 ﻿/*
-SUP_PYTHON_BEGIN
-################
-cr 				= 20
-camdata 		= [[0,2,1],[-cr,cr,0],[-cr,cr,0], [0.0001, 4.5, 1.5]]
-camrad			= [ [-1,1,0], [-0.5,0.5,0.5], [-1,1,0], [-1,1,0] ]
-ls 				= 4
-lookat = [[-ls,ls,0],[-ls,ls,0],[-ls,ls,0]]
-
-pd = 1
-snm_pos = [[-pd,pd,0],[-pd,pd,0],[-pd,pd,0]]
-
-sceneid = [0, 1, 0]
-sceneid_wtest = [-1, 10, 0]
-
-snm_spacing 	= [1, 8, 1]
-snm_spacings 	= [snm_spacing, snm_spacing, snm_spacing]
-snm_repidx 		= [0, 16, 1]
-snm_repidxs 	= [snm_repidx, snm_repidx, snm_repidx]
-
-s01 = [0, 1, 1]
-s010 = [0, 1, 0]
-s01h = [0, 1, 0.5]
-s11 = [-1, 1, 0]
-fbm4 = [ [0.01, 4, 0.05], [0.5, 1, 0.5], [0, 1, 0], [0, 2, 0] ]
-Ny = 'no yes'
-
-################
-SUP_PYTHON_END
-*/
-
-/*
 SUP_ADDTODICT_BEGIN
 cr 				= 20,
 camdata 		= [[0,2,1],[-cr,cr,0],[-cr,cr,0], [0.0001, 4.5, 1.5]],
@@ -50,10 +19,14 @@ snm_repidxs 	= [snm_repidx, snm_repidx, snm_repidx],
 
 s01 = [0, 1, 1],
 s010 = [0, 1, 0],
+s011 = [0, 1, 0],
 s01h = [0, 1, 0.5],
 s11 = [-1, 1, 0],
 fbm4 = [ [0.01, 4, 0.05], [0.5, 1, 0.5], [0, 1, 0], [0, 2, 0] ],
-Ny = 'no yes'
+Ny = 'no yes',
+
+colorcomp = [0, 1, 1],
+defcolor = [colorcomp, colorcomp, colorcomp, colorcomp]
 SUP_ADDTODICT_END
 */
 
@@ -62,7 +35,7 @@ SUP_STRUCTS_BEGIN
 
 #define STRMETA_Rmain(V,N) STRMAIN_ARG11(Rmain,V,N,\
 vec4, 	camera,			ui("lims=camdata"			)\
-vec4, 	camera_rad,		ui("tox = 'sv_xys', lims = [-1,1,0]"			)\
+vec4, 	camera_rad,		ui("lims = [-1,1,0]"			)\
 vec3,	lookat,			ui("lims=lookat"			)\
 float,	normalmix,		ui("lims = [0, 1, 0.3]"		)\
 ivec3,	RootidIqnelidIqneloct,	ui("lims = [sceneid_wtest, [-100,100,0], [0,9,0]]"	)\
@@ -71,11 +44,11 @@ int,	depth,			ui("lims = [0, 6, 0]"		)\
 float,	colorseed,		ui("lims = [0, 8, 2]"		)\
 float,	phaselen,		ui("lims = [0, 16, 4]"		)\
 float,	manphase,		ui("lims = [0, 2, 0]"		)\
-ivec3,	renmode)		ui("rad=['base >+wire', 'manpos >radial', '>manphase timephase']")
+ivec3,	renmode)		ui("rad=[['base', >, '+wire'], ['manpos', >, 'radial'], [>,'manphase', 'timephase']]")
 STRDECL(Rmain)
 
 #define STRMETA_RenFin(V,N) STRMAIN_ARG3(RenFin,V,N,\
-vec4, 	stepcNvalc,		ui("tox = 'sv_xys', lims = [[0,1,1],[0,1,0]]"	)\
+vec4, 	stepcNvalc,		ui("lims = [[0,1,1],[0,1,0]]"	)\
 vec2,	step_powmul, 	ui("lims=[[0.01,3,1],[0.01,33,10]]"				)\
 vec2,	val_powmul) 	ui("lims=[[0.01,3,1],[0.01,33,10]]"				)
 STRDECL(RenFin)
@@ -92,9 +65,9 @@ STRDECL(SNChild)
 
 #define STRMETA_IQNData(V,N) STRMAIN_ARG15(IQNData,V,N,\
 int, 	octaves,									ui("lims=[0, 12, 0]"				)\
-vec4, 	scale2_smooth2,								ui("tox = 'sv_xys', lims=fbm4"		)\
+vec4, 	scale2_smooth2,								ui("lims=fbm4"		)\
 vec2, 	NeighbOctmod,								ui("lims=[[0,2,0.1], [0,2,1]]"		)\
-ivec3, 	mode_elemId_octopId,						ui("rad=['sub add', 'sp wb wbco A B C D', 'no iqrot shrot 1 2 3']" )\
+ivec3, 	mode_elemId_octopId,						ui("rad=[['sub', 'add'],['sp', 'wb', 'wbco', 'A', 'B', 'C', 'D'],['no', 'iqrot', 'shrot', '1', '2', '3']]" )\
 vec4, 	elem_prm_Size,								ui("lims=[0,1,1]"					)\
 vec4, 	elem_prm_Rot,								ui("lims=[0,1,0]"					)\
 vec4, 	elem_prm_Trans,								ui("lims=s11"						)\
@@ -103,13 +76,13 @@ vec4, 	elem_prm_Extra,								ui("lims=s11"						)\
 vec4, 	elem_prm_Caleidrot,							ui("lims=s11"						)\
 vec4, 	elem_prm_Caleidtrans,						ui("lims=s11"						)\
 vec4, 	elem_prm_RoundClipformClipsizeNoisetodepth,	ui("lims=[[-0.15, 0.15, 0], s010, [0,1,1], s010]")\
-vec4, 	elem_prm_Pads,								ui("tox = 'sv_xys', lims = s11"		)\
-vec4, 	elem_prm_PadsDelta,							ui("tox = 'sv_xys', lims = s11"		)\
+vec4, 	elem_prm_Pads,								ui("lims = s11"		)\
+vec4, 	elem_prm_PadsDelta,							ui("lims = s11"		)\
 vec4, 	prm_octop)									ui("lims=[0,1,0]")
 STRDECL(IQNData)
 
 #define STRMETA_Lighting(V,N) STRMAIN_ARG5(Lighting,V,N,\
-vec4, 	fogcolor,			ui("color = [1,1,1,0.09]"	)\
+vec4, 	fogcolor,			ui("lims = [s011,s011,s011,[0,1,0.09]]"	)\
 float, 	fogdistfactor,		ui("lims=[0, 12, 1]"	)\
 vec3, 	AmblightShadfromTo,	ui("lims=[[0, 1, 0.4], s010, s01]"	)\
 float, 	using_mat,			ui("lims=[0, 1, 1]"		)\
@@ -119,7 +92,7 @@ STRDECL(Lighting)
 #define STRMETA_Light(V,N) STRMAIN_ARG4(Light,V,N,\
 vec4, 	pos,			ui("lims=s11"				)\
 float, 	radius,			ui("lims=[0.5, 2, 2]"	)\
-vec4, 	color,			ui("color = [1,1,1,1]"			)\
+vec4, 	color,			ui("lims = defcolor"			)\
 float, 	intensity01)	ui("lims=[0, 25, 5]"				)
 STRDECL(Light)
 
@@ -140,8 +113,8 @@ vec4, 	d_Size,					ui("lims = [0,1,1]"								)\
 vec4, 	d_PosScaleAngCross,		ui("lims = [[-1,1,1],[0,1,1],[0,1,1],[0,1,1]]"	)\
 vec2, 	d_SegcountPlatfh,		ui("lims = [[1,8,5],[0,0.5,0]]"					)\
 vec3, 	shuffle_SizePosSeg,		ui("lims = [0,1,1]"								)\
-vec4, 	globshuffle,			ui("tox = 'sv_xys', lims = [[-1,1,1],[-1,1,1]]"	)\
-vec4, 	MidtexWinsize,			ui("tox = 'sv_xys', lims = [[-1,1,1],[-1,1,1],[0.1,8,1],[0.1,8,1]]"	)\
+vec4, 	globshuffle,			ui("lims = [[-1,1,1],[-1,1,1]]"	)\
+vec4, 	MidtexWinsize,			ui("lims = [[-1,1,1],[-1,1,1],[0.1,8,1],[0.1,8,1]]"	)\
 vec4, 	ThreshNoneYsubdivMix,	ui("lims = [[0,1,1], [0,1,0.05], [2, 128, 16], [0,1,1]]"		)\
 vec4, 	aaa)					ui("lims = [0,1,1]"								)
 STRDECL(RingParDeltas)
@@ -157,16 +130,16 @@ ivec4, 	i,						ui("lims = [0, 10, 1]"		)\
 vec4, 	a,						ui(""						)\
 vec4, 	b,						ui(""						)\
 vec4, 	c,						ui(""						)\
-vec4, 	d)						ui("tox = 'sv_xys', lims = [[0,6,1],[0,6,1]]")
+vec4, 	d)						ui("lims = [[0,6,1],[0,6,1]]")
 STRDECL(Vor)
 
 #define STRMETA_Repwall(V,N) STRMAIN_ARG7(Repwall,V,N,\
 vec4, 	dims,					ui("lims=[[0, 0.5, 0.125],[0, 0.5, 0.125],[0, 0.5, 0.125], [0, 2, 1]]")	\
 vec4, 	A_TilexyDepthId,		ui("lims=[ [0,32,8], [0,48,12], [0.001, 0.5, 0.125], [0,8,0]]")			\
-vec4, 	A_TexposWinsize,		ui("tox = 'sv_xys', lims=[s11, s11, [0,1,0.25], [0,1,0.25]]")			\
+vec4, 	A_TexposWinsize,		ui("lims=[s11, s11, [0,1,0.25], [0,1,0.25]]")			\
 vec4, 	B_TilexyDepthId,		ui("lims=[ [0,32,8], [0,48,12], [0.001, 0.5, 0.125], [0,8,0]]")			\
-vec4, 	B_TexposWinsize,		ui("tox = 'sv_xys', lims=[s11, s11, [0,1,0.25], [0,1,0.25]]")			\
-vec4, 	AB_NoopvalTolerance,	ui("tox = 'sv_xys', lims=[s01]")										\
+vec4, 	B_TexposWinsize,		ui("lims=[s11, s11, [0,1,0.25], [0,1,0.25]]")			\
+vec4, 	AB_NoopvalTolerance,	ui("lims=[s01]")										\
 vec4, 	AB_Mirror)				ui("lims=[s01]")	
 STRDECL(Repwall)
 
@@ -176,13 +149,13 @@ vec4, segwall_WidthHeightLengthAngmod_Min,		ui("lims=[[0, 1, 0.05],[0, 1, 0.25],
 vec4, segwall_WidthHeightLengthAngmod_Max,		ui("lims=[[0, 1, 0.1],[0, 1, 0.5], s01, s01]")		\
 vec4, Ylevel_SmK_Clipshape_Clipmore,			ui("lims=[[0, 1, 0.0],[0, 1, 0.0], s010, s01]")		\
 vec4, Firsttowerx_Subdivs_XX,					ui("lims=[s010, [0,12,2], s010, s010 ]")			\
-vec4, pads)										ui("tox = 'sv_xys', lims=[s11]")
+vec4, pads)										ui("lims=[s11]")
 STRDECL(ProtoData)
 
 
 #define STRMETA_BPM(V,N) STRMAIN_ARG3(BPM,V,N,\
-vec4, 	basecolor,				ui("color = [1,1,1,1]")	\
-vec4, 	speccolor,				ui("color = [1,1,1,1]")			\
+vec4, 	basecolor,				ui("lims = defcolor")	\
+vec4, 	speccolor,				ui("lims = defcolor")			\
 vec2, 	RoughnessRefraction)	ui("lims=[0, 2, 1]")	
 STRDECL(BPM)
 
@@ -194,40 +167,40 @@ SUP_STRUCTS_END
 //absolutely no empty lines allowed or will break ^^
 #line 	0
 SUP_VARS_BEGIN
-		STR(Rmain, 	rmain) 		ui("C1")
+		STR(Rmain, 	rmain) 		ui("")
 #line	ooo(Rmain)
 		VAR(vec4, ta)			ui("lims = [0,2,1]")
 		VAR(vec4, tb)			ui("lims = [0,2,1]")
 		VAR(vec4, tc)			ui("lims = [0,2,1]")
 		VAR(vec4, td)			ui("lims = [0,2,1]")
-		VAR(vec4, te)			ui("tox = 'sv_xys', lims = [-1,1,0]")
-		STR(RenFin, renfin) 	ui("C1")
+		VAR(vec4, te)			ui("lims = [-1,1,0]")
+		STR(RenFin, renfin) 	ui("")
 #line	ooo(RenFin)		
 		STR(Lighting, lighting)
 #line	ooo(Lighting)	
 		STR(Light, mainlight)
 #line	ooo(Light)				
-		STR(SNChild, childA) 	ui("C1")
+		STR(SNChild, childA) 	ui("")
 #line	ooo(SNChild)
-		STR(SNChild, childB) 	ui("C1")
+		STR(SNChild, childB) 	ui("")
 #line	ooo(SNChild)
-		STR(IQNData, iqn) 		ui("C2")
+		STR(IQNData, iqn) 		ui("")
 #line	ooo(IQNData)
-		STR(IQNData, iqn2) 		ui("C2")
+		STR(IQNData, iqn2) 		ui("")
 #line	ooo(IQNData)
-		STR(Vor, vor) 			ui("C3")
+		STR(Vor, vor) 			ui("")
 #line	ooo(Vor)
-		STR(Ring, ring1) 		ui("C3")
+		STR(Ring, ring1) 		ui("")
 #line	ooo(Ring)
-		STR(RingParDeltas, ring1deltas) 	ui("C3")
+		STR(RingParDeltas, ring1deltas) 	ui("")
 #line	ooo(RingParDeltas)
-		STR(Repwall, repw1) 	ui("C1")
+		STR(Repwall, repw1) 	ui("")
 #line	ooo(Repwall)
-		STR(BPM, bpm1) 	ui("C1")
+		STR(BPM, bpm1) 	ui("")
 #line	ooo(BPM)
-		STR(BPM, bpm2) 	ui("C1")
+		STR(BPM, bpm2) 	ui("")
 #line	ooo(BPM)
-		STR(ProtoData, proto) 	ui("C3")
+		STR(ProtoData, proto) 	ui("")
 #line	ooo(ProtoData)
 SUP_VARS_END
 #line 197
