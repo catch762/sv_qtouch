@@ -9,6 +9,8 @@
 #include <QMenuBar>
 #include <QFileDialog>
 
+#include "DataToTDFormat\TDFormatTreeConverter.h"
+
 QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
 {
     centralWidget = new QWidget(this);
@@ -43,6 +45,42 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     initMenuBar();
 
     closeProject();
+
+    tdClient = new TDTcpClient(this);
+
+    {
+        QWidget* testui = new QWidget(nullptr);
+        QVBoxLayout* lay = new QVBoxLayout(testui);
+
+        QPushButton* doConnect = new QPushButton("connect to default");
+        connect(doConnect, &QPushButton::clicked, [&]()
+        {
+            tdClient->connectToTd();
+        });
+
+        QPushButton* send = new QPushButton("send");
+        connect(send, &QPushButton::clicked, [&]()
+        {
+            if (!rootNode)
+            {
+                SV_ERROR("root is null bro");
+                return;
+            }
+
+            TreeAsTDFormatData data;
+            if (auto err = convertTreeToTDFormat(rootNode, data))
+            {
+                SV_ERROR(*err);
+            }
+
+            tdClient->sendTreeData(data);
+        });
+
+        lay->addWidget(doConnect);
+        lay->addWidget(send);
+
+        testui->show();
+    }
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)

@@ -21,7 +21,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Thats all i need to setup Qt, i assume:
 set(CMAKE_PREFIX_PATH "C:/SvQt/6.10.3/msvc2022_64")
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network)
 qt_standard_project_setup()
 
 # todo submodule
@@ -51,6 +51,8 @@ file(GLOB_RECURSE SV_QTOUCH_SOURCES src/*.cpp src/*.h)
 
 qt_add_executable(sv_qtouch_app ${SV_QTOUCH_SOURCES})
 
+target_include_directories(sv_qtouch_app PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
 # Automatically handle full deployment (DLLs + Platforms + Styles) post-build
 #todo replace with variable
 if(WIN32)
@@ -65,7 +67,7 @@ if(WIN32)
 endif()
 
 # 5. Link Qt and other modules
-target_link_libraries(sv_qtouch_app PRIVATE Qt6::Widgets Qt6::Core sv_common sv_qtcommon sv_datalayer)
+target_link_libraries(sv_qtouch_app PRIVATE Qt6::Widgets Qt6::Core Qt6::Network sv_common sv_qtcommon sv_datalayer)
 
 # 6. Explicitly enforce the MSVC C++20 flag for this target
 if(MSVC)

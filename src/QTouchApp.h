@@ -5,6 +5,7 @@
 #include "SUP_Data/SUP_DataParser.h"
 #include "TreeAndWidgetsBuilder.h"
 
+#include "TouchdesignerCommunication/TDTcpCLient.h"
 
 class PresetTab;
 class TopLevelWidgetsContainer;
@@ -92,6 +93,8 @@ private:
     //have to load same files later, if we need to.
     LoadedPreset presetForMixing_A;
     LoadedPreset presetForMixing_B;
+
+    TDTcpClient* tdClient = nullptr;
 
 private:
     QWidget*                    centralWidget   = nullptr;
