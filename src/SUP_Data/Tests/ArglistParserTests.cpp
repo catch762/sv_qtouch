@@ -55,7 +55,7 @@ TEST_CASE("Flat list and empty array")
         {"",    comp()}
     }};
 
-    auto actualRes = SUP_ArglistParser().parseToArglist(text);
+    auto actualRes = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(text);
 
 
     INFO(makeContext(text, expectedRes, actualRes));
@@ -70,7 +70,7 @@ TEST_CASE("Just an integer")
         {"",    leaf_int(777)}
     }};
 
-    auto actualRes = SUP_ArglistParser().parseToArglist(text);
+    auto actualRes = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(text);
 
 
     INFO(makeContext(text, expectedRes, actualRes));
@@ -83,7 +83,7 @@ TEST_CASE("Should fail on unexpected comma token")
 
     SUP_ArglistOrError expectedRes = std::string("some error");
 
-    auto actualRes = SUP_ArglistParser().parseToArglist(text);
+    auto actualRes = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(text);
 
 
     INFO(makeContext(text, expectedRes, actualRes));
@@ -107,7 +107,7 @@ TEST_CASE("Long list of everything")
         }
     }};
 
-    auto actualRes = SUP_ArglistParser().parseToArglist(text);
+    auto actualRes = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(text);
 
 
     INFO(makeContext(text, expectedRes, actualRes));
@@ -120,7 +120,7 @@ TEST_CASE("Should fail because of unexpected token in array")
 
     SUP_ArglistOrError expectedRes = std::string("some error");
 
-    auto actualRes = SUP_ArglistParser().parseToArglist(text);
+    auto actualRes = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(text);
 
 
     INFO(makeContext(text, expectedRes, actualRes));
@@ -147,7 +147,7 @@ TEST_CASE("Even longer list of everything")
         }
     }};
 
-    auto actualRes = SUP_ArglistParser().parseToArglist(text);
+    auto actualRes = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(text);
 
 
     INFO(makeContext(text, expectedRes, actualRes));

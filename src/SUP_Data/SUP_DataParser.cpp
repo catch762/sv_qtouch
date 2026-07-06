@@ -329,44 +329,45 @@ bool SUP_DataParser::processDictEntryLine(const QString &line)
     if (lineIsDictEnd(line))
     {
         state = State::LookingForData;
-
-        SUP_ArglistOrError res = SUP_ArglistParser().parseToArglist(currentDictText);
-        if (auto err = getError(res))
-        {
-            SV_ERROR(std::format("Whilst finishing processing Dict block, couldnt parse its text to arglist: {}", *err));
-            return false;
-        }
-        const SUP_Arglist& arglist = std::get<0>(res);
-
-        if (!arglist.allArgsAreNamed())
-        {
-            SV_ERROR(std::format("Error, Dict block was parsed to arglist, but not all items are named: {}", arglist));
-            return false;
-        }
-
-        for (const auto &arg : arglist.namedExpressions)
-        {
-            if (parseResult.varDict.getVariableExpr(arg.first))
-            {
-                SV_ERROR(std::format("Error, Dict block was parsed to arglist, but such Dict var name already exists: {}", arg.first));
-                return false;
-            }
-
-            if (auto err = parseResult.varDict.saveVariableExpr(arg.first, std::move(arg.second)))
-            {
-                SV_ERROR("Error while processing Dict block: {}", *err);
-                return false;
-            }
-        }
-
         return true;
     }
-    else
+
+    if (line.isEmpty())
     {
-        currentDictText += "\n";
-        currentDictText += line;
         return true;
     }
+
+    SUP_ArglistOrError res = SUP_ArglistParser().parseToArglistAndReplaceSymbolTokensWithDictEntries(line, parseResult.varDict);
+    if (auto err = getError(res))
+    {
+        SV_ERROR(std::format("Whilst processing Dict block line, couldnt parse its text to arglist: {}\n"
+                             "Line: {}", *err, line));
+        return false;
+    }
+    const SUP_Arglist& arglist = std::get<0>(res);
+
+    if (!arglist.allArgsAreNamed())
+    {
+        SV_ERROR(std::format("Error, Dict block line was parsed to arglist, but not all items are named: {}", arglist));
+        return false;
+    }
+
+    for (auto &arg : arglist.namedExpressions)
+    {
+        if (parseResult.varDict.getVariableExpr(arg.first))
+        {
+            SV_ERROR(std::format("Error, Dict block line was parsed to arglist, but such Dict var name already exists: {}", arg.first));
+            return false;
+        }
+
+        if (auto err = parseResult.varDict.saveVariableExpr(arg.first, std::move(arg.second)))
+        {
+            SV_ERROR("Error while processing Dict block line: {}", *err);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void SUP_DataParser::onLineError(const QString &error, const QString &line)
@@ -395,6 +396,5 @@ void SUP_DataParser::resetState()
 {
     state = State::LookingForData;
     currentStruct = SUP_StructDefinition();
-    currentDictText = QString();
     parseResult = SUP_Data();
 }

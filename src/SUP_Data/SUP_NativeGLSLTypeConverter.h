@@ -186,7 +186,7 @@ private:
         if (uiMacroString)
         {
             auto parsedDataOrErr = dict ? SUP_ArglistParser().parseToArglistAndReplaceSymbolTokensWithDictEntries(*uiMacroString, *dict) :
-                                          SUP_ArglistParser().parseToArglist(*uiMacroString);
+                                          SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(*uiMacroString);
 
             if (auto err = getError(parsedDataOrErr))
             {

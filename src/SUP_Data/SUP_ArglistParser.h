@@ -9,7 +9,7 @@ BasicTokenizer& SUP_getBasicTokenizerForUiString();
 class SUP_ArglistParser
 {
 public:
-    SUP_ArglistOrError parseToArglist(const UiMacroString& uiMacroString);
+    SUP_ArglistOrError parseToArglistWithoutSymbolSubstitutions(const UiMacroString& uiMacroString);
     SUP_ArglistOrError parseToArglistAndReplaceSymbolTokensWithDictEntries(const UiMacroString& uiMacroString, const SUP_VariablesDict& dict);
 
 private:

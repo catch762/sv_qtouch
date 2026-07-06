@@ -88,7 +88,5 @@ private:
     
     SUP_StructDefinition currentStruct; //if we are in State::ParsingMemberVariablesOfStructDecl, we are filling this.
 
-    QString currentDictText; //if we are in State::ParsingEntriesOfDict, we collect all data as text first
-
     SUP_Data parseResult;
 };

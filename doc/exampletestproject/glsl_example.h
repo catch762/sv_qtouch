@@ -1,31 +1,31 @@
 ﻿/*
 SUP_ADDTODICT_BEGIN
-cr 				= 20,
-camdata 		= [[0,2,1],[-cr,cr,0],[-cr,cr,0], [0.0001, 4.5, 1.5]],
-camrad			= [ [-1,1,0], [-0.5,0.5,0.5], [-1,1,0], [-1,1,0] ],
-ls 				= 4,
-lookat = [[-ls,ls,0],[-ls,ls,0],[-ls,ls,0]],
+cr 				= 20
+camdata 		= [[0,2,1],[-cr,cr,0],[-cr,cr,0], [0.0001, 4.5, 1.5]]
+camrad			= [ [-1,1,0], [-0.5,0.5,0.5], [-1,1,0], [-1,1,0] ]
+ls 				= 4
+lookat = [[-ls,ls,0],[-ls,ls,0],[-ls,ls,0]]
 
-pd = 1,
-snm_pos = [[-pd,pd,0],[-pd,pd,0],[-pd,pd,0]],
+pd = 1
+snm_pos = [[-pd,pd,0],[-pd,pd,0],[-pd,pd,0]]
 
-sceneid = [0, 1, 0],
-sceneid_wtest = [-1, 10, 0],
+sceneid = [0, 1, 0]
+sceneid_wtest = [-1, 10, 0]
 
-snm_spacing 	= [1, 8, 1],
-snm_spacings 	= [snm_spacing, snm_spacing, snm_spacing],
-snm_repidx 		= [0, 16, 1],
-snm_repidxs 	= [snm_repidx, snm_repidx, snm_repidx],
+snm_spacing 	= [1, 8, 1]
+snm_spacings 	= [snm_spacing, snm_spacing, snm_spacing]
+snm_repidx 		= [0, 16, 1]
+snm_repidxs 	= [snm_repidx, snm_repidx, snm_repidx]
 
-s01 = [0, 1, 1],
-s010 = [0, 1, 0],
-s011 = [0, 1, 0],
-s01h = [0, 1, 0.5],
-s11 = [-1, 1, 0],
-fbm4 = [ [0.01, 4, 0.05], [0.5, 1, 0.5], [0, 1, 0], [0, 2, 0] ],
-Ny = 'no yes',
+s01 = [0, 1, 1]
+s010 = [0, 1, 0]
+s011 = [0, 1, 0]
+s01h = [0, 1, 0.5]
+s11 = [-1, 1, 0]
+fbm4 = [ [0.01, 4, 0.05], [0.5, 1, 0.5], [0, 1, 0], [0, 2, 0] ]
+Ny = 'no yes'
 
-colorcomp = [0, 1, 1],
+colorcomp = [0, 1, 1]
 defcolor = [colorcomp, colorcomp, colorcomp, colorcomp]
 SUP_ADDTODICT_END
 */

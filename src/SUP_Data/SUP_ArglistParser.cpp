@@ -28,7 +28,7 @@ BasicTokenizer &SUP_getBasicTokenizerForUiString()
     return tokenizer;
 }
 
-SUP_ArglistOrError SUP_ArglistParser::parseToArglist(const UiMacroString &uiMacroString)
+SUP_ArglistOrError SUP_ArglistParser::parseToArglistWithoutSymbolSubstitutions(const UiMacroString &uiMacroString)
 {
     if (uiMacroString.isEmpty())
     {
@@ -87,7 +87,13 @@ SUP_ArglistOrError SUP_ArglistParser::parseToArglist(const UiMacroString &uiMacr
 
 SUP_ArglistOrError SUP_ArglistParser::parseToArglistAndReplaceSymbolTokensWithDictEntries(const UiMacroString &uiMacroString, const SUP_VariablesDict &dict)
 {
-    auto arglistOrErr = parseToArglist(uiMacroString);
+    /*
+    if (uiMacroString.startsWith("lims=camdata")) {
+        SV_LOG("ok");
+    }
+    */
+
+    auto arglistOrErr = parseToArglistWithoutSymbolSubstitutions(uiMacroString);
     if (auto err = getError(arglistOrErr))
     {
         return *err;
