@@ -150,17 +150,42 @@ SUP_ExprOrError SUP_ArglistParser::tryParseNextExpr(const BasicTokenVec &tokens,
     const auto& firstToken = tokens[startIndex];
 
     const bool startsAsLegalNonArrayExpr = firstToken.isSymbol() || firstToken.isString() || firstToken.isNumber() ||
-                                           (firstToken.isSpecialCharachter() && !isArrayOpenBracket(firstToken)
-                                                                      && !isArrayCloseBracket(firstToken)
-                                                                      && !isComma(firstToken));
+                                           (firstToken.isSpecialCharachter()  && !isArrayOpenBracket(firstToken)
+                                                                              && !isArrayCloseBracket(firstToken)
+                                                                              && !isComma(firstToken));
 
     const int remainingTokens = tokens.size() - startIndex;
 
-    //So far, non-array expr can only be single token, with either nothing or comma afterwards.
     if (startsAsLegalNonArrayExpr)
     {
-        outLastParsedTokenIndex = startIndex;
-        return SUP_Expr(firstToken);
+        // If theres normal negative number like "-5" we dont even get minus tokens here, we just get number token of -5.
+        // However, there just might be "-varname", which will look like SpecChar(-), Symbol(varname)
+        // and in that case we need to handle it as single SUP_Expr with negative flag set.
+
+        if (isMinus(firstToken))
+        {
+            if (remainingTokens < 1)
+            {
+                return "Error, was parsing expr, found Minus token, but nothing afterwards";
+            }
+
+            const int nextExprIndex = startIndex + 1;
+            const auto& nextToken = tokens[nextExprIndex];
+
+            if (!nextToken.isSymbol())
+            {
+                return std::format("Error, after Minus token, expected Symbol token, but next was {}", nextToken);
+            }
+
+            //ok, all good, lets form that negative symbol token
+            outLastParsedTokenIndex = nextExprIndex;
+            return SUP_Expr(TokenWithModifier(nextToken, true));
+        }
+        else
+        {
+            outLastParsedTokenIndex = startIndex;
+            return SUP_Expr(firstToken);
+        }
     }
     else
     {
@@ -176,7 +201,7 @@ SUP_ExprOrError SUP_ArglistParser::tryParseNextExpr(const BasicTokenVec &tokens,
 
         SUP_Expr arrayExpr = SUP_Expr::makeComposite();
 
-        int nextExprIndex = startIndex+1;
+        int nextExprIndex = startIndex + 1;
         while(true)
         {
             if (!isValidIndex(nextExprIndex, tokens.size()))
@@ -222,7 +247,7 @@ SUP_ExprOrError SUP_ArglistParser::tryParseNextExpr(const BasicTokenVec &tokens,
                     {
                         return std::format("During parsing array expr, after found unexpected {} which is neither ',' nor ']'",
                                                 tokenCommaOrBracket);
-                    }
+                    }//todo whats line in orig file? and whats happening now, print all tokens
                 }
             }
         }
@@ -239,6 +264,11 @@ bool SUP_ArglistParser::isEquals(const BasicToken &token) const
 bool SUP_ArglistParser::isComma(const BasicToken &token) const
 {
     return token.isSpecialCharachter() && token.getSpecialCharachterData() == ',';
+}
+
+bool SUP_ArglistParser::isMinus(const BasicToken& token) const
+{
+    return token.isSpecialCharachter() && token.getSpecialCharachterData() == '-';
 }
 
 bool SUP_ArglistParser::isArrayOpenBracket(const BasicToken &token) const

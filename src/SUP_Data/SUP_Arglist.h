@@ -43,8 +43,25 @@ SV_DECL_ALIASES(UiMacroString);
 // }
 
 
+class TokenWithModifier : public BasicToken
+{
+public:
+    TokenWithModifier(BasicToken tok, bool _negative = false) : BasicToken(tok), negative(_negative)
+    {
+    }
 
-using SUP_Expr = CompositeNode<BasicToken>;
+    bool isNegative()
+    {
+        return negative;
+    }
+
+public:
+    bool negative = false;
+};
+SV_DECL_STD_FORMATTER(TokenWithModifier, obj.info());
+
+//using SUP_Expr = CompositeNode<BasicToken>;
+using SUP_Expr = CompositeNode<TokenWithModifier>;
 SV_DECL_ALIASES(SUP_Expr);
 
 namespace sup_expr_helpers

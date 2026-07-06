@@ -19,6 +19,7 @@ private:
 
     bool isEquals(const BasicToken& token) const;
     bool isComma(const BasicToken& token) const;
+    bool isMinus(const BasicToken& token) const;
     bool isArrayOpenBracket(const BasicToken& token) const;
     bool isArrayCloseBracket(const BasicToken& token) const;
 

@@ -25,7 +25,8 @@
 void testRunQtouchApp()
 {
     QDir projdir("doc/exampletestproject");
-    QString codeFilePath = projdir.absoluteFilePath("glsl_example_simple.h");
+    //QString codeFilePath = projdir.absoluteFilePath("glsl_example_simple.h");
+    QString codeFilePath = projdir.absoluteFilePath("glsl_example.h");
 
     auto app = new QTouchApp();
 
