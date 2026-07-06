@@ -2,8 +2,9 @@
 project(sv_qtouch)
 
 if (MSVC)
-    add_compile_options(/fsanitize=address)
-    add_link_options(/fsanitize=address)
+    # Only for Debug configuration
+    add_compile_options("$<$<CONFIG:Debug>:/fsanitize=address>")
+    add_link_options("$<$<CONFIG:Debug>:/fsanitize=address>")
 endif()
 
 # 1. Force the C++20 Standard globally
