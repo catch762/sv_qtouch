@@ -85,15 +85,40 @@ struct SUP_VariablesDict
             {
                 if (token->isSymbol())
                 {
-                    const auto& variableName = token->getSymbolData();
-                    if (const SUP_Expr* exprFromDict = getVariableExpr(QString::fromStdString(variableName)))
+                    const QString variableName = QString::fromStdString(token->getSymbolData());
+                    if (const SUP_Expr* exprFromDict = getVariableExpr(variableName))
                     {
-                        //copy it here
+                        //So, this token contains data:
+                        //  - variable name
+                        //  - flag that indicates we must take negative of that variable value.
+                        if (token->isNegative())
+                        {
+                            //we can only apply it to numbers.
+                            
+                        }
+
+                        const bool mustNegateValue = token->isNegative();
+
+                        //Ok, we copied it here. 'token' is invalid ptr now btw.
                         node = *exprFromDict;
+
+                        if (mustNegateValue)
+                        {
+                            if (node.isComposite() || !node.getLeafValue()->isNumber())
+                            {
+                                SV_MSGBOX_ERROR(std::format("there is minus sign before dict var [{}], which is unexpectedly non-number expression, its [{}]\n\n"
+                                                            "Cant negate it, and this negation will be ignored",
+                                                            variableName, node));
+                            }
+                            else
+                            {
+                                node.getLeafValue()->negateNumber();
+                            }
+                        }
                     }
                     else
                     {
-                        notFoundNames.emplace(variableName);
+                        notFoundNames.emplace(variableName.toStdString());
                     }
                 }
             }
