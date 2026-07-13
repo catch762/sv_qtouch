@@ -27,6 +27,28 @@ public:
         view->setRootIndex(model->index(model->rootPath()));
         view->setContextMenuPolicy(Qt::CustomContextMenu);
         view->verticalHeader()->hide();
+        view->setSelectionBehavior(QAbstractItemView::SelectRows);
+        view->setSelectionMode(QAbstractItemView::MultiSelection);
+
+        view->setShowGrid(false);
+
+        view->setStyleSheet(
+            "QHeaderView::section {"
+            "    font-weight: normal;"
+            "}"
+            "QHeaderView::section:selected {"
+            "    font-weight: normal;"
+            "}"
+            ""
+            "QTableView::item {"
+            "    border: none;"
+            "}"
+            "QTableView::item:selected {"
+            "    background: #f5f5f5;"
+            "    border: none;"
+            "    outline: 0;"
+            "}"
+        );
 
         int exportCol = model->exportColumn();
         for (int col = 0; col < model->columnCount(); ++col) {

@@ -41,19 +41,18 @@ public:
 
     QVariant data(const QModelIndex& index, int role) const override
     {
-        if (!index.isValid())
-            return QFileSystemModel::data(index, role);
-
-        if (index.column() == exportColumn()) {
+        if (index.isValid() && index.column() == exportColumn()) {
             const QString& path = filePath(index);
             bool value = m_exportValues.value(path, false);
 
-            if (role == Qt::DisplayRole) {
+            /*if (role == Qt::DisplayRole) {
                 return value ? QString("Yes") : QString("No");
-            }
+            }*/
             if (role == Qt::CheckStateRole) {
                 return value ? Qt::Checked : Qt::Unchecked;
             }
+
+            return QVariant();
         }
 
         return QFileSystemModel::data(index, role);
@@ -63,10 +62,7 @@ public:
         const QVariant& value,
         int role) override
     {
-        if (!index.isValid() || index.column() != exportColumn())
-            return QFileSystemModel::setData(index, value, role);
-
-        if (role == Qt::CheckStateRole) {
+        if (index.isValid() && index.column() == exportColumn() && role == Qt::CheckStateRole) {
             bool checked = value.toInt() == Qt::Checked;
             const QString& path = filePath(index);
             m_exportValues[path] = checked;
@@ -79,11 +75,11 @@ public:
     }
 
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
-        if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-            if (section == exportColumn()) {
-                return QString("Export");
-            }
+        if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section == exportColumn())
+        {
+            return QString("Export");
         }
+
         return QFileSystemModel::headerData(section, orientation, role);
     }
 
