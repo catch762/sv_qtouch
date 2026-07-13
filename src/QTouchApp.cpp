@@ -4,8 +4,8 @@
 #include "Interpolation/InterpolationSystem.h"
 
 #include "UIComponents/TopLevelWidgetsContainer.h"
-#include "UiComponents/PresetFileView.h"
-#include "UiComponents/PresetTab.h"
+#include "UiComponents/Presets/PresetFileView.h"
+#include "UiComponents/Presets/PresetTab.h"
 #include <QMenuBar>
 #include <QFileDialog>
 
