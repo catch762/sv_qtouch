@@ -1,10 +1,12 @@
 #pragma once
 #include "sv_qtcommon.h"
-#include <QListView>
+#include <QTableView>
 #include <QFileSystemModel>
 #include <QMenu>
 #include <QMessageBox>
 #include <QInputDialog>
+#include "PresetFileSystemModel.h"
+#include <QHeaderView>
 
 class PresetFileView : public QWidget
 {
@@ -14,27 +16,37 @@ public:
     {
         layout = new QVBoxLayout(this);
 
-        model = new QFileSystemModel(this);
+        model = new PresetFileSystemModel(this);
         model->setRootPath(rootPath);        // start from user home
         model->setReadOnly(false);                   // enable rename/delete
         model->setNameFilters({"*.json"});
         model->setNameFilterDisables(false);
 
-        listView = new QListView(this);
-        listView->setModel(model);
-        listView->setRootIndex(model->index(model->rootPath()));
-        listView->setContextMenuPolicy(Qt::CustomContextMenu);
-        listView->setSelectionMode(QAbstractItemView::MultiSelection);
-        listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        view = new QTableView(this);
+        view->setModel(model);
+        view->setRootIndex(model->index(model->rootPath()));
+        view->setContextMenuPolicy(Qt::CustomContextMenu);
+        view->verticalHeader()->hide();
 
-        connect(listView, &QListView::doubleClicked, this, [this](const QModelIndex &index)
+        int exportCol = model->exportColumn();
+        for (int col = 0; col < model->columnCount(); ++col) {
+            if (col != 0 && col != exportCol) {
+                view->hideColumn(col);
+            }
+        }
+
+
+        //view->setSelectionMode(QAbstractItemView::MultiSelection);
+        //view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+        connect(view, &QTableView::doubleClicked, this, [this](const QModelIndex &index)
         {
             emit presetLoadingRequested(model->fileName(index));
         });
 
-        connect(listView, &QListView::customContextMenuRequested, this, &PresetFileView::onContextMenu);
+        connect(view, &QTableView::customContextMenuRequested, this, &PresetFileView::onContextMenu);
 
-        layout->addWidget(listView);
+        layout->addWidget(view);
     }
 
     bool presetNameExists(const QString& presetFileNameWithExtension)
@@ -48,13 +60,13 @@ public:
         if (!rootPath.isEmpty()) {
         const QModelIndex rootIndex = model->setRootPath(rootPath);
 
-        listView->setRootIndex(rootIndex);
+        view->setRootIndex(rootIndex);
     }
     }
 
     void onContextMenu(const QPoint &pos)
     {
-        const QModelIndex index = listView->indexAt(pos);
+        const QModelIndex index = view->indexAt(pos);
         if (!index.isValid())
             return;
 
@@ -74,9 +86,9 @@ public:
         // Rename action
         QAction *renameAction = menu.addAction("Rename");
         connect(renameAction, &QAction::triggered, this, [this, index]() {
-            const QModelIndex index = listView->currentIndex();
+            const QModelIndex index = view->currentIndex();
             if (index.isValid()) {
-                listView->edit(index);
+                view->edit(index);
             }
         });
 
@@ -117,7 +129,7 @@ public:
             emit presetWasSelectedForMixing(fileName, false);
         });
 
-        menu.exec(listView->viewport()->mapToGlobal(pos));
+        menu.exec(view->viewport()->mapToGlobal(pos));
     }
 
 signals:
@@ -128,7 +140,7 @@ signals:
 private:
     QVBoxLayout* layout = nullptr;
 
-    QListView       *listView = nullptr;
-    QFileSystemModel *model = nullptr;
+    QTableView       *view = nullptr;
+    PresetFileSystemModel* model = nullptr;
 
 };

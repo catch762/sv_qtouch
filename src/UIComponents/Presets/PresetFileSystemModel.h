@@ -12,7 +12,7 @@ public:
     }
 
     // Extra column index (after the default Name/Size/Type/Date)
-    static int exportColumn() { return columnCount() - 1; }
+    int exportColumn() const { return columnCount() - 1; }
 
     // Accessor for the boolean value
     bool exportValue(const QModelIndex& index) const
@@ -32,7 +32,7 @@ public:
         emit dataChanged(index, index, { Qt::CheckStateRole, Qt::DisplayRole });
     }
 
-protected:
+
     int columnCount(const QModelIndex& parent = {}) const override
     {
         // QFileSystemModel has 4 columns by default (Name, Size, Type, Date)
@@ -54,12 +54,37 @@ protected:
             if (role == Qt::CheckStateRole) {
                 return value ? Qt::Checked : Qt::Unchecked;
             }
-            if (role == Qt::AlignmentRole) {
-                return Qt::AlignHCenter | Qt::AlignVCenter;
-            }
         }
 
         return QFileSystemModel::data(index, role);
+    }
+
+    bool setData(const QModelIndex& index,
+        const QVariant& value,
+        int role) override
+    {
+        if (!index.isValid() || index.column() != exportColumn())
+            return QFileSystemModel::setData(index, value, role);
+
+        if (role == Qt::CheckStateRole) {
+            bool checked = value.toInt() == Qt::Checked;
+            const QString& path = filePath(index);
+            m_exportValues[path] = checked;
+
+            emit dataChanged(index, index, { Qt::CheckStateRole, Qt::DisplayRole });
+            return true;
+        }
+
+        return QFileSystemModel::setData(index, value, role);
+    }
+
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
+        if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+            if (section == exportColumn()) {
+                return QString("Export");
+            }
+        }
+        return QFileSystemModel::headerData(section, orientation, role);
     }
 
     Qt::ItemFlags flags(const QModelIndex& index) const override

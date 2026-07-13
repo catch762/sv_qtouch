@@ -32,7 +32,7 @@ void testRunQtouchApp()
 
     app->openProjectDir(projdir);
     
-    app->loadTreeAndWidgetsFromCode({codeFilePath});
+    //app->loadTreeAndWidgetsFromCode({codeFilePath});
 
     app->show();
 };
