@@ -28,10 +28,10 @@ public:
         view->setContextMenuPolicy(Qt::CustomContextMenu);
         view->verticalHeader()->hide();
         view->setSelectionBehavior(QAbstractItemView::SelectRows);
-        view->setSelectionMode(QAbstractItemView::MultiSelection);
+        view->setSelectionMode(QAbstractItemView::ExtendedSelection);
         view->setShowGrid(false);
         
-        int a = 2;
+        int a = 1;
 
         if (a == 1)
         {
