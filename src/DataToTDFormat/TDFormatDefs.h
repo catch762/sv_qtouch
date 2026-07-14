@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include "sv_common.h"
+#include "DataNode/DataNodeHeader.h"
 
 //***********************************************************************************
 //
@@ -32,3 +33,5 @@ SV_DECL_OPT(SUP_Vec4);
 
 using TreeAsVec4Array = std::vector<SUP_Vec4>;
 SV_DECL_OPT(TreeAsVec4Array);
+
+using TreeVarNames = std::vector<NodeAddressString>;

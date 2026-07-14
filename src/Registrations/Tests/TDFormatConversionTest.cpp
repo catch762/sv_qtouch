@@ -71,11 +71,11 @@ TEST_CASE("Converting entire tree to vec<vec4>")
 	};
 
 	TreeAsVec4Array actualResult;
-	auto errOpt = convertTreeToTDFormat(tree, actualResult);
+	auto errOpt = convertTreeToVec4Array(tree, actualResult);
 	
 	if (errOpt)
 	{
-		INFO(std::format("convertTreeToTDFormat failed to convert tree with err {}", *errOpt));
+		INFO(std::format("convertTreeToVec4Array failed to convert tree with err {}", *errOpt));
 		REQUIRE(false);
 	}
 
@@ -84,6 +84,31 @@ TEST_CASE("Converting entire tree to vec<vec4>")
 		FAIL_CHECK(std::format(	"TreeAsVec4Array test mismatch:\n"
 								"EXPECTED: {}\n"
 								"ACTUAL:   {}\n", expectedResult, actualResult));
+
+	}
+
+	TreeVarNames expectedNames = {
+		"root/one/a",
+		"root/one/b",
+		"root/one/c",
+		"root/two/a",
+		"root/two/b",
+		"root/two/c",
+	};
+
+	TreeVarNames actualNames;
+	auto varnamesErrOpt = getVarNamesFromTree(tree, actualNames);
+	if (varnamesErrOpt)
+	{
+		INFO(std::format("getVarNamesFromTree failed to convert tree with err {}", *varnamesErrOpt));
+		REQUIRE(false);
+	}
+
+	if (expectedNames != actualNames)
+	{
+		FAIL_CHECK(std::format("TreeVarNames test mismatch:\n"
+			"EXPECTED: {}\n"
+			"ACTUAL:   {}\n", expectedNames, actualNames));
 
 	}
 }

@@ -1,7 +1,7 @@
 #include "TDFormatTreeConverter.h"
 #include "TDFormatConverterSystem.h"
 
-StringErrOpt convertTreeToTDFormat(DataNodeShared tree, TreeAsVec4Array& result)
+StringErrOpt convertTreeToVec4Array(DataNodeShared tree, TreeAsVec4Array& result)
 {
     SV_ASSERT(tree);
 
@@ -22,6 +22,33 @@ StringErrOpt convertTreeToTDFormat(DataNodeShared tree, TreeAsVec4Array& result)
         }
 
         result.push_back(*convertedVar);
+    });
+
+    return currentError;
+}
+
+StringErrOpt getVarNamesFromTree(DataNodeShared tree, TreeVarNames& result)
+{
+    SV_ASSERT(tree);
+
+    result.clear();
+
+    StringErrOpt currentError;
+
+    DataNode::iterateRecoursively(tree, [&](const DataNodeShared& node)
+    {
+        if (node->isComposite() || currentError.has_value()) return;
+
+        auto addressOrErr = getAddress(node);
+
+        if (auto err = getError(addressOrErr))
+        {
+            currentError = *err;
+            result.clear();
+            return;
+        }
+
+        result.push_back(std::get<0>(addressOrErr));
     });
 
     return currentError;
