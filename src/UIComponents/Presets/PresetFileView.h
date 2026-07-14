@@ -30,75 +30,35 @@ public:
         view->setSelectionBehavior(QAbstractItemView::SelectRows);
         view->setSelectionMode(QAbstractItemView::ExtendedSelection);
         view->setShowGrid(false);
-        
-        int a = 1;
 
-        if (a == -1)
-        {
-            view->setStyleSheet(
-                "QHeaderView::section {"
-                "    font-weight: normal;"
-                "}"
-                "QHeaderView::section:selected {"
-                "    font-weight: normal;"
-                "}"
-                ""
-                "QTableView::item {"
-                "    border: none;"
-                "}"
-                "QTableView::item:selected {"
-                "    background: #f5f5f5;"
-                "    border: none;"
-                "    outline: 0;"
-                "}"
-            );
-        }
-        else if (a == 1)
-        {
-            view->setStyleSheet(R"(
-                QHeaderView::section {
-                    font-weight: normal;
-                }
-                QHeaderView::section:selected {
-                    font-weight: normal;
-                }
-                QTableView::item {
-                    border: none;
-                }
-                QTableView::item:selected {
-                    background: #f5f5f5;
-                    border: none;
-                    outline: 0;
-                }
-                )"
-            );
-        }
-        else if (a == 2)
-        {
-            view->setStyleSheet(
-                "QTableView{\
-                    background-color: #242526;\
-                    gridline-color: #3f4042;\
-                    color: #f0f0f0;\
-                    font-size: 13px;\
-                    selection-background - color: #1a73e8;\
-                    selection-color: #ffffff;\
-                    border: 1px solid #32414B;\
-                }\
-                QTableView::item{\
-                    padding: 6px;\
-                    border-bottom: 1px solid #32414B;\
-                }\
-                QTableView::item:hover{\
-                    background-color: #303134;\
-                }\
-                QTableView::item : selected{\
-                    background-color: #1a73e8;\
-                    color: #ffffff;\
-                }"
-            );
-        }
-        
+        //im only doing it because there are some fucking retarded rules on drawing borders
+        //on focused fields of a row, that i cant remove via stylesheet or anything else.
+        //i also dont see any fucking documentation on this.
+        //but if we just disable focus logic for the widget, borders go away:
+        view->setFocusPolicy(Qt::NoFocus);
+
+        //changes on header view:       disable font becoming bold on click
+        //changes on table view item:   fucking retarded shit, figured by trial and error, i wont even describe.
+        //                              theres no describing this shit and fucking ugly undocumented visual
+        //                              "features" with no clear way to disable them
+        view->setStyleSheet(R"(
+            QHeaderView::section {
+                font-weight: normal;
+            }
+            QHeaderView::section:selected {
+                font-weight: normal;
+            }
+
+            QTableView::item {
+                border: none;
+                color: black;
+            }
+            QTableView::item:selected {
+                border: none;
+                background: rgb(230, 235, 240);
+            }
+            )"
+        );
 
         int exportCol = model->exportColumn();
         for (int col = 0; col < model->columnCount(); ++col) {
