@@ -3,4 +3,4 @@
 #include "DataNode/DataNodeHeader.h"
 
 //result is passed to reuse memory, is cleared at start
-StringErrOpt convertTreeToTDFormat(DataNodeShared tree, TreeAsTDFormatData &result);
+StringErrOpt convertTreeToTDFormat(DataNodeShared tree, TreeAsVec4Array &result);

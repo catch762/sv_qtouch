@@ -30,5 +30,5 @@
 using SUP_Vec4 = std::array<float, 4>;
 SV_DECL_OPT(SUP_Vec4);
 
-using TreeAsTDFormatData = std::vector<SUP_Vec4>;
-SV_DECL_OPT(TreeAsTDFormatData);
+using TreeAsVec4Array = std::vector<SUP_Vec4>;
+SV_DECL_OPT(TreeAsVec4Array);

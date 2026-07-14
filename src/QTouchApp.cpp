@@ -67,7 +67,7 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
                 return;
             }
 
-            TreeAsTDFormatData data;
+            TreeAsVec4Array data;
             if (auto err = convertTreeToTDFormat(rootNode, data))
             {
                 SV_ERROR(*err);

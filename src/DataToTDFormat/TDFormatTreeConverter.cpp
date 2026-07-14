@@ -1,7 +1,7 @@
 #include "TDFormatTreeConverter.h"
 #include "TDFormatConverterSystem.h"
 
-StringErrOpt convertTreeToTDFormat(DataNodeShared tree, TreeAsTDFormatData& result)
+StringErrOpt convertTreeToTDFormat(DataNodeShared tree, TreeAsVec4Array& result)
 {
     SV_ASSERT(tree);
 

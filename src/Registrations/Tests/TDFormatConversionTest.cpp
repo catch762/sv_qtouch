@@ -61,7 +61,7 @@ TEST_CASE("Converting entire tree to vec<vec4>")
 					})
 		});
 
-	TreeAsTDFormatData expectedResult = {
+	TreeAsVec4Array expectedResult = {
 		{60},
 		{6, -1},
 		{10, 700},
@@ -70,7 +70,7 @@ TEST_CASE("Converting entire tree to vec<vec4>")
 		{-700}
 	};
 
-	TreeAsTDFormatData actualResult;
+	TreeAsVec4Array actualResult;
 	auto errOpt = convertTreeToTDFormat(tree, actualResult);
 	
 	if (errOpt)
@@ -81,7 +81,7 @@ TEST_CASE("Converting entire tree to vec<vec4>")
 
 	if (actualResult != expectedResult)
 	{
-		FAIL_CHECK(std::format(	"TreeAsTDFormatData test mismatch:\n"
+		FAIL_CHECK(std::format(	"TreeAsVec4Array test mismatch:\n"
 								"EXPECTED: {}\n"
 								"ACTUAL:   {}\n", expectedResult, actualResult));
 

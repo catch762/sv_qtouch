@@ -3,6 +3,7 @@
 #include "SerializationLogic/SerializationSystem.h"
 #include "WidgetLogic/WidgetMakerSystem.h"
 #include "WidgetLogic/NodeWidget.h"
+#include "Utils.h"
 
 TreeAndTopLevelWidgetsOpt TreeAndWidgetsBuilder::buildTreeAndWidgets(const SUP_Data &data)
 {
@@ -29,7 +30,7 @@ TreeAndTopLevelWidgetsOpt TreeAndWidgetsBuilder::buildTreeAndWidgets(const SUP_D
         return {};
     }
 
-    DataNodeShared root = DataNode::makeComposite();
+    DataNodeShared root = DataNode::makeComposite(QtouchRootName);
     NodeWidgetVec topLevelWidgets;
 
     for(auto &nodeAndWidget : topLevelItems)

@@ -38,7 +38,7 @@ public:
         socket_->disconnectFromHost();
     }
 
-    void sendTreeData(const TreeAsTDFormatData& treeData)
+    void sendTreeData(const TreeAsVec4Array& treeData)
     {
         sendPacket(makePacket(treeData));
     }

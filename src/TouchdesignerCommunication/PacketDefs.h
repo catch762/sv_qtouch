@@ -45,7 +45,7 @@ inline char* packetContentPtr(QByteArray& packet)
     return packet.data() + PacketHeaderSize;
 }
 
-inline QByteArray makePacket(const TreeAsTDFormatData& treeData)
+inline QByteArray makePacket(const TreeAsVec4Array& treeData)
 {
     const auto contentSize  = treeData.size() * sizeof(SUP_Vec4);
     QByteArray packet       = makeArrayForPacket(PacketType::TreeData, contentSize);
