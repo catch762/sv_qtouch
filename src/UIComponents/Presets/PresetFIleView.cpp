@@ -124,12 +124,67 @@ void PresetFileView::setRootPath(const QString& rootPath)
     }
 }
 
+void PresetFileView::deleteSelectedFiles(const QModelIndexList& selectedRows)
+{
+    if (selectedRows.empty()) return;
+
+    QString allPathsInfo;
+
+    QStringList pathsToDelete;
+    int filesCount = 0;
+    int dirsCount = 0;
+    for (const QModelIndex& index : selectedRows)
+    {
+        auto path = model->filePath(index);
+
+        if (QFileInfo(path).isDir())
+        {
+            dirsCount++;
+        }
+        else filesCount++;
+
+        allPathsInfo += QString("\t%1\n").arg(path);
+
+        pathsToDelete.append(path);
+    }
+
+    QString msg = QString("Are you sure you want to delete %1%2%3 ?\n\n%4")
+                    .arg(filesCount ? QString("%1 files").arg(filesCount) : "")
+                    .arg(filesCount && dirsCount ? " and " : "")
+                    .arg(dirsCount ? QString("%1 folders").arg(dirsCount) : "")
+                    .arg(allPathsInfo);
+
+
+    auto reply = QMessageBox::question(this, "Confirm Delete", msg,
+        QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes) return;
+
+    for (const QString& path : pathsToDelete)
+    {
+        const QFileInfo fi(path);
+        if (fi.isDir()) {
+            QDir dir(path);
+            if (!dir.removeRecursively()) {
+                QMessageBox::warning(this, "Error", "Failed to delete directory.");
+            }
+        }
+        else {
+            if (!QFile::remove(path)) {
+                QMessageBox::warning(this, "Error", "Failed to delete file.");
+            }
+        }
+    }
+}
+
 void PresetFileView::onContextMenu(const QPoint& pos)
 {
     //we rely on index being at 0 column strictly. If we rightclicked on other column,
     //we wont be able to get data from that index with non-zero column.
 
-    const QModelIndex index = view->indexAt(pos).siblingAtColumn(0);
+    QModelIndexList selectedRows = view->selectionModel()->selectedRows(0);
+
+    const QModelIndex index = selectedRows.first();
     if (!index.isValid())
         return;
 
@@ -140,6 +195,7 @@ void PresetFileView::onContextMenu(const QPoint& pos)
 
     // Open action
     QAction* openAction = menu.addAction("Load");
+    openAction->setEnabled(selectedRows.size() == 1);
     connect(openAction, &QAction::triggered, this, [fileName, this]()
         {
             //QMessageBox::information(this, "Ok", "Open");
@@ -148,6 +204,7 @@ void PresetFileView::onContextMenu(const QPoint& pos)
 
     // Rename action
     QAction* renameAction = menu.addAction("Rename");
+    renameAction->setEnabled(selectedRows.size() == 1);
     connect(renameAction, &QAction::triggered, this, [this, index]() {
         //const QModelIndex index = view->currentIndex();
         if (index.isValid()) {
@@ -157,7 +214,12 @@ void PresetFileView::onContextMenu(const QPoint& pos)
 
     // Delete action
     QAction* deleteAction = menu.addAction("Delete");
-    connect(deleteAction, &QAction::triggered, this, [this, filePath, index]() {
+    connect(deleteAction, &QAction::triggered, this, [this, selectedRows]()
+    {
+        deleteSelectedFiles(selectedRows);
+        return;
+
+        /*
         const QFileInfo fi(filePath);
         const QString what = fi.isDir() ? "directory" : "file";
         const int ret = QMessageBox::question(
@@ -180,15 +242,19 @@ void PresetFileView::onContextMenu(const QPoint& pos)
                 QMessageBox::warning(this, "Error", "Failed to delete file.");
             }
         }
+        */
+
         });
 
     // Custom actions
     QAction* selectAsA = menu.addAction("Select as mixing preset A");
+    selectAsA->setEnabled(selectedRows.size() == 1);
     connect(selectAsA, &QAction::triggered, this, [&] {
         emit presetWasSelectedForMixing(fileName, true);
         });
 
     QAction* selectAsB = menu.addAction("Select as mixing preset B");
+    selectAsB->setEnabled(selectedRows.size() == 1);
     connect(selectAsB, &QAction::triggered, this, [&] {
         emit presetWasSelectedForMixing(fileName, false);
         });

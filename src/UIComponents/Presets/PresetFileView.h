@@ -25,6 +25,9 @@ signals:
     void presetLoadingRequested(const QString& presetFilename);
 
 private:
+    void deleteSelectedFiles(const QModelIndexList& selectedRows);
+
+private:
     QVBoxLayout* layout = nullptr;
 
     QTableView       *view = nullptr;
