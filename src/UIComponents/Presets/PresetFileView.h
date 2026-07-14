@@ -33,7 +33,7 @@ public:
         
         int a = 1;
 
-        if (a == 1)
+        if (a == -1)
         {
             view->setStyleSheet(
                 "QHeaderView::section {"
@@ -51,6 +51,26 @@ public:
                 "    border: none;"
                 "    outline: 0;"
                 "}"
+            );
+        }
+        else if (a == 1)
+        {
+            view->setStyleSheet(R"(
+                QHeaderView::section {
+                    font-weight: normal;
+                }
+                QHeaderView::section:selected {
+                    font-weight: normal;
+                }
+                QTableView::item {
+                    border: none;
+                }
+                QTableView::item:selected {
+                    background: #f5f5f5;
+                    border: none;
+                    outline: 0;
+                }
+                )"
             );
         }
         else if (a == 2)
