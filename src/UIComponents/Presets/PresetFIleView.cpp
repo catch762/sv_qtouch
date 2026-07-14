@@ -126,7 +126,10 @@ void PresetFileView::setRootPath(const QString& rootPath)
 
 void PresetFileView::onContextMenu(const QPoint& pos)
 {
-    const QModelIndex index = view->indexAt(pos);
+    //we rely on index being at 0 column strictly. If we rightclicked on other column,
+    //we wont be able to get data from that index with non-zero column.
+
+    const QModelIndex index = view->indexAt(pos).siblingAtColumn(0);
     if (!index.isValid())
         return;
 
@@ -146,7 +149,7 @@ void PresetFileView::onContextMenu(const QPoint& pos)
     // Rename action
     QAction* renameAction = menu.addAction("Rename");
     connect(renameAction, &QAction::triggered, this, [this, index]() {
-        const QModelIndex index = view->currentIndex();
+        //const QModelIndex index = view->currentIndex();
         if (index.isValid()) {
             view->edit(index);
         }
