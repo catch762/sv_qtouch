@@ -7,6 +7,21 @@
 #include <QInputDialog>
 #include "PresetFileSystemModel.h"
 #include <QHeaderView>
+#include <QStyledItemDelegate>
+
+class NoIconDelegate : public QStyledItemDelegate {
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+protected:
+    void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override {
+        QStyledItemDelegate::initStyleOption(option, index);
+
+        // Remove the decoration (icon) features and clear the actual icon
+        option->features &= ~QStyleOptionViewItem::HasDecoration;
+        option->icon = QIcon();
+    }
+};
 
 class PresetFileView : public QWidget
 {
@@ -30,6 +45,11 @@ public:
         view->setSelectionBehavior(QAbstractItemView::SelectRows);
         view->setSelectionMode(QAbstractItemView::ExtendedSelection);
         view->setShowGrid(false);
+
+        //NoIconDelegate* delegate = new NoIconDelegate(view);
+
+        // Set it only for column 0 (The Name column in QFileSystemModel)
+        //view->setItemDelegateForColumn(0, delegate);
 
         //im only doing it because there are some fucking retarded rules on drawing borders
         //on focused fields of a row, that i cant remove via stylesheet or anything else.
@@ -60,11 +80,34 @@ public:
             )"
         );
 
+        /*
         int exportCol = model->exportColumn();
         for (int col = 0; col < model->columnCount(); ++col) {
             if (col != 0 && col != exportCol) {
                 view->hideColumn(col);
             }
+        }
+        */
+
+        //Set up horizontal header:
+        {
+            // 1. Get a pointer to the horizontal header
+            QHeaderView* header = view->horizontalHeader();
+
+            // 2. Prevent the user from dragging/reordering columns manually
+            header->setSectionsMovable(false);
+
+            // 3. Configure Column 4 (The Checkbox Column on the right)
+            header->setSectionResizeMode(4, QHeaderView::Fixed); // Lock resize behavior
+            view->setColumnWidth(4, 45);                         // Force width to exactly 50px
+
+            // 4. Configure Column 0 (The Name Column on the left)
+            header->setSectionResizeMode(0, QHeaderView::Stretch); // Automatically takes all remaining space
+
+            // 5. Explicitly hide columns 1, 2, and 3 if they are in your way
+            view->setColumnHidden(1, true);
+            view->setColumnHidden(2, true);
+            view->setColumnHidden(3, true);
         }
 
 
