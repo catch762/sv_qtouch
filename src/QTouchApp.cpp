@@ -158,25 +158,49 @@ bool QTouchApp::savePreset(const QString &presetFilename)
 
     //if it existed, we already got confirmation to delete old file
 
-    auto file = QFileInfo( getPresetsSubdir()->absoluteFilePath(presetFilename) );
-    
-    auto json = SerializerForDataNodeTreeAndItsWidgets::toJson(rootNode);
-    if (!json)
+    // 1) .json
     {
-        SV_ERROR("Save preset failed: serialization to json has failed")
-        return false;
+        auto file = QFileInfo(getPresetsSubdir()->absoluteFilePath(presetFilename));
+
+        auto json = SerializerForDataNodeTreeAndItsWidgets::toJson(rootNode);
+        if (!json)
+        {
+            SV_ERROR("Save preset failed: serialization to json has failed")
+                return false;
+        }
+
+        bool saved = saveJsonValueToFile(*json, file.absoluteFilePath());
+        if (!saved)
+        {
+            SV_ERROR("Save preset failed: writing to json file has failed");
+            return false;
+        }
     }
 
-    bool saved = saveJsonValueToFile(*json, file.absoluteFilePath());
-    if (!saved)
+    // 2) vec4 data file
     {
-        SV_ERROR("Save preset failed: writing to file has failed");
-        return false;
+        TreeAsVec4Array treeAsVec4;
+        if (auto err = convertTreeToVec4Array(rootNode, treeAsVec4))
+        {
+            SV_ERROR(std::format("Save preset failed: convertTreeToVec4Array failed with {}", *err));
+            return false;
+        }
     }
 
-    return true;
+    // 3) var names data file
+    {
+        TreeVarNames treeVarNames;
+        if (auto err = getVarNamesFromTree(rootNode, treeVarNames))
+        {
+            SV_ERROR(std::format("Save preset failed: getVarNamesFromTree failed with {}", *err));
+            return false;
+        }
+    }
+
 
     SV_LOG(std::format("Successfully saved preset to {}", file.absoluteFilePath()));
+
+    return true;
 }
 
 QDirOpt QTouchApp::getProjectDir()
