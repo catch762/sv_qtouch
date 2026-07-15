@@ -57,29 +57,24 @@ void PresetFileSystemModel::removeFileNameFromPresetExportList(const QString& pr
     presetFileNamesToExport.erase(presetFilename);
 }
 
-bool PresetFileSystemModel::savePresetExportListToFile(const QString& filePath)
+QJsonValue PresetFileSystemModel::savePresetExportListToJson() const
 {
-    auto json = Serializer<PresetNamesSet>().toJson(getPresetExportList());
-
-    return saveJsonValueToFile(json, filePath);
+    return Serializer<PresetNamesSet>().toJson(getPresetExportList());
 }
 
-bool PresetFileSystemModel::loadPresetExportListFromFile(const QString& filePath)
+bool PresetFileSystemModel::loadPresetExportListFromJson(const QJsonValue& json)
 {
-    auto json = loadJsonFromFile(filePath);
-    if (!json)
-    {
-        return false;
-    }
-
-    auto loadedSet = Serializer<PresetNamesSet>().fromJson(*json);
+    auto loadedSet = Serializer<PresetNamesSet>().fromJson(json);
     if (!loadedSet)
     {
         return false;
     }
 
     setPresetExportList(std::move(*loadedSet));
+    return true;
 }
+
+
 
 int PresetFileSystemModel::columnCount(const QModelIndex& parent) const
 {

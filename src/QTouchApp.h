@@ -24,13 +24,15 @@ public:
     DataNodeShared getRootNode();
 
     //returns success
-    bool savePreset(const QString& presetFilename);
+    bool savePreset(const QString& presetFilename) const;
+
+    bool saveProject() const;
 
     //**** 1) Checking if project is opened ****
-    bool projectIsOpened();
+    bool projectIsOpened() const;
     //**** 2) So, if project IS opened, these dirs will have value, otherwise they wont ****
-    QDirOpt getProjectDir();
-    QDirOpt    getPresetsSubdir();
+    QDirOpt getProjectDir() const;
+    QDirOpt    getPresetsSubdir() const;
 
 private slots:
     void onPresetMixingActivated(const QString& presetFilenameA, const QString& presetFilenameB, double morphAtoB01);
@@ -69,8 +71,9 @@ private:
     
 
     //returns same as 'projectIsOpened()' and if its not, prints error
-    bool requireProjectIsOpenedFor(const char* forOperation, bool withMsgBox = true);
+    bool requireProjectIsOpenedFor(const char* forOperation, bool withMsgBox = true) const;
 
+    StringErrOpt loadProjectJson(const QString& jsonFilePath);
 
 //Menu bar and its actions:
 private:
@@ -80,6 +83,7 @@ private:
 
     QAction* closeProjectAction = nullptr;
     QAction* loadCodeAction = nullptr;
+    QAction* saveProjectAction = nullptr;
 
 private:
     QDirOpt projectDir; //no value means no project is opened

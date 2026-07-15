@@ -19,6 +19,8 @@ public:
 
     void onContextMenu(const QPoint &pos);
 
+    PresetFileSystemModel* getModel();
+
 signals:
     //selected for preset A or for preset B
     void presetWasSelectedForMixing(const QString& presetFilename, bool selectedForA);

@@ -208,3 +208,8 @@ void PresetFileView::onContextMenu(const QPoint& pos)
 
     menu.exec(view->viewport()->mapToGlobal(pos));
 }
+
+PresetFileSystemModel* PresetFileView::getModel()
+{
+    return model;
+}

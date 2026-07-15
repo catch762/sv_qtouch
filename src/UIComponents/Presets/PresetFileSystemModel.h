@@ -24,8 +24,8 @@ public:
     void addFileNameToPresetExportList(const QString& presetFilename);
     void removeFileNameFromPresetExportList(const QString& presetFilename);
 
-    bool savePresetExportListToFile(const QString& filePath);
-    bool loadPresetExportListFromFile(const QString& filePath);
+    QJsonValue savePresetExportListToJson() const;
+    bool loadPresetExportListFromJson(const QJsonValue& json);
 
     // Extra column index (after the default Name/Size/Type/Date)
     int exportColumn() const;

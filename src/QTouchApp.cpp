@@ -12,6 +12,12 @@
 #include "DataToTDFormat\TDFormatTreeConverter.h"
 #include "Utils.h"
 
+namespace
+{
+    constexpr auto ProjectJsonFileName = "project.json";
+    constexpr auto PresetExportListKey = "presetExportList";
+};
+
 QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
 {
     centralWidget = new QWidget(this);
@@ -147,7 +153,7 @@ bool QTouchApp::loadTreeAndWidgetsUsingPresetFileName(const QString& presetFilen
     return loadTreeAndWidgetsFromPresetFile(filePath);
 }
 
-bool QTouchApp::savePreset(const QString &presetFilename)
+bool QTouchApp::savePreset(const QString &presetFilename) const
 {
     if (!requireProjectIsOpenedFor("Preset saving")) return false;
 
@@ -204,12 +210,71 @@ bool QTouchApp::savePreset(const QString &presetFilename)
     return true;
 }
 
-QDirOpt QTouchApp::getProjectDir()
+bool QTouchApp::saveProject() const
+{
+    if (!requireProjectIsOpenedFor("Project saving")) return false;
+
+    const auto saveFilePath = getProjectDir()->absoluteFilePath(ProjectJsonFileName);
+
+    QJsonObject json;
+
+    json[PresetExportListKey] = presetTab->getPresetView()->getModel()->savePresetExportListToJson();
+
+    if (!saveJsonValueToFile(json, saveFilePath))
+    {
+        SV_MSGBOX_ERROR("saveProject: saveJsonValueToFile failed");
+        return false;
+    }
+
+    return true;
+}
+
+StringErrOpt QTouchApp::loadProjectJson(const QString& jsonFilePath)
+{
+    auto fmtErr = [&](const std::string& text)
+    {
+        return std::format("loadProjectJson[{}] failed with error: {}", jsonFilePath, text);
+    };
+
+    if (!QFile::exists(jsonFilePath))
+    {
+        //perfectly fine. no data = all default
+        return {};
+    }
+
+    auto json = loadJsonFromFile(jsonFilePath);
+    if (!json)
+    {
+        return fmtErr("File exists, but couldnt parse json.");
+    }
+
+    auto jsonObj = convertJson<QJsonObject>(*json);
+    if (!jsonObj)
+    {
+        return fmtErr("Couldnt convert root to QJsonObject");
+    }
+
+    if (!jsonObj->contains(PresetExportListKey))
+    {
+        return fmtErr(std::format("No key {} !", PresetExportListKey));
+    }
+
+    auto presetExportListJson = (*jsonObj)[PresetExportListKey];
+
+    if (!presetTab->getPresetView()->getModel()->loadPresetExportListFromJson(presetExportListJson))
+    {
+        return fmtErr("preset model couldnt loadPresetExportListFromJson() from what was provided");
+    }
+
+    return {};
+}
+
+QDirOpt QTouchApp::getProjectDir() const
 {
     return projectDir;
 }
 
-QDirOpt QTouchApp::getPresetsSubdir()
+QDirOpt QTouchApp::getPresetsSubdir() const
 {
     if (projectDir) return QDir(projectDir->filePath("presets"));
     else return {};
@@ -256,10 +321,17 @@ bool QTouchApp::openProjectDir(const QDir &newProjectDir)
     }
 
     presetTab->getPresetView()->setRootPath(getPresetsSubdir()->absolutePath());
+
+    if (auto err = loadProjectJson(getProjectDir()->absoluteFilePath(ProjectJsonFileName)))
+    {
+        SV_MSGBOX_ERROR(*err);
+    }
+
     //presetTab->setEnabled(true);
 
     centralWidget->setEnabled(true);
     closeProjectAction->setEnabled(true);
+    saveProjectAction->setEnabled(true);
     loadCodeAction->setEnabled(true);
 
     SV_LOG(std::format("Successfully opened project folder [{}]", projectDir->absolutePath()));
@@ -301,6 +373,16 @@ void QTouchApp::initMenuBar()
 {
     auto* projectMenu = menuBar()->addMenu("Project");
     projectMenu->addAction("Create or open existing project", this, &QTouchApp::createOrOpenProjectAction);
+
+    {
+        saveProjectAction = new QAction("Save project", this);
+        connect(saveProjectAction, &QAction::triggered, [this]()
+        {
+            loadProjectJson(getProjectDir()->absoluteFilePath(ProjectJsonFileName));
+        });
+
+        projectMenu->addAction(saveProjectAction);
+    }
 
     {
         closeProjectAction = new QAction("Close project", this);
@@ -361,15 +443,16 @@ void QTouchApp::closeProject()
     centralWidget->setDisabled(true);
 
     closeProjectAction->setDisabled(true);
+    saveProjectAction->setDisabled(true);
     loadCodeAction->setDisabled(true);
 }
 
-bool QTouchApp::projectIsOpened()
+bool QTouchApp::projectIsOpened() const
 {
     return projectDir.has_value();
 }
 
-bool QTouchApp::requireProjectIsOpenedFor(const char *forOperation, bool withMsgBox)
+bool QTouchApp::requireProjectIsOpenedFor(const char *forOperation, bool withMsgBox) const
 {
     bool isOpened = projectIsOpened();
 
