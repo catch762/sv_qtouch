@@ -24,6 +24,19 @@ const std::set<QString> PresetFileSystemModel::getPresetExportList() const
     return presetFileNamesToExport;
 }
 
+void PresetFileSystemModel::setPresetExportList(std::set<QString> newPresetFileNamesToExport)
+{
+    // 1. Update the internal set data
+    presetFileNamesToExport = std::move(newPresetFileNamesToExport);
+
+    // 2. Identify the boundaries of the top-level items
+    QModelIndex topLeft     = index(0,              exportColumn());
+    QModelIndex bottomRight = index(rowCount() - 1, exportColumn());
+
+    // 3. Notify all connected views to refresh this entire column
+    emit dataChanged(topLeft, bottomRight, { Qt::CheckStateRole });
+}
+
 bool PresetFileSystemModel::fileNameIsInPresetExportList(const QString& presetFilename) const
 {
     return presetFileNamesToExport.contains(presetFilename);
