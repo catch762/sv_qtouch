@@ -11,15 +11,21 @@ class PresetFileSystemModel : public QFileSystemModel
     Q_OBJECT
 
 public:
+    using PresetNamesSet = std::set<QString>;
+    SV_DECL_OPT(PresetNamesSet);
+
     explicit PresetFileSystemModel(QObject* parent = nullptr);
 
-    const std::set<QString> getPresetExportList() const;
-    void setPresetExportList(std::set<QString> newPresetFileNamesToExport);
+    const PresetNamesSet& getPresetExportList() const;
+    void setPresetExportList(PresetNamesSet newPresetFileNamesToExport);
 
     bool fileNameIsInPresetExportList(const QString& presetFilename) const;
     bool indexIsInPresetExportList(const QModelIndex& index) const;
     void addFileNameToPresetExportList(const QString& presetFilename);
     void removeFileNameFromPresetExportList(const QString& presetFilename);
+
+    bool savePresetExportListToFile(const QString& filePath);
+    bool loadPresetExportListFromFile(const QString& filePath);
 
     // Extra column index (after the default Name/Size/Type/Date)
     int exportColumn() const;

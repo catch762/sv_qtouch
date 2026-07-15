@@ -1,5 +1,10 @@
 #include "PresetFileSystemModel.h"
 
+
+//todo
+#include "Registrations/DefaultSerializers.h"
+#include "Registrations/Utils/ContainerSerializers.h"
+
 PresetFileSystemModel::PresetFileSystemModel(QObject* parent)
     : QFileSystemModel(parent) {
 }
@@ -19,7 +24,7 @@ bool PresetFileSystemModel::indexIsInPresetExportList(const QModelIndex& index) 
     return fileNameIsInPresetExportList(fileName(makeFirstColumnIndex(index)));
 }
 
-const std::set<QString> PresetFileSystemModel::getPresetExportList() const
+const std::set<QString>& PresetFileSystemModel::getPresetExportList() const
 {
     return presetFileNamesToExport;
 }
@@ -50,6 +55,30 @@ void PresetFileSystemModel::addFileNameToPresetExportList(const QString& presetF
 void PresetFileSystemModel::removeFileNameFromPresetExportList(const QString& presetFilename)
 {
     presetFileNamesToExport.erase(presetFilename);
+}
+
+bool PresetFileSystemModel::savePresetExportListToFile(const QString& filePath)
+{
+    auto json = Serializer<PresetNamesSet>().toJson(getPresetExportList());
+
+    return saveJsonValueToFile(json, filePath);
+}
+
+bool PresetFileSystemModel::loadPresetExportListFromFile(const QString& filePath)
+{
+    auto json = loadJsonFromFile(filePath);
+    if (!json)
+    {
+        return false;
+    }
+
+    auto loadedSet = Serializer<PresetNamesSet>().fromJson(*json);
+    if (!loadedSet)
+    {
+        return false;
+    }
+
+    setPresetExportList(std::move(*loadedSet));
 }
 
 int PresetFileSystemModel::columnCount(const QModelIndex& parent) const
