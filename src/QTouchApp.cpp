@@ -376,10 +376,7 @@ void QTouchApp::initMenuBar()
 
     {
         saveProjectAction = new QAction("Save project", this);
-        connect(saveProjectAction, &QAction::triggered, [this]()
-        {
-            loadProjectJson(getProjectDir()->absoluteFilePath(ProjectJsonFileName));
-        });
+        connect(saveProjectAction, &QAction::triggered, this, &QTouchApp::saveProject);
 
         projectMenu->addAction(saveProjectAction);
     }
