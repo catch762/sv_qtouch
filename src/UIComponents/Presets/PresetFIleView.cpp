@@ -18,6 +18,7 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
     view->setContextMenuPolicy(Qt::CustomContextMenu);
     view->setSelectionBehavior(QAbstractItemView::SelectRows);
     view->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    view->setEditTriggers(QAbstractItemView::NoEditTriggers); // !
     view->setShowGrid(false);
 
     //im only doing it because there are some fucking retarded rules on drawing borders
