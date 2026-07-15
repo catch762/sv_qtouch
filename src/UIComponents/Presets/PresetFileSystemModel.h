@@ -35,6 +35,8 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
+    QModelIndex makeFirstColumnIndex(const QModelIndex& index) const;
+
 private:
     std::set<QString> presetFileNamesToExport;
 };

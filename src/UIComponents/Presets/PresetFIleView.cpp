@@ -71,7 +71,7 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
 
     connect(view, &QTableView::doubleClicked, this, [this](const QModelIndex& index)
     {
-        emit presetLoadingRequested(model->fileName(makeFirstColumnIndex(index)));
+        emit presetLoadingRequested(model->fileName(model->makeFirstColumnIndex(index)));
     });
 
     connect(view, &QTableView::customContextMenuRequested, this, &PresetFileView::onContextMenu);
@@ -149,11 +149,6 @@ void PresetFileView::deleteSelectedFiles(const QModelIndexList& selectedRows)
             }
         }
     }
-}
-
-QModelIndex PresetFileView::makeFirstColumnIndex(const QModelIndex& index)
-{
-    return index.sibling(index.row(), 0);
 }
 
 void PresetFileView::onContextMenu(const QPoint& pos)

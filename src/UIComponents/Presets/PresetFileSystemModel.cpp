@@ -16,7 +16,7 @@ bool PresetFileSystemModel::indexIsInPresetExportList(const QModelIndex& index) 
         return false;
     }
 
-    return fileNameIsInPresetExportList(fileName(index));
+    return fileNameIsInPresetExportList(fileName(makeFirstColumnIndex(index)));
 }
 
 const std::set<QString> PresetFileSystemModel::getPresetExportList() const
@@ -64,13 +64,15 @@ bool PresetFileSystemModel::setData(const QModelIndex& index, const QVariant& va
 {
     if (index.isValid() && !isDir(index) && index.column() == exportColumn() && role == Qt::CheckStateRole)
     {
+        const auto filename = fileName(makeFirstColumnIndex(index));
+
         if (value.toInt() == Qt::Checked)
         {
-            addFileNameToPresetExportList(fileName(index));
+            addFileNameToPresetExportList(filename);
         }
         else
         {
-            removeFileNameFromPresetExportList(fileName(index));
+            removeFileNameFromPresetExportList(filename);
         }
 
         emit dataChanged(index, index, { Qt::CheckStateRole, Qt::DisplayRole });
@@ -97,4 +99,9 @@ Qt::ItemFlags PresetFileSystemModel::flags(const QModelIndex& index) const
         f |= Qt::ItemIsUserCheckable;
     }
     return f;
+}
+
+inline QModelIndex PresetFileSystemModel::makeFirstColumnIndex(const QModelIndex& index) const
+{
+    return index.sibling(index.row(), 0);
 }
