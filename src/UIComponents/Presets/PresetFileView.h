@@ -26,6 +26,7 @@ signals:
 
 private:
     void deleteSelectedFiles(const QModelIndexList& selectedRows);
+    QModelIndex makeFirstColumnIndex(const QModelIndex& index);
 
 private:
     QVBoxLayout* layout = nullptr;

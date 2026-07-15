@@ -7,91 +7,34 @@ class PresetFileSystemModel : public QFileSystemModel
     Q_OBJECT
 
 public:
-    explicit PresetFileSystemModel(QObject* parent = nullptr)
-        : QFileSystemModel(parent) {
-    }
+    explicit PresetFileSystemModel(QObject* parent = nullptr);
 
     // Extra column index (after the default Name/Size/Type/Date)
-    int exportColumn() const { return columnCount() - 1; }
+    int exportColumn() const;
 
     // Accessor for the boolean value
-    bool exportValue(const QModelIndex& index) const
-    {
-        if (!index.isValid() || index.column() != exportColumn())
-            return false;
-        const QString& path = filePath(index);
-        return m_exportValues.value(path, false);
-    }
+    bool indexIsInPresetExportList(const QModelIndex& index) const;
 
-    void setExportValue(const QModelIndex& index, bool value)
-    {
-        if (!index.isValid() || index.column() != exportColumn())
-            return;
-        const QString& path = filePath(index);
-        m_exportValues[path] = value;
-        emit dataChanged(index, index, { Qt::CheckStateRole, Qt::DisplayRole });
-    }
+    const std::set<QString> getPresetExportList() const;
 
+    bool fileNameIsInPresetExportList(const QString& presetFilename) const;
 
-    int columnCount(const QModelIndex& parent = {}) const override
-    {
-        // QFileSystemModel has 4 columns by default (Name, Size, Type, Date)
-        return QFileSystemModel::columnCount(parent) + 1;
-    }
+    void addFileNameToPresetExportList(const QString& presetFilename);
 
-    QVariant data(const QModelIndex& index, int role) const override
-    {
-        if (index.isValid() && index.column() == exportColumn()) {
-            const QString& path = filePath(index);
-            bool value = m_exportValues.value(path, false);
+    void removeFileNameFromPresetExportList(const QString& presetFilename);
 
-            /*if (role == Qt::DisplayRole) {
-                return value ? QString("Yes") : QString("No");
-            }*/
-            if (role == Qt::CheckStateRole) {
-                return value ? Qt::Checked : Qt::Unchecked;
-            }
+    int columnCount(const QModelIndex& parent = {}) const override;
 
-            return QVariant();
-        }
-
-        return QFileSystemModel::data(index, role);
-    }
+    QVariant data(const QModelIndex& index, int role) const override;
 
     bool setData(const QModelIndex& index,
         const QVariant& value,
-        int role) override
-    {
-        if (index.isValid() && index.column() == exportColumn() && role == Qt::CheckStateRole) {
-            bool checked = value.toInt() == Qt::Checked;
-            const QString& path = filePath(index);
-            m_exportValues[path] = checked;
+        int role) override;
 
-            emit dataChanged(index, index, { Qt::CheckStateRole, Qt::DisplayRole });
-            return true;
-        }
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
-        return QFileSystemModel::setData(index, value, role);
-    }
-
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const override {
-        if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section == exportColumn())
-        {
-            return QString("Export");
-        }
-
-        return QFileSystemModel::headerData(section, orientation, role);
-    }
-
-    Qt::ItemFlags flags(const QModelIndex& index) const override
-    {
-        Qt::ItemFlags f = QFileSystemModel::flags(index);
-        if (index.isValid() && index.column() == exportColumn()) {
-            f |= Qt::ItemIsUserCheckable;
-        }
-        return f;
-    }
+    Qt::ItemFlags flags(const QModelIndex& index) const override;
 
 private:
-    QHash<QString, bool> m_exportValues;
+    std::set<QString> presetFileNamesToExport;
 };

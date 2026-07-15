@@ -2,21 +2,6 @@
 #include <QHeaderView>
 #include <QStyledItemDelegate>
 
-//unused but if u wanted to remove that json file icon:
-class NoIconDelegate : public QStyledItemDelegate {
-public:
-    using QStyledItemDelegate::QStyledItemDelegate;
-
-protected:
-    void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override {
-        QStyledItemDelegate::initStyleOption(option, index);
-
-        // Remove the decoration (icon) features and clear the actual icon
-        option->features &= ~QStyleOptionViewItem::HasDecoration;
-        option->icon = QIcon();
-    }
-};
-
 PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidget(parent)
 {
     layout = new QVBoxLayout(this);
@@ -35,10 +20,6 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
     view->setSelectionMode(QAbstractItemView::ExtendedSelection);
     view->setShowGrid(false);
 
-    //Disable json icons:
-    //NoIconDelegate* delegate = new NoIconDelegate(view);
-    //view->setItemDelegateForColumn(0, delegate);
-
     //im only doing it because there are some fucking retarded rules on drawing borders
     //on focused fields of a row, that i cant remove via stylesheet or anything else.
     //i also dont see any fucking documentation on this.
@@ -46,9 +27,7 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
     view->setFocusPolicy(Qt::NoFocus);
 
     //changes on header view:       disable font becoming bold on click
-    //changes on table view item:   fucking retarded shit, figured by trial and error, i wont even describe.
-    //                              theres no describing this shit and fucking ugly undocumented visual
-    //                              "features" with no clear way to disable them
+    //changes on table view item:   this removes some fucking retarded undocumented visual crap, i wont even explain
     view->setStyleSheet(R"(
             QHeaderView::section {
                 font-weight: normal;
@@ -68,16 +47,7 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
             )"
     );
 
-    /*
-    int exportCol = model->exportColumn();
-    for (int col = 0; col < model->columnCount(); ++col) {
-    if (col != 0 && col != exportCol) {
-    view->hideColumn(col);
-    }
-    }
-    */
-
-    //Set up header:
+    //Set up headers:
     {
         const int columnName = 0;
         const int columnExport = model->exportColumn();
@@ -100,9 +70,9 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
     }
 
     connect(view, &QTableView::doubleClicked, this, [this](const QModelIndex& index)
-        {
-            emit presetLoadingRequested(model->fileName(index));
-        });
+    {
+        emit presetLoadingRequested(model->fileName(makeFirstColumnIndex(index)));
+    });
 
     connect(view, &QTableView::customContextMenuRequested, this, &PresetFileView::onContextMenu);
 
@@ -117,7 +87,8 @@ bool PresetFileView::presetNameExists(const QString& presetFileNameWithExtension
 
 void PresetFileView::setRootPath(const QString& rootPath)
 {
-    if (!rootPath.isEmpty()) {
+    if (!rootPath.isEmpty())
+    {
         const QModelIndex rootIndex = model->setRootPath(rootPath);
 
         view->setRootIndex(rootIndex);
@@ -155,26 +126,34 @@ void PresetFileView::deleteSelectedFiles(const QModelIndexList& selectedRows)
                     .arg(allPathsInfo);
 
 
-    auto reply = QMessageBox::question(this, "Confirm Delete", msg,
-        QMessageBox::Yes | QMessageBox::No);
+    auto reply = QMessageBox::question(this, "Confirm Delete", msg, QMessageBox::Yes | QMessageBox::No);
 
     if (reply != QMessageBox::Yes) return;
 
     for (const QString& path : pathsToDelete)
     {
         const QFileInfo fi(path);
-        if (fi.isDir()) {
+        if (fi.isDir())
+        {
             QDir dir(path);
-            if (!dir.removeRecursively()) {
+            if (!dir.removeRecursively())
+            {
                 QMessageBox::warning(this, "Error", "Failed to delete directory.");
             }
         }
-        else {
-            if (!QFile::remove(path)) {
+        else
+        {
+            if (!QFile::remove(path))
+            {
                 QMessageBox::warning(this, "Error", "Failed to delete file.");
             }
         }
     }
+}
+
+QModelIndex PresetFileView::makeFirstColumnIndex(const QModelIndex& index)
+{
+    return index.sibling(index.row(), 0);
 }
 
 void PresetFileView::onContextMenu(const QPoint& pos)
@@ -193,71 +172,43 @@ void PresetFileView::onContextMenu(const QPoint& pos)
 
     QMenu menu(this);
 
-    // Open action
     QAction* openAction = menu.addAction("Load");
     openAction->setEnabled(selectedRows.size() == 1);
     connect(openAction, &QAction::triggered, this, [fileName, this]()
-        {
-            //QMessageBox::information(this, "Ok", "Open");
-            emit presetLoadingRequested(fileName);
-        });
+    {
+        emit presetLoadingRequested(fileName);
+    });
 
-    // Rename action
     QAction* renameAction = menu.addAction("Rename");
     renameAction->setEnabled(selectedRows.size() == 1);
-    connect(renameAction, &QAction::triggered, this, [this, index]() {
-        //const QModelIndex index = view->currentIndex();
-        if (index.isValid()) {
+    connect(renameAction, &QAction::triggered, this, [this, index]()
+    {
+        if (index.isValid())
+        {
             view->edit(index);
         }
-        });
+    });
 
-    // Delete action
     QAction* deleteAction = menu.addAction("Delete");
     connect(deleteAction, &QAction::triggered, this, [this, selectedRows]()
     {
         deleteSelectedFiles(selectedRows);
-        return;
-
-        /*
-        const QFileInfo fi(filePath);
-        const QString what = fi.isDir() ? "directory" : "file";
-        const int ret = QMessageBox::question(
-            this,
-            "Confirm",
-            QString("Delete %1 \"%2\"?").arg(what).arg(fi.fileName())
-        );
-
-        if (ret != QMessageBox::Yes)
-            return;
-
-        if (fi.isDir()) {
-            QDir dir(filePath);
-            if (!dir.removeRecursively()) {
-                QMessageBox::warning(this, "Error", "Failed to delete directory.");
-            }
-        }
-        else {
-            if (!QFile::remove(filePath)) {
-                QMessageBox::warning(this, "Error", "Failed to delete file.");
-            }
-        }
-        */
-
-        });
+    });
 
     // Custom actions
     QAction* selectAsA = menu.addAction("Select as mixing preset A");
     selectAsA->setEnabled(selectedRows.size() == 1);
-    connect(selectAsA, &QAction::triggered, this, [&] {
+    connect(selectAsA, &QAction::triggered, this, [&]
+    {
         emit presetWasSelectedForMixing(fileName, true);
-        });
+    });
 
     QAction* selectAsB = menu.addAction("Select as mixing preset B");
     selectAsB->setEnabled(selectedRows.size() == 1);
-    connect(selectAsB, &QAction::triggered, this, [&] {
+    connect(selectAsB, &QAction::triggered, this, [&]
+    {
         emit presetWasSelectedForMixing(fileName, false);
-        });
+    });
 
     menu.exec(view->viewport()->mapToGlobal(pos));
 }

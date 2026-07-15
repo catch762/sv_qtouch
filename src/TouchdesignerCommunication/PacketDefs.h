@@ -52,12 +52,12 @@ inline char* packetContentPtr(QByteArray& packet)
 //
 // Return value: pointer to next byte after data written. (may be invalid, if we are at the end)
 
-uint32_t stringSectionSize(const std::string& str)
+inline uint32_t stringSectionSize(const std::string& str)
 {
     return sizeof(uint32_t) + str.size();
 }
 
-char* writeStringSectionToPacket(char* memoryOfPacket, const std::string& str)
+inline char* writeStringSectionToPacket(char* memoryOfPacket, const std::string& str)
 {
     const uint32_t stringLength = str.size();
 
@@ -79,12 +79,12 @@ inline QByteArrayOpt makePacket(const TreeAsVec4Array& treeData, const std::stri
 {
     if (treeData.empty())
     {
-        SV_ERROR("Surely you didnt mean to make packet with empty tree data");
+        SV_ERROR("makePacket error: Surely you didnt mean to make packet with empty tree data");
         return {};
     }
     if (presetName.empty())
     {
-        SV_ERROR("Surely you didnt mean to make packet with empty preset name");
+        SV_ERROR("makePacket error: Surely you didnt mean to make packet with empty preset name");
         return {};
     }
 
@@ -106,12 +106,12 @@ inline QByteArrayOpt makePacket(const TreeVarNames& varNames, const std::string&
 {
     if (varNames.empty())
     {
-        SV_ERROR("Surely you didnt mean to make packet with empty varNames data");
+        SV_ERROR("makePacket error: Surely you didnt mean to make packet with empty varNames data");
         return {};
     }
     if (presetName.empty())
     {
-        SV_ERROR("Surely you didnt mean to make packet with empty preset name");
+        SV_ERROR("makePacket error: Surely you didnt mean to make packet with empty preset name");
         return {};
     }
 

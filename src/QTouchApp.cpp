@@ -10,6 +10,7 @@
 #include <QFileDialog>
 
 #include "DataToTDFormat\TDFormatTreeConverter.h"
+#include "Utils.h"
 
 QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
 {
@@ -73,7 +74,7 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
                 SV_ERROR(*err);
             }
 
-            tdClient->sendTreeData(data);
+            tdClient->sendTreeData(data, QTouchUITreePresetName);
         });
 
         lay->addWidget(doConnect);
@@ -198,7 +199,7 @@ bool QTouchApp::savePreset(const QString &presetFilename)
     }
 
 
-    SV_LOG(std::format("Successfully saved preset to {}", file.absoluteFilePath()));
+    SV_LOG(std::format("Successfully saved preset {}", presetFilename));
 
     return true;
 }

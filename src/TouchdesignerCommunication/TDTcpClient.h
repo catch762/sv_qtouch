@@ -38,9 +38,13 @@ public:
         socket_->disconnectFromHost();
     }
 
-    void sendTreeData(const TreeAsVec4Array& treeData)
+    void sendTreeData(const TreeAsVec4Array& treeData, const std::string& presetName)
     {
-        sendPacket(makePacket(treeData));
+        if (auto packet = makePacket(treeData, presetName))
+        {
+            sendPacket(*packet);
+        }
+        else SV_ERROR("sendTreeData error: couldnt create packet")
     }
 
     void sendPacket(const QByteArray& packet)
