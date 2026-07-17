@@ -7,6 +7,8 @@
 
 #include "TouchdesignerCommunication/TDTcpCLient.h"
 
+#include "QTouchDefs.h"
+
 class PresetTab;
 class TopLevelWidgetsContainer;
 class QTouchApp : public QMainWindow
@@ -14,9 +16,9 @@ class QTouchApp : public QMainWindow
 public:
     QTouchApp(QWidget *parent = nullptr);
 
-    bool loadTreeAndWidgetsFromCode(const QStringVec& codeFilePaths);
-    bool loadTreeAndWidgetsFromPresetFile(const QString& filePath);
-    bool loadTreeAndWidgetsUsingPresetFileName(const QString& presetFilename);
+    bool loadTreeAndWidgetsFromCode             (const QStringVec& codeFilePaths);
+    bool loadTreeAndWidgetsFromPresetFile       (const QString& filePath);
+    bool loadTreeAndWidgetsUsingPresetFileName  (const PresetNameString& presetName);
 
     //returns success
     bool openProjectDir(const QDir& newProjectDir);
@@ -24,7 +26,7 @@ public:
     DataNodeShared getRootNode();
 
     //returns success
-    bool savePreset(const QString& presetFilename) const;
+    bool savePreset(const PresetNameString& presetName) const;
 
     bool saveProject() const;
 
@@ -35,14 +37,14 @@ public:
     QDirOpt    getPresetsSubdir() const;
 
 private slots:
-    void onPresetMixingActivated(const QString& presetFilenameA, const QString& presetFilenameB, double morphAtoB01);
+    void onPresetMixingActivated(const PresetNameString& presetNameA, const PresetNameString& presetNameB, double morphAtoB01);
     
 private:
     struct LoadedPreset
     {
     public:
         DataNodeShared rootNode;
-        QString fileName; //yes, just filename from presets subdir, not path
+        PresetNameString loadedPresetName;
 
     public:
         enum Result
@@ -51,7 +53,7 @@ private:
             JustLoadedThisFile,
             AlreadyHadThisFile
         };
-        Result loadFileIfItsNotLoadedYet(const QDir& presetsDir, const QString& presetFileName);
+        Result loadPresetIfItsNotLoadedYet(const PresetNameString& presetName, const QString& jsonPresetFilePath);
         void clear();
     };
 
@@ -67,7 +69,7 @@ private:
     static std::optional< std::tuple<DataNodeShared, NodeWidgetVec> > createTreeAndWidgetsFromFile(const QString& filePath);
 
     
-
+    QString absPathForPresetJsonFile(const PresetNameString& presetName) const;
     
 
     //returns same as 'projectIsOpened()' and if its not, prints error

@@ -3,7 +3,7 @@
 #include "SerializationLogic/SerializationSystem.h"
 #include "WidgetLogic/WidgetMakerSystem.h"
 #include "WidgetLogic/NodeWidget.h"
-#include "Utils.h"
+#include "QTouchDefs.h"
 
 TreeAndTopLevelWidgetsOpt TreeAndWidgetsBuilder::buildTreeAndWidgets(const SUP_Data &data)
 {

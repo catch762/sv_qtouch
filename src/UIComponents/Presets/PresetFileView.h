@@ -5,7 +5,7 @@
 #include <QMessageBox>
 #include <QInputDialog>
 #include "PresetFileSystemModel.h"
-
+#include "QTouchDefs.h"
 
 class PresetFileView : public QWidget
 {
@@ -13,7 +13,7 @@ class PresetFileView : public QWidget
 public:
     PresetFileView(const QString& rootPath, QWidget* parent = nullptr);
 
-    bool presetNameExists(const QString& presetFileNameWithExtension);
+    bool presetNameExists(const PresetNameString& presetName);
 
     void setRootPath(const QString& rootPath);
 
@@ -23,8 +23,8 @@ public:
 
 signals:
     //selected for preset A or for preset B
-    void presetWasSelectedForMixing(const QString& presetFilename, bool selectedForA);
-    void presetLoadingRequested(const QString& presetFilename);
+    void presetWasSelectedForMixing (const PresetNameString& presetName, bool selectedForA);
+    void presetLoadingRequested     (const PresetNameString& presetName);
 
 private:
     void deleteSelectedFiles(const QModelIndexList& selectedRows);

@@ -62,9 +62,9 @@ public:
         return mixModeOnButton->isChecked();
     }
 signals:
-    void presetMixingActivated(const QString& presetFilenameA, const QString& presetFilenameB, double morphAtoB01);
+    void presetMixingActivated(const PresetNameString& presetNameA, const PresetNameString& presetNameB, double morphAtoB01);
     void presetMixingDeactivated();
-    void presetSavingRequested(const QString& presetFilename);
+    void presetSavingRequested(const PresetNameString& presetName);
 
 private slots:
     void onSavePresetClicked();

@@ -80,9 +80,12 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
     layout->addWidget(view);
 }
 
-bool PresetFileView::presetNameExists(const QString& presetFileNameWithExtension)
+bool PresetFileView::presetNameExists(const PresetNameString& presetName)
 {
-    bool exists = QFileInfo(model->rootDirectory().absoluteFilePath(presetFileNameWithExtension)).isFile();
+    bool exists = QFileInfo(
+        model->rootDirectory().absoluteFilePath(getPresetJsonFileName(presetName))
+    ).isFile();
+
     return exists;
 }
 
@@ -107,6 +110,8 @@ void PresetFileView::deleteSelectedFiles(const QModelIndexList& selectedRows)
     int dirsCount = 0;
     for (const QModelIndex& index : selectedRows)
     {
+        SV_ASSERT(index.column() == 0);
+
         auto path = model->filePath(index);
 
         if (QFileInfo(path).isDir())
@@ -159,29 +164,28 @@ void PresetFileView::onContextMenu(const QPoint& pos)
 
     QModelIndexList selectedRows = view->selectionModel()->selectedRows(0);
 
-    const QModelIndex index = selectedRows.first();
-    if (!index.isValid())
+    const QModelIndex firstSelectedIndex = selectedRows.first();
+    if (!firstSelectedIndex.isValid())
         return;
 
-    const QString filePath = model->filePath(index);
-    const QString fileName = model->fileName(index);
+    const PresetNameString presetName = getFileNameWithoutExtension( model->fileName(firstSelectedIndex) );
 
     QMenu menu(this);
 
     QAction* openAction = menu.addAction("Load");
     openAction->setEnabled(selectedRows.size() == 1);
-    connect(openAction, &QAction::triggered, this, [fileName, this]()
+    connect(openAction, &QAction::triggered, this, [presetName, this]()
     {
-        emit presetLoadingRequested(fileName);
+        emit presetLoadingRequested(presetName);
     });
 
     QAction* renameAction = menu.addAction("Rename");
     renameAction->setEnabled(selectedRows.size() == 1);
-    connect(renameAction, &QAction::triggered, this, [this, index]()
+    connect(renameAction, &QAction::triggered, this, [this, firstSelectedIndex]()
     {
-        if (index.isValid())
+        if (firstSelectedIndex.isValid())
         {
-            view->edit(index);
+            view->edit(firstSelectedIndex);
         }
     });
 
@@ -194,16 +198,16 @@ void PresetFileView::onContextMenu(const QPoint& pos)
     // Custom actions
     QAction* selectAsA = menu.addAction("Select as mixing preset A");
     selectAsA->setEnabled(selectedRows.size() == 1);
-    connect(selectAsA, &QAction::triggered, this, [&]
+    connect(selectAsA, &QAction::triggered, this, [this, presetName]
     {
-        emit presetWasSelectedForMixing(fileName, true);
+        emit presetWasSelectedForMixing(presetName, true);
     });
 
     QAction* selectAsB = menu.addAction("Select as mixing preset B");
     selectAsB->setEnabled(selectedRows.size() == 1);
-    connect(selectAsB, &QAction::triggered, this, [&]
+    connect(selectAsB, &QAction::triggered, this, [this, presetName]
     {
-        emit presetWasSelectedForMixing(fileName, false);
+        emit presetWasSelectedForMixing(presetName, false);
     });
 
     menu.exec(view->viewport()->mapToGlobal(pos));

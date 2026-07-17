@@ -10,7 +10,6 @@
 #include <QFileDialog>
 
 #include "DataToTDFormat\TDFormatTreeConverter.h"
-#include "Utils.h"
 
 namespace
 {
@@ -145,15 +144,15 @@ bool QTouchApp::loadTreeAndWidgetsFromPresetFile(const QString &filePath)
     return true;
 }
 
-bool QTouchApp::loadTreeAndWidgetsUsingPresetFileName(const QString& presetFilename)
+bool QTouchApp::loadTreeAndWidgetsUsingPresetFileName(const PresetNameString& presetName)
 {
     if (!requireProjectIsOpenedFor("loadTreeAndWidgetsUsingPresetFileName")) return false;
 
-    auto filePath = getPresetsSubdir()->absoluteFilePath(presetFilename);
+    auto filePath = absPathForPresetJsonFile(presetName);
     return loadTreeAndWidgetsFromPresetFile(filePath);
 }
 
-bool QTouchApp::savePreset(const QString &presetFilename) const
+bool QTouchApp::savePreset(const PresetNameString& presetName) const
 {
     if (!requireProjectIsOpenedFor("Preset saving")) return false;
 
@@ -163,11 +162,11 @@ bool QTouchApp::savePreset(const QString &presetFilename) const
         return false;
     }
 
-    //if it existed, we already got confirmation to delete old file
+    //if it existed, we already got confirmation to delete old files
 
     // 1) .json
     {
-        auto file = QFileInfo(getPresetsSubdir()->absoluteFilePath(presetFilename));
+        auto jsonFilePath = absPathForPresetJsonFile(presetName);
 
         auto json = SerializerForDataNodeTreeAndItsWidgets::toJson(rootNode);
         if (!json)
@@ -176,7 +175,7 @@ bool QTouchApp::savePreset(const QString &presetFilename) const
                 return false;
         }
 
-        bool saved = saveJsonValueToFile(*json, file.absoluteFilePath());
+        bool saved = saveJsonValueToFile(*json, jsonFilePath);
         if (!saved)
         {
             SV_ERROR("Save preset failed: writing to json file has failed");
@@ -205,7 +204,7 @@ bool QTouchApp::savePreset(const QString &presetFilename) const
     }
 
 
-    SV_LOG(std::format("Successfully saved preset {}", presetFilename));
+    SV_LOG(std::format("Successfully saved preset {}", presetName));
 
     return true;
 }
@@ -369,6 +368,16 @@ std::optional<std::tuple<DataNodeShared, NodeWidgetVec>> QTouchApp::createTreeAn
     return res;
 }
 
+QString QTouchApp::absPathForPresetJsonFile(const PresetNameString& presetName) const
+{
+    if (!requireProjectIsOpenedFor("obtaining absolute path for preset files", false))
+    {
+        return "";
+    }
+
+    return getPresetsSubdir()->absoluteFilePath(getPresetJsonFileName(presetName));
+}
+
 void QTouchApp::initMenuBar()
 {
     auto* projectMenu = menuBar()->addMenu("Project");
@@ -470,8 +479,8 @@ bool QTouchApp::requireProjectIsOpenedFor(const char *forOperation, bool withMsg
     return isOpened;
 }
 
-void QTouchApp::onPresetMixingActivated(const QString& presetFilenameA,
-                                        const QString& presetFilenameB,
+void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
+                                        const PresetNameString& presetNameB,
                                         double morphAtoB01)
 {
     // This is called when:
@@ -489,8 +498,8 @@ void QTouchApp::onPresetMixingActivated(const QString& presetFilenameA,
     //Ensure presets A and B are loaded:
     auto presetDir = getPresetsSubdir();
 
-    auto resultA = presetForMixing_A.loadFileIfItsNotLoadedYet(*presetDir, presetFilenameA);
-    auto resultB = presetForMixing_B.loadFileIfItsNotLoadedYet(*presetDir, presetFilenameB);
+    auto resultA = presetForMixing_A.loadPresetIfItsNotLoadedYet(presetNameA, absPathForPresetJsonFile(presetNameA));
+    auto resultB = presetForMixing_B.loadPresetIfItsNotLoadedYet(presetNameB, absPathForPresetJsonFile(presetNameB));
 
     if ( resultA == LoadedPreset::Result::Error ||
          resultB == LoadedPreset::Result::Error )
@@ -531,8 +540,8 @@ void QTouchApp::onPresetMixingActivated(const QString& presetFilenameA,
     if (!existingRootNodeIsAlreadyCorrectMixingTarget)
     {
         deleteExistingTreeAndAllWidgets();
-
-        auto treeAndWidgets = createTreeAndWidgetsFromFile(presetDir->filePath(presetForMixing_B.fileName));
+        
+        auto treeAndWidgets = createTreeAndWidgetsFromFile(absPathForPresetJsonFile(presetForMixing_B.loadedPresetName));
         if (!treeAndWidgets)
         {
             SV_MSGBOX_ERROR("Couldnt make mixing target (tree made from preset B)");
@@ -573,26 +582,25 @@ void QTouchApp::onPresetMixingActivated(const QString& presetFilenameA,
     });
 }
 
-QTouchApp::LoadedPreset::Result QTouchApp::LoadedPreset::loadFileIfItsNotLoadedYet(const QDir &presetsDir, const QString &presetFileName)
+QTouchApp::LoadedPreset::Result QTouchApp::LoadedPreset::loadPresetIfItsNotLoadedYet(const PresetNameString& presetName, const QString& jsonPresetFilePath)
 {
-    if (rootNode && fileName == presetFileName)
+    if (rootNode && loadedPresetName == presetName)
     {
         return LoadedPreset::Result::AlreadyHadThisFile;
     }
 
-    QString filePath = presetsDir.filePath(presetFileName);
-    if (!QFile::exists(filePath))
+    if (!QFile::exists(jsonPresetFilePath))
     {
-        SV_ERROR(std::format("Load preset from [{}] failed: file doesnt exist", filePath));
+        SV_ERROR(std::format("Load preset from [{}] failed: file doesnt exist", jsonPresetFilePath));
 
         clear();
         return LoadedPreset::Result::Error;
     }
 
-    auto json = loadJsonFromFile(filePath);
+    auto json = loadJsonFromFile(jsonPresetFilePath);
     if (!json)
     {
-        SV_ERROR(std::format("Load preset from [{}] failed: couldnt parse json from file", filePath));
+        SV_ERROR(std::format("Load preset from [{}] failed: couldnt parse json from file", jsonPresetFilePath));
 
         clear();
         return LoadedPreset::Result::Error;
@@ -601,19 +609,19 @@ QTouchApp::LoadedPreset::Result QTouchApp::LoadedPreset::loadFileIfItsNotLoadedY
     rootNode = DataNode::fromJSON(json.value());
     if (!rootNode)
     {
-        SV_ERROR(std::format("Load preset from [{}] failed: couldnt parse data tree", filePath));
+        SV_ERROR(std::format("Load preset from [{}] failed: couldnt parse data tree", jsonPresetFilePath));
 
         clear();
         return LoadedPreset::Result::Error;
     }
 
     //Successfully loaded then.
-    fileName = presetFileName;
+    loadedPresetName = presetName;
     return LoadedPreset::Result::JustLoadedThisFile;
 }
 
 void QTouchApp::LoadedPreset::clear()
 {
     rootNode.reset();
-    fileName.clear();
+    loadedPresetName.clear();
 }

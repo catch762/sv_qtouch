@@ -24,16 +24,14 @@ void PresetTab::onSavePresetClicked()
         return;
     }
 
-    QString fullPresetName = presetName + ".json";
-
-    bool alreadyExists = presetView->presetNameExists(fullPresetName);
+    bool alreadyExists = presetView->presetNameExists(presetName);
 
     if (alreadyExists)
     {
         QMessageBox::StandardButton reply = QMessageBox::question(
             this,                          
             "Confirm overwriting preset",                                           // window title
-            QString("Do you want to overwrite preset [%1] ?").arg(fullPresetName),  // message text
+            QString("Do you want to overwrite preset [%1] ?").arg(presetName),      // message text
             QMessageBox::Yes | QMessageBox::No,                                     // buttons
             QMessageBox::Yes                                                        // default button
         );
@@ -46,5 +44,5 @@ void PresetTab::onSavePresetClicked()
 
     lastSavedPresetName = presetName;
 
-    emit presetSavingRequested(fullPresetName);
+    emit presetSavingRequested(presetName);
 }

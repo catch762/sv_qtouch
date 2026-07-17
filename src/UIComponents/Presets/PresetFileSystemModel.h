@@ -1,6 +1,7 @@
 #pragma once
 #include <QFileSystemModel>
 #include "sv_qtcommon.h"
+#include "QTouchDefs.h"
 
 // This exists for the single reason: to add extra field to items of the model,
 // the field being essentially 'bool exportEnabled' - to track presets that
@@ -11,7 +12,7 @@ class PresetFileSystemModel : public QFileSystemModel
     Q_OBJECT
 
 public:
-    using PresetNamesSet = std::set<QString>;
+    using PresetNamesSet = std::set<PresetNameString>;
     SV_DECL_OPT(PresetNamesSet);
 
     explicit PresetFileSystemModel(QObject* parent = nullptr);
@@ -19,10 +20,10 @@ public:
     const PresetNamesSet& getPresetExportList() const;
     void setPresetExportList(PresetNamesSet newPresetFileNamesToExport);
 
-    bool fileNameIsInPresetExportList(const QString& presetFilename) const;
+    bool presetNameIsInPresetExportList(const PresetNameString& presetName) const;
     bool indexIsInPresetExportList(const QModelIndex& index) const;
-    void addFileNameToPresetExportList(const QString& presetFilename);
-    void removeFileNameFromPresetExportList(const QString& presetFilename);
+    void addPresetNameToPresetExportList(const PresetNameString& presetName);
+    void removePresetNameFromPresetExportList(const PresetNameString& presetName);
 
     QJsonValue savePresetExportListToJson() const;
     bool loadPresetExportListFromJson(const QJsonValue& json);
@@ -37,5 +38,5 @@ public:
     QModelIndex makeFirstColumnIndex(const QModelIndex& index) const;
 
 private:
-    std::set<QString> presetFileNamesToExport;
+    std::set<QString> presetNamesToExport;
 };

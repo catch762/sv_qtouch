@@ -21,18 +21,18 @@ bool PresetFileSystemModel::indexIsInPresetExportList(const QModelIndex& index) 
         return false;
     }
 
-    return fileNameIsInPresetExportList(fileName(makeFirstColumnIndex(index)));
+    return presetNameIsInPresetExportList(fileName(makeFirstColumnIndex(index)));
 }
 
 const std::set<QString>& PresetFileSystemModel::getPresetExportList() const
 {
-    return presetFileNamesToExport;
+    return presetNamesToExport;
 }
 
 void PresetFileSystemModel::setPresetExportList(std::set<QString> newPresetFileNamesToExport)
 {
     // 1. Update the internal set data
-    presetFileNamesToExport = std::move(newPresetFileNamesToExport);
+    presetNamesToExport = std::move(newPresetFileNamesToExport);
 
     // 2. Identify the boundaries of the top-level items
     QModelIndex topLeft     = index(0,              exportColumn());
@@ -42,19 +42,19 @@ void PresetFileSystemModel::setPresetExportList(std::set<QString> newPresetFileN
     emit dataChanged(topLeft, bottomRight, { Qt::CheckStateRole });
 }
 
-bool PresetFileSystemModel::fileNameIsInPresetExportList(const QString& presetFilename) const
+bool PresetFileSystemModel::presetNameIsInPresetExportList(const PresetNameString& presetName) const
 {
-    return presetFileNamesToExport.contains(presetFilename);
+    return presetNamesToExport.contains(presetName);
 }
 
-void PresetFileSystemModel::addFileNameToPresetExportList(const QString& presetFilename)
+void PresetFileSystemModel::addPresetNameToPresetExportList(const PresetNameString& presetName)
 {
-    presetFileNamesToExport.insert(presetFilename);
+    presetNamesToExport.insert(presetName);
 }
 
-void PresetFileSystemModel::removeFileNameFromPresetExportList(const QString& presetFilename)
+void PresetFileSystemModel::removePresetNameFromPresetExportList(const PresetNameString& presetName)
 {
-    presetFileNamesToExport.erase(presetFilename);
+    presetNamesToExport.erase(presetName);
 }
 
 QJsonValue PresetFileSystemModel::savePresetExportListToJson() const
@@ -105,11 +105,11 @@ bool PresetFileSystemModel::setData(const QModelIndex& index, const QVariant& va
 
         if (value.toInt() == Qt::Checked)
         {
-            addFileNameToPresetExportList(filename);
+            addPresetNameToPresetExportList(filename);
         }
         else
         {
-            removeFileNameFromPresetExportList(filename);
+            removePresetNameFromPresetExportList(filename);
         }
 
         emit dataChanged(index, index, { Qt::CheckStateRole, Qt::DisplayRole });
