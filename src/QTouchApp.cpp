@@ -166,8 +166,6 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
 
     // 1) .json
     {
-        auto jsonFilePath = absPathForPresetJsonFile(presetName);
-
         auto json = SerializerForDataNodeTreeAndItsWidgets::toJson(rootNode);
         if (!json)
         {
@@ -175,7 +173,7 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
                 return false;
         }
 
-        bool saved = saveJsonValueToFile(*json, jsonFilePath);
+        bool saved = saveJsonValueToFile(*json, absPathForPresetJsonFile(presetName));
         if (!saved)
         {
             SV_ERROR("Save preset failed: writing to json file has failed");
@@ -191,6 +189,20 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
             SV_ERROR(std::format("Save preset failed: convertTreeToVec4Array failed with {}", *err));
             return false;
         }
+
+        auto packet = makePacket(treeAsVec4, presetName.toStdString());
+        if (!packet)
+        {
+            SV_ERROR("Save preset failed: couldnt makePacket from TreeAsVec4Array");
+            return false;
+        }
+
+        bool saved = writeByteArrayToFile(absPathForPresetVec4File(presetName), *packet);
+        if (!saved)
+        {
+            SV_ERROR("Save preset failed: writing to vec4 file has failed");
+            return false;
+        }
     }
 
     // 3) var names data file
@@ -199,6 +211,20 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
         if (auto err = getVarNamesFromTree(rootNode, treeVarNames))
         {
             SV_ERROR(std::format("Save preset failed: getVarNamesFromTree failed with {}", *err));
+            return false;
+        }
+
+        auto packet = makePacket(treeVarNames, presetName.toStdString());
+        if (!packet)
+        {
+            SV_ERROR("Save preset failed: couldnt makePacket from TreeVarNames");
+            return false;
+        }
+
+        bool saved = writeByteArrayToFile(absPathForPresetVarnamesFile(presetName), *packet);
+        if (!saved)
+        {
+            SV_ERROR("Save preset failed: writing to varnames file has failed");
             return false;
         }
     }
@@ -376,6 +402,26 @@ QString QTouchApp::absPathForPresetJsonFile(const PresetNameString& presetName) 
     }
 
     return getPresetsSubdir()->absoluteFilePath(getPresetJsonFileName(presetName));
+}
+
+QString QTouchApp::absPathForPresetVec4File(const PresetNameString& presetName) const
+{
+    if (!requireProjectIsOpenedFor("obtaining absolute path for preset files", false))
+    {
+        return "";
+    }
+
+    return getPresetsSubdir()->absoluteFilePath(getPresetVec4FileName(presetName));
+}
+
+QString QTouchApp::absPathForPresetVarnamesFile(const PresetNameString& presetName) const
+{
+    if (!requireProjectIsOpenedFor("obtaining absolute path for preset files", false))
+    {
+        return "";
+    }
+
+    return getPresetsSubdir()->absoluteFilePath(getPresetVarnamesFileName(presetName));
 }
 
 void QTouchApp::initMenuBar()

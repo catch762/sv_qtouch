@@ -69,7 +69,9 @@ private:
     static std::optional< std::tuple<DataNodeShared, NodeWidgetVec> > createTreeAndWidgetsFromFile(const QString& filePath);
 
     
-    QString absPathForPresetJsonFile(const PresetNameString& presetName) const;
+    QString absPathForPresetJsonFile    (const PresetNameString& presetName) const;
+    QString absPathForPresetVec4File    (const PresetNameString& presetName) const;
+    QString absPathForPresetVarnamesFile(const PresetNameString& presetName) const;
     
 
     //returns same as 'projectIsOpened()' and if its not, prints error

@@ -1,6 +1,7 @@
 #pragma once
 #include "sv_qtcommon.h"
 #include "DataToTDFormat/TDFormatDefs.h"
+#include "QTouchDefs.h"
 
 enum class PacketType : uint32_t
 {
