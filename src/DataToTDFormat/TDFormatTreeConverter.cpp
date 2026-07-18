@@ -39,7 +39,7 @@ StringErrOpt getVarNamesFromTree(DataNodeShared tree, TreeVarNames& result)
     {
         if (node->isComposite() || currentError.has_value()) return;
 
-        auto addressOrErr = getAddress(node);
+        auto addressOrErr = getAbsAddress(node);
 
         if (auto err = getError(addressOrErr))
         {

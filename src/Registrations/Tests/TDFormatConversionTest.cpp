@@ -88,12 +88,12 @@ TEST_CASE("Converting entire tree to vec<vec4>")
 	}
 
 	TreeVarNames expectedNames = {
-		"root/one/a",
-		"root/one/b",
-		"root/one/c",
-		"root/two/a",
-		"root/two/b",
-		"root/two/c",
+		"/one/a",
+		"/one/b",
+		"/one/c",
+		"/two/a",
+		"/two/b",
+		"/two/c",
 	};
 
 	TreeVarNames actualNames;

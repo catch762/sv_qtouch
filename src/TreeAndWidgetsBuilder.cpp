@@ -30,7 +30,7 @@ TreeAndTopLevelWidgetsOpt TreeAndWidgetsBuilder::buildTreeAndWidgets(const SUP_D
         return {};
     }
 
-    DataNodeShared root = DataNode::makeComposite(QtouchRootName);
+    DataNodeShared root = DataNode::makeComposite();
     NodeWidgetVec topLevelWidgets;
 
     for(auto &nodeAndWidget : topLevelItems)
