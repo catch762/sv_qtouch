@@ -40,7 +40,7 @@ public:
 
     void sendTreeData(const TreeAsVec4Array& treeData, const std::string& presetName)
     {
-        if (auto packet = makePacket(treeData, presetName))
+        if (auto packet = makePacket(treeData, 0, treeData.size(), presetName))
         {
             sendPacket(*packet);
         }

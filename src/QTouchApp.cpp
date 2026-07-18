@@ -37,6 +37,7 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
             setTreeType(TreeType::Standalone); //yes thats all we do    
         });
         connect(presetTab, &PresetTab::presetSavingRequested, this, &QTouchApp::savePreset);
+        connect(presetTab, &PresetTab::exportPresetsRequested, this, &QTouchApp::exportPresets);
         connect(presetTab->getPresetView(), &PresetFileView::presetLoadingRequested,
                 this, [this](const QString& presetFilename)
                 {
@@ -190,7 +191,7 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
             return false;
         }
 
-        auto packet = makePacket(treeAsVec4, presetName.toStdString());
+        auto packet = makePacket(treeAsVec4, 0, treeAsVec4.size()-1, presetName.toStdString());
         if (!packet)
         {
             SV_ERROR("Save preset failed: couldnt makePacket from TreeAsVec4Array");
@@ -670,4 +671,28 @@ void QTouchApp::LoadedPreset::clear()
 {
     rootNode.reset();
     loadedPresetName.clear();
+}
+
+bool QTouchApp::exportPresets()
+{
+    if (!requireProjectIsOpenedFor("Presets export")) return false;
+
+    //even if there are no presets to export, we must still send packet with zero exports,
+    //so user can clear exports in Touchdesigner this way.
+
+    const auto& exportPresetNames = presetTab->getPresetView()->getModel()->getPresetExportList();
+
+    for (const auto& presetName : exportPresetNames)
+    {
+        auto vec4File       = absPathForPresetVec4File(presetName);
+        auto varnamesFile   = absPathForPresetVarnamesFile(presetName);
+    }
+
+    
+
+    //checks:
+    //-name list exact same
+    //-vec4 size same
+
+    return true;
 }

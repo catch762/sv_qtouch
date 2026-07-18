@@ -8,7 +8,7 @@ enum class PacketType : uint32_t
     TreeData = 0
 };
 
-//Packet structure:
+//General packet structure that all packets follow:
 inline constexpr int PacketBytesOffset_PacketBytesCount = 0;   //uint32_t Field 1: size of entire packet
 inline constexpr int PacketBytesOffset_PacketType       = 4;   //uint32_t Field 2: packet type
 inline constexpr int PacketBytesOffset_PacketContent    = 8;   //         Field 3: actual content data of any size, even 0
@@ -76,7 +76,15 @@ inline char* writeStringSectionToPacket(char* memoryOfPacket, const std::string&
     return memoryOfPacket + stringSectionSize(str);
 };
 
-inline QByteArrayOpt makePacket(const TreeAsVec4Array& treeData, const std::string& presetName)
+// Return value: pointer to next byte after data written. (may be invalid, if we are at the end)
+template<typename T>
+char* writeFixedVar(char* memory, T var)
+{
+    std::memcpy(memory, &var, sizeof(var));
+    return memory + sizeof(var);
+}
+
+inline QByteArrayOpt makePacket(const TreeAsVec4Array& treeData, uint32_t firstIndex, uint32_t lastIndex, const std::string& presetName)
 {
     if (treeData.empty())
     {
@@ -89,16 +97,33 @@ inline QByteArrayOpt makePacket(const TreeAsVec4Array& treeData, const std::stri
         return {};
     }
 
+    const uint32_t totalEntriesInTreeCount = treeData.size();
+    const int entriesToSendCount = lastIndex - firstIndex + 1;
+
+    if (entriesToSendCount <= 0                             ||
+        !isValidIndex(firstIndex, totalEntriesInTreeCount)  ||
+        !isValidIndex(lastIndex,  totalEntriesInTreeCount) )
+    {
+        SV_ERROR(std::format("makePacket error: wrong indices first=[{}] last=[{}] for size=[{}]",
+                                firstIndex, lastIndex, totalEntriesInTreeCount));
+        return {};
+    }
+
     const auto presetNameSectionSize    = stringSectionSize(presetName);
-    const auto vec4SectionSize          = treeData.size() * sizeof(SUP_Vec4);
-    const auto contentSize              = presetNameSectionSize + vec4SectionSize;
+    const auto otherFixedFields         = sizeof(uint32_t) * 3;
+    const auto vec4SectionSize          = entriesToSendCount * sizeof(SUP_Vec4);
+    const auto contentSize              = presetNameSectionSize + otherFixedFields + vec4SectionSize;
+
     QByteArray packet                   = makeArrayForPacket(PacketType::TreeData, contentSize);
     SV_ASSERT(contentSize == packetContentSize(packet));
 
-    char* presetNameSection = packetContentPtr(packet);
-    char* vec4Section       = writeStringSectionToPacket(presetNameSection, presetName);
+    char* next = packetContentPtr(packet);
 
-    std::memcpy(vec4Section, treeData.data(), vec4SectionSize);
+    next = writeStringSectionToPacket(next, presetName);
+    next = writeFixedVar(next, totalEntriesInTreeCount);
+    next = writeFixedVar(next, firstIndex);
+    next = writeFixedVar(next, lastIndex);
+    std::memcpy(next, treeData.data() + firstIndex, vec4SectionSize);
 
     return packet;
 }
@@ -142,3 +167,11 @@ inline QByteArrayOpt makePacket(const TreeVarNames& varNames, const std::string&
 
     return packet;
 }
+
+
+// Just to avoid extra copies, we will simply return multiple bytearrays,
+// which we then feed into tcp stream sequentially,
+using PresetsExportPackets = std::vector<QByteArray>;
+SV_DECL_OPT(PresetsExportPackets);
+
+inline PresetsExportPacketsOpt makePresetExportPackets();

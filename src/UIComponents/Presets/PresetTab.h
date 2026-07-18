@@ -19,6 +19,10 @@ public:
         savePresetButton = new QPushButton("Save preset", this);
         connect(savePresetButton, &QPushButton::clicked, this, &PresetTab::onSavePresetClicked);
         layout->addWidget(savePresetButton, 2, 0);
+        
+        sendPresetExportsButton = new QPushButton("Send export presets to Touchdsigner", this);
+        connect(sendPresetExportsButton, &QPushButton::clicked, this, &PresetTab::exportPresetsRequested);
+        layout->addWidget(sendPresetExportsButton, 3, 0);
 
         connect(presetView, &PresetFileView::presetWasSelectedForMixing, this,
             [this](const QString& fileName, bool forA)
@@ -65,6 +69,7 @@ signals:
     void presetMixingActivated(const PresetNameString& presetNameA, const PresetNameString& presetNameB, double morphAtoB01);
     void presetMixingDeactivated();
     void presetSavingRequested(const PresetNameString& presetName);
+    void exportPresetsRequested();
 
 private slots:
     void onSavePresetClicked();
@@ -186,6 +191,7 @@ private:
         QSlider*            mixSlider           = nullptr;
     PresetFileView* presetView                  = nullptr;
     QPushButton*    savePresetButton            = nullptr;
+    QPushButton*    sendPresetExportsButton     = nullptr;
 
 private:
     QString lastSavedPresetName;
