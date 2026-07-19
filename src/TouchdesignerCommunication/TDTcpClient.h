@@ -2,7 +2,7 @@
 #include "sv_qtcommon.h"
 #include <QTcpSocket>
 #include "DataToTDFormat/TDFormatDefs.h"
-#include "PacketDefs.h"
+#include "Packets.h"
 
 
 class TDTcpClient : public QObject

@@ -682,13 +682,33 @@ bool QTouchApp::exportPresets()
 
     const auto& exportPresetNames = presetTab->getPresetView()->getModel()->getPresetExportList();
 
+    int vec4PacketsSize = 0;
+    std::vector<QByteArray> vec4Packets;
+
     for (const auto& presetName : exportPresetNames)
     {
-        auto vec4File       = absPathForPresetVec4File(presetName);
-        auto varnamesFile   = absPathForPresetVarnamesFile(presetName);
+        auto vec4File       = absPathForPresetVec4File      (presetName);
+        auto varnamesFile   = absPathForPresetVarnamesFile  (presetName);
+
+        auto vec4Data = readByteArrayFromFile(vec4File);
+        if (!vec4Data)
+        {
+            SV_MSGBOX_ERROR(std::format("exportPresets error reading file [{}]", vec4File));
+            return false;
+        }
+
+        auto varnamesData = readByteArrayFromFile(varnamesFile);
+        if (!varnamesData)
+        {
+            SV_MSGBOX_ERROR(std::format("exportPresets error reading file [{}]", varnamesFile));
+            return false;
+        }
+
+        vec4PacketsSize += vec4Data->size();
+        vec4Packets.push_back(std::move(*vec4Data));
     }
 
-    
+
 
     //checks:
     //-name list exact same

@@ -8,6 +8,11 @@ enum class PacketType : uint32_t
     TreeData = 0
 };
 
+
+
+
+
+
 //General packet structure that all packets follow:
 inline constexpr int PacketBytesOffset_PacketBytesCount = 0;   //uint32_t Field 1: size of entire packet
 inline constexpr int PacketBytesOffset_PacketType       = 4;   //uint32_t Field 2: packet type
