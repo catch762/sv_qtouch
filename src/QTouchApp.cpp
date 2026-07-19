@@ -191,7 +191,7 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
             return false;
         }
 
-        auto packet = makePacket(treeAsVec4, 0, treeAsVec4.size()-1, presetName.toStdString());
+        auto packet = Packets::makeTreeAsVec4Packet(treeAsVec4, 0, treeAsVec4.size()-1, presetName.toStdString());
         if (!packet)
         {
             SV_ERROR("Save preset failed: couldnt makePacket from TreeAsVec4Array");
@@ -215,7 +215,7 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
             return false;
         }
 
-        auto packet = makePacket(treeVarNames, presetName.toStdString());
+        auto packet = Packets::makeTreeVarnamesPacket(treeVarNames, presetName.toStdString());
         if (!packet)
         {
             SV_ERROR("Save preset failed: couldnt makePacket from TreeVarNames");
