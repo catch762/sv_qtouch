@@ -101,15 +101,15 @@ bool PresetFileSystemModel::setData(const QModelIndex& index, const QVariant& va
 {
     if (index.isValid() && !isDir(index) && index.column() == exportColumn() && role == Qt::CheckStateRole)
     {
-        const auto filename = fileName(makeFirstColumnIndex(index));
+        const auto presetName = getFileNameWithoutExtension( fileName(makeFirstColumnIndex(index)) );
 
         if (value.toInt() == Qt::Checked)
         {
-            addPresetNameToPresetExportList(filename);
+            addPresetNameToPresetExportList(presetName);
         }
         else
         {
-            removePresetNameFromPresetExportList(filename);
+            removePresetNameFromPresetExportList(presetName);
         }
 
         emit dataChanged(index, index, { Qt::CheckStateRole, Qt::DisplayRole });

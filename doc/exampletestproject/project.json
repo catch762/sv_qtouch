@@ -1,6 +1,6 @@
 {
     "presetExportList": [
-        "newA.json",
-        "newC.json"
+        "newA",
+        "newC"
     ]
 }
