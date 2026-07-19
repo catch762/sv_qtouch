@@ -113,6 +113,46 @@ public:
         return packet;
     }
 
+    // We cant just write a==b, because packets with different preset names but same varnames will be unequal
+    static bool varnamesPacketsContentIsSame(const QByteArray& a, const QByteArray& b)
+    {
+        //Returns -1 for error, also may return invalid index equal to size
+        auto getActualVarnamesSectionIndex = [](const QByteArray& packet)
+        {
+            if (packet.size() < 12)
+            {
+                SV_WARN("Malformed varnames packet passed to comparison");
+                return -1;
+            }
+
+            uint32_t presetNameSize = qFromLittleEndian<uint32_t>(packet.constData() + PacketHeaderSize);
+
+            int indexOfFirstByteOfVarnamesSection = PacketHeaderSize + sizeof(uint32_t) + presetNameSize;
+
+            return indexOfFirstByteOfVarnamesSection;
+        };
+        
+        int varnamesSectionIndexA = getActualVarnamesSectionIndex(a);
+        int varnamesSectionIndexB = getActualVarnamesSectionIndex(b);
+
+        if (varnamesSectionIndexA == -1 || varnamesSectionIndexB == -1) return false;
+
+        int sectionSizeA = a.size() - varnamesSectionIndexA;
+        int sectionSizeB = b.size() - varnamesSectionIndexB;
+
+        SV_ASSERT(sectionSizeA >= 0);
+        SV_ASSERT(sectionSizeB >= 0);
+
+        if (sectionSizeA != sectionSizeB) return false;
+
+        for (int i = 0; i < sectionSizeA; ++i)
+        {
+            if (a[varnamesSectionIndexA + i] != b[varnamesSectionIndexB + i]) return false;
+        }
+
+        return true;
+    }
+
     // Note: sending empty arguments should form perfectly valid packet meant for resetting exports on TD side.
     static QByteArrayOpt makePresetExportsPacket(const QByteArray& varNamesPacket, const std::vector<QByteArray>& vec4Packets)
     {

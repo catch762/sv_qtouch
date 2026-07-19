@@ -720,7 +720,7 @@ StringErrOpt QTouchApp::tryExportPresets()
         }
         else //current data is not first, so we should compare it against first:
         {
-            if (varnamesData != firstVarnamesData.value())
+            if (!Packets::varnamesPacketsContentIsSame(*varnamesData, *firstVarnamesData))
             {
                 return std::format( "Mismatch in varnames content:\n"
                                     "Preset [{}] packet size [{}]\n"

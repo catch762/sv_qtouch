@@ -21,7 +21,9 @@ bool PresetFileSystemModel::indexIsInPresetExportList(const QModelIndex& index) 
         return false;
     }
 
-    return presetNameIsInPresetExportList(fileName(makeFirstColumnIndex(index)));
+    return presetNameIsInPresetExportList(
+        getFileNameWithoutExtension(fileName(makeFirstColumnIndex(index)))
+    );
 }
 
 const std::set<QString>& PresetFileSystemModel::getPresetExportList() const
