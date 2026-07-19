@@ -6,8 +6,8 @@
                     "leafValue": {
                         "_type": "LimitedInt",
                         "left": 10,
-                        "right": 20,
-                        "val": 15
+                        "right": 777,
+                        "val": 777
                     },
                     "name": "a",
                     "widgets": {
@@ -34,7 +34,7 @@
                                         "ddd"
                                     ]
                                 ],
-                                "index": 0
+                                "index": 2
                             },
                             {
                                 "_type": "Enum",
@@ -64,7 +64,7 @@
                                         "eeeeeee"
                                     ]
                                 ],
-                                "index": 4
+                                "index": 1
                             },
                             {
                                 "_type": "Enum",
@@ -94,7 +94,7 @@
                                         "eeeeeee"
                                     ]
                                 ],
-                                "index": 4
+                                "index": 1
                             },
                             {
                                 "_type": "Enum",
@@ -124,7 +124,7 @@
                                         "eeeeeee"
                                     ]
                                 ],
-                                "index": 4
+                                "index": 1
                             }
                         ]
                     },
@@ -181,19 +181,19 @@
                                 "_type": "LimitedDouble",
                                 "left": 0,
                                 "right": 5,
-                                "val": 5
+                                "val": 0.906
                             },
                             {
                                 "_type": "LimitedDouble",
                                 "left": 10,
                                 "right": 20,
-                                "val": 19.875
+                                "val": 14.938
                             },
                             {
                                 "_type": "LimitedDouble",
                                 "left": 10,
                                 "right": 20,
-                                "val": 20
+                                "val": 19.125
                             },
                             {
                                 "_type": "LimitedDouble",

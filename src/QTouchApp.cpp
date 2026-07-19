@@ -673,17 +673,27 @@ void QTouchApp::LoadedPreset::clear()
     loadedPresetName.clear();
 }
 
-bool QTouchApp::exportPresets()
+void QTouchApp::exportPresets()
 {
-    if (!requireProjectIsOpenedFor("Presets export")) return false;
+    if (auto err = tryExportPresets())
+    {
+        SV_MSGBOX_ERROR(std::format("Couldnt send export presets to Touchdesigner due to error:\n{}", *err));
+    }
+}
+
+StringErrOpt QTouchApp::tryExportPresets()
+{
+    if (!requireProjectIsOpenedFor("Presets export")) return "Project is not opened";
 
     //even if there are no presets to export, we must still send packet with zero exports,
     //so user can clear exports in Touchdesigner this way.
 
     const auto& exportPresetNames = presetTab->getPresetView()->getModel()->getPresetExportList();
 
-    int vec4PacketsSize = 0;
     std::vector<QByteArray> vec4Packets;
+
+    QByteArrayOpt firstVarnamesData;
+    QString firstPresetName;
 
     for (const auto& presetName : exportPresetNames)
     {
@@ -693,26 +703,41 @@ bool QTouchApp::exportPresets()
         auto vec4Data = readByteArrayFromFile(vec4File);
         if (!vec4Data)
         {
-            SV_MSGBOX_ERROR(std::format("exportPresets error reading file [{}]", vec4File));
-            return false;
+            return std::format("error reading file [{}]", vec4File);
         }
+        vec4Packets.push_back(std::move(*vec4Data));
 
         auto varnamesData = readByteArrayFromFile(varnamesFile);
         if (!varnamesData)
         {
-            SV_MSGBOX_ERROR(std::format("exportPresets error reading file [{}]", varnamesFile));
-            return false;
+            return std::format("error reading file [{}]", varnamesFile);
         }
 
-        vec4PacketsSize += vec4Data->size();
-        vec4Packets.push_back(std::move(*vec4Data));
+        if (!firstVarnamesData)
+        {
+            firstVarnamesData = varnamesData;
+            firstPresetName = presetName;
+        }
+        else //current data is not first, so we should compare it against first:
+        {
+            if (varnamesData != firstVarnamesData.value())
+            {
+                return std::format( "Mismatch in varnames content:\n"
+                                    "Preset [{}] packet size [{}]\n"
+                                    "Preset [{}] packet size [{}]\n",
+                                    firstPresetName, firstVarnamesData->size(),
+                                    presetName, varnamesData->size() );
+            }
+        }
     }
 
+    auto packet = Packets::makePresetExportsPacket(firstVarnamesData.value_or(QByteArray()), vec4Packets);
+    if (!packet)
+    {
+        return "couldnt create preset export packet";
+    }
 
+    tdClient->sendPacket(*packet);
 
-    //checks:
-    //-name list exact same
-    //-vec4 size same
-
-    return true;
+    return {};
 }

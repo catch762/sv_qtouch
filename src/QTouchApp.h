@@ -38,9 +38,11 @@ public:
 
 private slots:
     void onPresetMixingActivated(const PresetNameString& presetNameA, const PresetNameString& presetNameB, double morphAtoB01);
-    bool exportPresets();
+    void exportPresets();
 
 private:
+    StringErrOpt tryExportPresets();
+
     struct LoadedPreset
     {
     public:

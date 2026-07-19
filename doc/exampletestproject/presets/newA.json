@@ -205,11 +205,15 @@
                     },
                     "name": "c",
                     "widgets": {
-                        "_DNWW_isExpanded": true
+                        "_DNWW_isExpanded": true,
+                        "modeIsXY": false
                     }
                 }
             ],
-            "name": "hello"
+            "name": "hello",
+            "widgets": {
+                "_DNWW_isExpanded": true
+            }
         },
         {
             "leafValue": {
@@ -243,7 +247,8 @@
             },
             "name": "theVar",
             "widgets": {
-                "_DNWW_isExpanded": true
+                "_DNWW_isExpanded": true,
+                "modeIsXY": false
             }
         }
     ],

@@ -20,7 +20,9 @@
 
 enum class PacketType : uint32_t
 {
-    TreeData = 0
+    TreeData = 0,
+    VarNames,
+    PresetsExport
 };
 
 class Packets
@@ -92,11 +94,14 @@ public:
 
         const auto contentSize = stringSectionSize(presetName) + varNamesSectionSize;
 
-        QByteArray packet = makeArrayForPacket(PacketType::TreeData, contentSize);
+        QByteArray packet = makeArrayForPacket(PacketType::VarNames, contentSize);
         SV_ASSERT(contentSize == packetContentSize(packet));
 
         char* next = packetContentPtr(packet);
 
+        //***************************
+        //  HERE GO ACTUAL FIELDS:
+        //***************************
         next = writeStringSectionToPacket(next, presetName);
         for (const auto& varName : varNames)
         {
@@ -108,9 +113,40 @@ public:
         return packet;
     }
 
+    // Note: sending empty arguments should form perfectly valid packet meant for resetting exports on TD side.
+    static QByteArrayOpt makePresetExportsPacket(const QByteArray& varNamesPacket, const std::vector<QByteArray>& vec4Packets)
+    {
+        // Instead of packing all packets into single QByteArray, we could just feed them one by one
+        // to TCP stream and it would work, but i dont care, its a rare operation.
+
+        int vec4PacketsSize = 0;
+        for (auto& packet : vec4Packets)
+        {
+            vec4PacketsSize += packet.size();
+        }
+
+        const auto contentSize = varNamesPacket.size() + vec4PacketsSize;
+
+        QByteArray packet = makeArrayForPacket(PacketType::PresetsExport, contentSize);
+
+        char* next = packetContentPtr(packet);
+
+        //***************************
+        //  HERE GO ACTUAL FIELDS:
+        //***************************
+        next = writeBytes(next, varNamesPacket.data(), varNamesPacket.size());
+        for (const auto& subPacket : vec4Packets)
+        {
+            next = writeBytes(next, subPacket.data(), subPacket.size());
+        }
+
+        SV_ASSERT(pointerIsAtTheEnd(next, packet));
+        return packet;
+    }
+
 private:
-    //When we are done building packet, we check that 'next' pointer now 
-    //points at next byte after packet end -- this means we did everything correctly
+    // When we are done building packet, we check that 'next' pointer now 
+    // points at next byte after packet end -- this means we did everything correctly
     static bool pointerIsAtTheEnd(const char* nextPointer, const QByteArray& packet)
     {
         return nextPointer == packet.data() + packet.size();

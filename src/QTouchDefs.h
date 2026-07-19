@@ -18,10 +18,10 @@ inline QString getPresetJsonFileName(const PresetNameString& presetName)
 
 inline QString getPresetVec4FileName(const PresetNameString& presetName)
 {
-	return presetName + ".vec4";
+	return presetName + ".vec4_packet";
 }
 
 inline QString getPresetVarnamesFileName(const PresetNameString& presetName)
 {
-	return presetName + ".varnames";
+	return presetName + ".varnames_packet";
 }
