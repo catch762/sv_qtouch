@@ -215,7 +215,7 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
             return false;
         }
 
-        auto packet = Packets::makeTreeVarnamesPacket(treeVarNames, presetName.toStdString());
+        auto packet = Packets::makeTreeVarnamesPacket(treeVarNames);
         if (!packet)
         {
             SV_ERROR("Save preset failed: couldnt makePacket from TreeVarNames");
@@ -720,7 +720,7 @@ StringErrOpt QTouchApp::tryExportPresets()
         }
         else //current data is not first, so we should compare it against first:
         {
-            if (!Packets::varnamesPacketsContentIsSame(*varnamesData, *firstVarnamesData))
+            if (*varnamesData != *firstVarnamesData)
             {
                 return std::format( "Mismatch in varnames content:\n"
                                     "Preset [{}] packet size [{}]\n"

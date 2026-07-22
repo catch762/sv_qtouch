@@ -21,6 +21,7 @@
 enum class PacketType : uint32_t
 {
     TreeData = 0,
+    TreeDataWithVarNames,
     VarNames,
     PresetsExport
 };
@@ -28,7 +29,12 @@ enum class PacketType : uint32_t
 class Packets
 {
 public:
-    static QByteArrayOpt makeTreeAsVec4Packet(const TreeAsVec4Array& treeData, uint32_t firstIndex, uint32_t lastIndex, const std::string& presetName)
+    //only range [firstIndex, lastIndex] will be sent from treeData
+    static QByteArrayOpt makeTreeAsVec4Packet(const TreeAsVec4Array& treeData,
+        uint32_t firstIndex,
+        uint32_t lastIndex,
+        const std::string& presetName,
+        const TreeVarNames* optionalVarNames = nullptr)
     {
         if (treeData.empty())
         {
@@ -40,6 +46,18 @@ public:
             SV_ERROR("makePacket error: Surely you didnt mean to make packet with empty preset name");
             return {};
         }
+
+        QByteArrayOpt optionalVarNamesSection;
+        if (optionalVarNames)
+        {
+            optionalVarNamesSection = makeTreeVarnamesPacket(*optionalVarNames);
+            if (!optionalVarNamesSection)
+            {
+                SV_ERROR("makePacket error: couldnt make varNames section");
+                return {};
+            }
+        }
+        const int varNamesSectionSize = optionalVarNamesSection ? optionalVarNamesSection->size() : 0;
 
         const uint32_t  totalEntriesInTreeCount = treeData.size();
         const int       entriesToSendCount      = lastIndex - firstIndex + 1;
@@ -54,9 +72,9 @@ public:
         }
 
         const auto vec4SectionSize          = entriesToSendCount * sizeof(SUP_Vec4);
-        const auto contentSize              = stringSectionSize(presetName) + sizeof(uint32_t) * 3 + vec4SectionSize;
+        const auto contentSize              = stringSectionSize(presetName) + varNamesSectionSize + sizeof(uint32_t) * 3 + vec4SectionSize;
 
-        QByteArray packet = makeArrayForPacket(PacketType::TreeData, contentSize);
+        QByteArray packet = makeArrayForPacket(optionalVarNames ? PacketType::TreeDataWithVarNames : PacketType::TreeData, contentSize);
         SV_ASSERT(contentSize == packetContentSize(packet));
 
         char* next = packetContentPtr(packet);
@@ -65,6 +83,10 @@ public:
         //  HERE GO ACTUAL FIELDS:
         //***************************
         next = writeStringSectionToPacket   (next, presetName);
+        if (optionalVarNamesSection)
+        {
+            next = writeBytes               (next, *optionalVarNamesSection);
+        }
         next = writeFixedVar                (next, totalEntriesInTreeCount);
         next = writeFixedVar                (next, firstIndex);
         next = writeFixedVar                (next, lastIndex);
@@ -73,16 +95,13 @@ public:
         return packet;
     }
 
-    static QByteArrayOpt makeTreeVarnamesPacket(const TreeVarNames& varNames, const std::string& presetName)
+    //we are not currently sending it as lone packet - rather, its optionally included as section in
+    //other packets such as PacketType::TreeData and PacketType::PresetsExport
+    static QByteArrayOpt makeTreeVarnamesPacket(const TreeVarNames& varNames)
     {
         if (varNames.empty())
         {
             SV_ERROR("makePacket error: Surely you didnt mean to make packet with empty varNames data");
-            return {};
-        }
-        if (presetName.empty())
-        {
-            SV_ERROR("makePacket error: Surely you didnt mean to make packet with empty preset name");
             return {};
         }
 
@@ -92,7 +111,7 @@ public:
             varNamesSectionSize += stringSectionSize(varName.toStdString());
         }
 
-        const auto contentSize = stringSectionSize(presetName) + varNamesSectionSize;
+        const auto contentSize = varNamesSectionSize;
 
         QByteArray packet = makeArrayForPacket(PacketType::VarNames, contentSize);
         SV_ASSERT(contentSize == packetContentSize(packet));
@@ -102,7 +121,6 @@ public:
         //***************************
         //  HERE GO ACTUAL FIELDS:
         //***************************
-        next = writeStringSectionToPacket(next, presetName);
         for (const auto& varName : varNames)
         {
             next = writeStringSectionToPacket(next, varName.toStdString());
@@ -111,46 +129,6 @@ public:
         SV_ASSERT(pointerIsAtTheEnd(next, packet));
 
         return packet;
-    }
-
-    // We cant just write a==b, because packets with different preset names but same varnames will be unequal
-    static bool varnamesPacketsContentIsSame(const QByteArray& a, const QByteArray& b)
-    {
-        //Returns -1 for error, also may return invalid index equal to size
-        auto getActualVarnamesSectionIndex = [](const QByteArray& packet)
-        {
-            if (packet.size() < 12)
-            {
-                SV_WARN("Malformed varnames packet passed to comparison");
-                return -1;
-            }
-
-            uint32_t presetNameSize = qFromLittleEndian<uint32_t>(packet.constData() + PacketHeaderSize);
-
-            int indexOfFirstByteOfVarnamesSection = PacketHeaderSize + sizeof(uint32_t) + presetNameSize;
-
-            return indexOfFirstByteOfVarnamesSection;
-        };
-        
-        int varnamesSectionIndexA = getActualVarnamesSectionIndex(a);
-        int varnamesSectionIndexB = getActualVarnamesSectionIndex(b);
-
-        if (varnamesSectionIndexA == -1 || varnamesSectionIndexB == -1) return false;
-
-        int sectionSizeA = a.size() - varnamesSectionIndexA;
-        int sectionSizeB = b.size() - varnamesSectionIndexB;
-
-        SV_ASSERT(sectionSizeA >= 0);
-        SV_ASSERT(sectionSizeB >= 0);
-
-        if (sectionSizeA != sectionSizeB) return false;
-
-        for (int i = 0; i < sectionSizeA; ++i)
-        {
-            if (a[varnamesSectionIndexA + i] != b[varnamesSectionIndexB + i]) return false;
-        }
-
-        return true;
     }
 
     // Note: sending empty arguments should form perfectly valid packet meant for resetting exports on TD side.
@@ -174,10 +152,10 @@ public:
         //***************************
         //  HERE GO ACTUAL FIELDS:
         //***************************
-        next = writeBytes(next, varNamesPacket.data(), varNamesPacket.size());
+        next = writeBytes(next, varNamesPacket);
         for (const auto& subPacket : vec4Packets)
         {
-            next = writeBytes(next, subPacket.data(), subPacket.size());
+            next = writeBytes(next, subPacket);
         }
 
         SV_ASSERT(pointerIsAtTheEnd(next, packet));
@@ -243,6 +221,11 @@ private:
             std::memcpy(dst, source, bytesCount);
         }
         return dst + bytesCount;
+    }
+
+    static char* writeBytes(char* dst, const QByteArray& src)
+    {
+        return writeBytes(dst, src.data(), src.size());
     }
 
     // To write a string, we write a following string section:
