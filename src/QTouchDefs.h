@@ -23,5 +23,5 @@ inline QString getPresetVec4FileName(const PresetNameString& presetName)
 
 inline QString getPresetVarnamesFileName(const PresetNameString& presetName)
 {
-	return presetName + ".varnames_packet";
+	return presetName + ".varnames_section";
 }

@@ -215,14 +215,14 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
             return false;
         }
 
-        auto packet = Packets::makeTreeVarnamesPacket(treeVarNames);
-        if (!packet)
+        auto section = Packets::makeTreeVarnamesSection(treeVarNames);
+        if (!section)
         {
-            SV_ERROR("Save preset failed: couldnt makePacket from TreeVarNames");
+            SV_ERROR("Save preset failed: couldnt make section from TreeVarNames");
             return false;
         }
 
-        bool saved = writeByteArrayToFile(absPathForPresetVarnamesFile(presetName), *packet);
+        bool saved = writeByteArrayToFile(absPathForPresetVarnamesFile(presetName), *section);
         if (!saved)
         {
             SV_ERROR("Save preset failed: writing to varnames file has failed");

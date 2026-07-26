@@ -22,7 +22,6 @@ enum class PacketType : uint32_t
 {
     TreeData = 0,
     TreeDataWithVarNames,
-    VarNames,
     PresetsExport
 };
 
@@ -50,7 +49,7 @@ public:
         QByteArrayOpt optionalVarNamesSection;
         if (optionalVarNames)
         {
-            optionalVarNamesSection = makeTreeVarnamesPacket(*optionalVarNames);
+            optionalVarNamesSection = makeTreeVarnamesSection(*optionalVarNames);
             if (!optionalVarNamesSection)
             {
                 SV_ERROR("makePacket error: couldnt make varNames section");
@@ -95,9 +94,9 @@ public:
         return packet;
     }
 
-    //we are not currently sending it as lone packet - rather, its optionally included as section in
-    //other packets such as PacketType::TreeData and PacketType::PresetsExport
-    static QByteArrayOpt makeTreeVarnamesPacket(const TreeVarNames& varNames)
+    // its not a packet, its a section, included in other packets such as
+    // PacketType::TreeData and PacketType::PresetsExport
+    static QByteArrayOpt makeTreeVarnamesSection(const TreeVarNames& varNames)
     {
         if (varNames.empty())
         {
@@ -105,30 +104,32 @@ public:
             return {};
         }
 
+        const uint32_t varNamesCount = varNames.size();
+
         int varNamesSectionSize = 0;
         for (const auto& varName : varNames)
         {
             varNamesSectionSize += stringSectionSize(varName.toStdString());
         }
 
-        const auto contentSize = varNamesSectionSize;
+        const auto sectionSize = sizeof(varNamesCount) + varNamesSectionSize;
 
-        QByteArray packet = makeArrayForPacket(PacketType::VarNames, contentSize);
-        SV_ASSERT(contentSize == packetContentSize(packet));
+        QByteArray section = QByteArray(sectionSize, Qt::Uninitialized);
 
-        char* next = packetContentPtr(packet);
+        char* next = section.data();
 
         //***************************
         //  HERE GO ACTUAL FIELDS:
         //***************************
+        next = writeFixedVar(next, varNamesCount);
         for (const auto& varName : varNames)
         {
             next = writeStringSectionToPacket(next, varName.toStdString());
         }
 
-        SV_ASSERT(pointerIsAtTheEnd(next, packet));
+        SV_ASSERT(pointerIsAtTheEnd(next, section));
 
-        return packet;
+        return section;
     }
 
     // Note: sending empty arguments should form perfectly valid packet meant for resetting exports on TD side.
