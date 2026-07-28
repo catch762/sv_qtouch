@@ -91,10 +91,11 @@ public:
             next = writeBytes(next, *optionalVarNamesSection);
         }
 
+        /*
         SV_LOG(std::format("makeTreeAsVec4Packet: vec4 items count [{}], vec4SectionSize [{}], contentSize [{}]\n"
                             "<Packet>\n{}\n</Packet>",
                             treeData.size(), vec4SectionSize, contentSize, QString::fromLatin1(packet.toHex())));
-        
+        */
 
         return packet;
     }
@@ -181,7 +182,7 @@ private:
     static QByteArray makeArrayForPacket(PacketType type, uint32_t contentSize)
     {
         const uint32_t packetBytesCount = PacketHeaderSize + contentSize;
-        const uint32_t packetType       = uint32_t(PacketType::TreeData);
+        const uint32_t packetType       = uint32_t(type);
 
         QByteArray packet(packetBytesCount, Qt::Uninitialized);
 

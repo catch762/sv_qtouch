@@ -65,7 +65,7 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
             tdClient->connectToTd();
         });
 
-        QPushButton* send = new QPushButton("send");
+        QPushButton* send = new QPushButton("send tree data with varnames");
         connect(send, &QPushButton::clicked, [&]()
         {
             if (!rootNode)
@@ -80,7 +80,13 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
                 SV_ERROR(*err);
             }
 
-            tdClient->sendTreeData(data, QTouchUITreePresetName);
+            TreeVarNames varNames;
+            if (auto err = getVarNamesFromTree(rootNode, varNames))
+            {
+                SV_ERROR(*err);
+            }
+
+            tdClient->sendTreeData(data, QTouchUITreePresetName, &varNames);
         });
 
         lay->addWidget(doConnect);
