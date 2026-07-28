@@ -82,14 +82,19 @@ public:
         //  HERE GO ACTUAL FIELDS:
         //***************************
         next = writeStringSectionToPacket   (next, presetName);
-        if (optionalVarNamesSection)
-        {
-            next = writeBytes               (next, *optionalVarNamesSection);
-        }
         next = writeFixedVar                (next, totalEntriesInTreeCount);
         next = writeFixedVar                (next, firstIndex);
         next = writeFixedVar                (next, lastIndex);
         next = writeBytes                   (next, treeData.data() + firstIndex, vec4SectionSize);
+        if (optionalVarNamesSection)
+        {
+            next = writeBytes(next, *optionalVarNamesSection);
+        }
+
+        SV_LOG(std::format("makeTreeAsVec4Packet: vec4 items count [{}], vec4SectionSize [{}], contentSize [{}]\n"
+                            "<Packet>\n{}\n</Packet>",
+                            treeData.size(), vec4SectionSize, contentSize, QString::fromLatin1(packet.toHex())));
+        
 
         return packet;
     }
