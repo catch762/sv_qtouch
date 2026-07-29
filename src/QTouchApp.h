@@ -38,6 +38,14 @@ public:
 
 private slots:
     void onPresetMixingActivated(const PresetNameString& presetNameA, const PresetNameString& presetNameB, double morphAtoB01);
+
+    //Internal call: all it does is makes sure current tree and widgets match mixing request.
+    //Return value: True if tree probably changed structurally (and in this case we send tree data with full info).
+    //              If there is error, we interpret it as "error means we do a full reset", and thus we return true as well.
+    //              And we send false only when we are sure that after this operation tree contains same members with same 
+    //              names, just different values (i.e. tree is structurally same)
+    bool setTreeAndWidgetsForPresetMixing(const PresetNameString& presetNameA, const PresetNameString& presetNameB, double morphAtoB01);
+
     void exportPresets();
 
 private:
@@ -110,8 +118,10 @@ private:
     TDTcpClient* tdClient = nullptr;
 
 private:
-    QWidget*                    centralWidget   = nullptr;
-    QHBoxLayout*                centralLayout   = nullptr;
-    TopLevelWidgetsContainer*       widgetsView = nullptr;
-    PresetTab*                  presetTab       = nullptr;
+    QWidget*                    centralWidget       = nullptr;
+    QHBoxLayout*                centralLayout       = nullptr;
+    TopLevelWidgetsContainer*       widgetsView     = nullptr;
+    QWidget*                        rightColumn     = nullptr;
+    QVBoxLayout*                    rightLayout     = nullptr;
+    PresetTab*                          presetTab   = nullptr;
 };

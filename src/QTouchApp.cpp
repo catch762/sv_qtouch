@@ -30,33 +30,70 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     }
 
     {
-        presetTab = new PresetTab(centralWidget);
-        //presetTab->getPresetView()->setRootPath(getPresetsSubdir().absolutePath());
-        connect(presetTab, &PresetTab::presetMixingActivated, this, [this]( const PresetNameString& presetNameA,
-                                                                            const PresetNameString& presetNameB,
-                                                                            double                  morphAtoB01 )
-                                                                            {
-                                                                                NodeWidgetChangeNotifier::executeWidgetChangingOperation([&]()
-                                                                                {
-                                                                                    onPresetMixingActivated(presetNameA, presetNameB, morphAtoB01);
-                                                                                });
-                                                                            });
+        rightColumn = new QWidget(this);
+        rightLayout = new QVBoxLayout(rightColumn);
+        rightColumn->setFixedWidth(300);
 
-        connect(presetTab, &PresetTab::presetMixingDeactivated, this, [this]()
+        centralLayout->addWidget(rightColumn);
+
+        //Preset tab:
         {
-            setTreeType(TreeType::Standalone); //yes thats all we do    
-        });
-        connect(presetTab, &PresetTab::presetSavingRequested, this, &QTouchApp::savePreset);
-        connect(presetTab, &PresetTab::exportPresetsRequested, this, &QTouchApp::exportPresets);
-        connect(presetTab->getPresetView(), &PresetFileView::presetLoadingRequested,
-                this, [this](const QString& presetFilename)
+            presetTab = new PresetTab(rightColumn);
+            //presetTab->getPresetView()->setRootPath(getPresetsSubdir().absolutePath());
+            connect(presetTab, &PresetTab::presetMixingActivated, this, [this]( const PresetNameString& presetNameA,
+                                                                                const PresetNameString& presetNameB,
+                                                                                double                  morphAtoB01 )
+                                                                                {
+                                                                                    //NodeWidgetChangeNotifier::executeWidgetChangingOperation([&]()
+                                                                                    //{
+                                                                                        onPresetMixingActivated(presetNameA, presetNameB, morphAtoB01);
+                                                                                    //});
+                                                                                });
+
+            connect(presetTab, &PresetTab::presetMixingDeactivated, this, [this]()
+            {
+                setTreeType(TreeType::Standalone); //yes thats all we do    
+            });
+            connect(presetTab, &PresetTab::presetSavingRequested, this, &QTouchApp::savePreset);
+            connect(presetTab, &PresetTab::exportPresetsRequested, this, &QTouchApp::exportPresets);
+            connect(presetTab->getPresetView(), &PresetFileView::presetLoadingRequested,
+                    this, [this](const QString& presetFilename)
+                    {
+                        if (!requireProjectIsOpenedFor("Preset loading")) return;
+
+                        loadTreeAndWidgetsFromPresetFile(getPresetsSubdir()->filePath(presetFilename));
+                    });
+
+            rightLayout->addWidget(presetTab);
+        }
+
+        //All other buttons which i put here temporarily, will move to new ui component at some point
+        {
+            QFrame* otherButtonsFrame = new QFrame(rightColumn);
+            otherButtonsFrame->setFrameStyle(QFrame::Panel | QFrame::Raised);
+            otherButtonsFrame->setLineWidth(2);
+            otherButtonsFrame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+            QVBoxLayout* otherButtonsLayout = new QVBoxLayout(otherButtonsFrame);
+
+            {
+                QPushButton* doConnect = new QPushButton("Connect to TD on default port");
+                connect(doConnect, &QPushButton::clicked, [&]()
                 {
-                    if (!requireProjectIsOpenedFor("Preset loading")) return;
-
-                    loadTreeAndWidgetsFromPresetFile(getPresetsSubdir()->filePath(presetFilename));
+                    tdClient->connectToTd();
                 });
+                otherButtonsLayout->addWidget(doConnect);
 
-        centralLayout->addWidget(presetTab);
+                QPushButton* sendTreeData = new QPushButton("Send full tree data with varnames");
+                connect(sendTreeData, &QPushButton::clicked, this, [this]()
+                {
+                    sendTreeDataToTD(true);
+                });
+                otherButtonsLayout->addWidget(sendTreeData);
+
+            }
+
+            rightLayout->addWidget(otherButtonsFrame);
+        }
     }
 
     initMenuBar();
@@ -65,35 +102,12 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
 
     tdClient = new TDTcpClient(this);
 
-    {
-        QWidget* testui = new QWidget(nullptr);
-        QVBoxLayout* lay = new QVBoxLayout(testui);
-
-        QPushButton* doConnect = new QPushButton("connect to default");
-        connect(doConnect, &QPushButton::clicked, [&]()
-        {
-            tdClient->connectToTd();
-        });
-
-        QPushButton* send = new QPushButton("send tree data with varnames");
-        connect(send, &QPushButton::clicked, this, [this]()
-        {
-            sendTreeDataToTD(true);
-        });
-
-        lay->addWidget(doConnect);
-        lay->addWidget(send);
-
-        testui->show();
-    }
-
     //This is generic case of "user changed something in a widget, we are sending updated data".
     //See other 'sendTreeDataToTD' calls for other cases such as preset mixing.
     if (auto notifier = NodeWidgetChangeNotifier::instance())
     {
         connect(notifier, &NodeWidgetChangeNotifier::someNodeWidgetChanged, this, [this]()
         {
-            //SV_WARN("Changed.");
             sendTreeDataToTD(false);
         });
     }
@@ -574,6 +588,18 @@ void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
                                         const PresetNameString& presetNameB,
                                         double morphAtoB01)
 {
+    //we dont want a single signal during this operation, we sendTreeDataToTD ourselves
+    QSignalBlocker block(NodeWidgetChangeNotifier::instance());
+
+    bool treeProbablyChangedStructurally = setTreeAndWidgetsForPresetMixing(presetNameA, presetNameB, morphAtoB01);
+
+    sendTreeDataToTD(treeProbablyChangedStructurally);
+}
+
+bool QTouchApp::setTreeAndWidgetsForPresetMixing(const PresetNameString& presetNameA,
+                                                 const PresetNameString& presetNameB,
+                                                 double morphAtoB01)
+{
     // This is called when:
     //  - preset mixing is turned on
     //  - user moves mix slider to a different position.
@@ -584,7 +610,7 @@ void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
     // For example, if user switched preset mixing on, off, and on again - nothing REALLY changes,
     // so we have to reuse existing trees, not reconstruct them.
 
-    if (!requireProjectIsOpenedFor("Preset mixing")) return;
+    if (!requireProjectIsOpenedFor("Preset mixing")) return true;
 
     //Ensure presets A and B are loaded:
     auto presetDir = getPresetsSubdir();
@@ -597,7 +623,7 @@ void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
     {
         SV_MSGBOX_ERROR("Preset mixing failed, couldnt load A/B presets");
         setTreeType(TreeType::Standalone);
-        return;
+        return true;
     }
 
     const bool alreadyHadAAndBLoaded =  resultA == LoadedPreset::Result::AlreadyHadThisFile &&
@@ -609,7 +635,7 @@ void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
         {
             SV_MSGBOX_ERROR("Preset mixing failed, A/B trees not structurally equal");
             setTreeType(TreeType::Standalone);
-            return;
+            return true;
         }
     }
 
@@ -637,7 +663,7 @@ void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
         {
             SV_MSGBOX_ERROR("Couldnt make mixing target (tree made from preset B)");
             setTreeType(TreeType::Standalone);
-            return;
+            return true;
         }
 
         setTreeType(TreeType::IsMixResult);
@@ -661,7 +687,7 @@ void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
                              "Res: {}\n",
                              presetForMixing_A.rootNode, presetForMixing_B.rootNode, rootNode));
         setTreeType(TreeType::Standalone);
-        return;
+        return true;
     }
 
     SV_LOG("Preset mixing: interpolated trees successfully. Updating widgets:"); 
@@ -671,6 +697,8 @@ void QTouchApp::onPresetMixingActivated(const PresetNameString& presetNameA,
     {
         WidgetsForNodeManager::updateAllWidgetsFromNodeState(node);
     });
+
+    return !existingRootNodeIsAlreadyCorrectMixingTarget;
 }
 
 QTouchApp::LoadedPreset::Result QTouchApp::LoadedPreset::loadPresetIfItsNotLoadedYet(const PresetNameString& presetName, const QString& jsonPresetFilePath)
