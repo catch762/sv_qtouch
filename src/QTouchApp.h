@@ -82,6 +82,8 @@ private:
 
     StringErrOpt loadProjectJson(const QString& jsonFilePath);
 
+    void sendTreeDataToTD(bool withVarNames);
+
 //Menu bar and its actions:
 private:
     void initMenuBar();

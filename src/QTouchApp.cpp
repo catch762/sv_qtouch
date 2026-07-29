@@ -10,6 +10,7 @@
 #include <QFileDialog>
 
 #include "DataToTDFormat\TDFormatTreeConverter.h"
+#include "WidgetLogic/NodeWidgetChangeNotifier.h"
 
 namespace
 {
@@ -31,7 +32,16 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     {
         presetTab = new PresetTab(centralWidget);
         //presetTab->getPresetView()->setRootPath(getPresetsSubdir().absolutePath());
-        connect(presetTab, &PresetTab::presetMixingActivated, this, &QTouchApp::onPresetMixingActivated);
+        connect(presetTab, &PresetTab::presetMixingActivated, this, [this]( const PresetNameString& presetNameA,
+                                                                            const PresetNameString& presetNameB,
+                                                                            double                  morphAtoB01 )
+                                                                            {
+                                                                                NodeWidgetChangeNotifier::executeWidgetChangingOperation([&]()
+                                                                                {
+                                                                                    onPresetMixingActivated(presetNameA, presetNameB, morphAtoB01);
+                                                                                });
+                                                                            });
+
         connect(presetTab, &PresetTab::presetMixingDeactivated, this, [this]()
         {
             setTreeType(TreeType::Standalone); //yes thats all we do    
@@ -66,27 +76,9 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
         });
 
         QPushButton* send = new QPushButton("send tree data with varnames");
-        connect(send, &QPushButton::clicked, [&]()
+        connect(send, &QPushButton::clicked, this, [this]()
         {
-            if (!rootNode)
-            {
-                SV_ERROR("root is null bro");
-                return;
-            }
-
-            TreeAsVec4Array data;
-            if (auto err = convertTreeToVec4Array(rootNode, data))
-            {
-                SV_ERROR(*err);
-            }
-
-            TreeVarNames varNames;
-            if (auto err = getVarNamesFromTree(rootNode, varNames))
-            {
-                SV_ERROR(*err);
-            }
-
-            tdClient->sendTreeData(data, QTouchUITreePresetName, &varNames);
+            sendTreeDataToTD(true);
         });
 
         lay->addWidget(doConnect);
@@ -94,6 +86,18 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
 
         testui->show();
     }
+
+    //This is generic case of "user changed something in a widget, we are sending updated data".
+    //See other 'sendTreeDataToTD' calls for other cases such as preset mixing.
+    if (auto notifier = NodeWidgetChangeNotifier::instance())
+    {
+        connect(notifier, &NodeWidgetChangeNotifier::someNodeWidgetChanged, this, [this]()
+        {
+            //SV_WARN("Changed.");
+            sendTreeDataToTD(false);
+        });
+    }
+    else SV_UNREACHABLE();
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
@@ -299,6 +303,40 @@ StringErrOpt QTouchApp::loadProjectJson(const QString& jsonFilePath)
     }
 
     return {};
+}
+
+void QTouchApp::sendTreeDataToTD(bool withVarNames)
+{
+    SV_WARN(std::format("sendTreeDataToTD: withVarNames={}", withVarNames));
+
+    if (!rootNode)
+    {
+        SV_ERROR("sendTreeDataToTD failed: rootNode is null");
+        return;
+    }
+
+    TreeAsVec4Array data;
+    if (auto err = convertTreeToVec4Array(rootNode, data))
+    {
+        SV_ERROR(std::format("sendTreeDataToTD failed: {}", *err));
+    }
+
+    
+    if (withVarNames)
+    {
+        TreeVarNames varNames;
+        if (auto err = getVarNamesFromTree(rootNode, varNames))
+        {
+            SV_ERROR(std::format("sendTreeDataToTD failed: {}", *err));
+        }
+
+        tdClient->sendTreeData(data, QTouchUITreePresetName, &varNames);
+    }
+    else
+    {
+        tdClient->sendTreeData(data, QTouchUITreePresetName);
+    }
+    
 }
 
 QDirOpt QTouchApp::getProjectDir() const

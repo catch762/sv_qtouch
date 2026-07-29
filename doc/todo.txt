@@ -10,3 +10,5 @@
 -for singletons, add DISABLE_COPY_AND_ASSIGNMENT and see if need to disable move as well
 
 -SUP: macros for enum, and auto parse it in widget maker ui string
+
+-well connect with 3 args, major mistake, fix all.
