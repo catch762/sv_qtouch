@@ -35,4 +35,10 @@ public:
 
 private:
     static NodeAndWidgetPairOpt buildTreeAndWidgetsForVariable(const SUP_Data& data, const SUP_Variable& var);
+
+    // If ui macro string contains information about tab, we are adding it to widget options. (if input widget options is 
+    // nullopt, then we create it)
+    //
+    // Return value: 'success'
+    static bool addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const QStringOpt& uiMacroString);
 };

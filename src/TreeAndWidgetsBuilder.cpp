@@ -53,6 +53,11 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
             return {};
         }
 
+        if (!addTabInformationIfNeeded(res->jsonForWidget, var.uiMacroArg))
+        {
+            return {};
+        }
+
         auto node = DataNode::makeLeaf(var.name, res->value);
         SV_ASSERT(node);
 
@@ -92,8 +97,50 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
             memberWidgets.push_back(memberNodeAndWidget->widget);
         }
 
-        auto *finalWrapperWidget = NodeWidget::makeNodeWidgetForCompositeNode(memberWidgets, node, var.name, getWidgetOptionsFromString(var.uiMacroArg));
+        QJsonObjectWithWidgetOptionsOpt widgetOptionsOpt = {};
+        if (!addTabInformationIfNeeded(widgetOptionsOpt, var.uiMacroArg))
+        {
+            return {};
+        }
+
+        auto *finalWrapperWidget = NodeWidget::makeNodeWidgetForCompositeNode(memberWidgets, node, var.name, widgetOptionsOpt);
 
         return NodeAndWidgetPair{node, finalWrapperWidget};
     }
+}
+
+bool TreeAndWidgetsBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const QStringOpt& uiMacroString)
+{
+    if (uiMacroString)
+    {
+        //we dont need substitutions here
+        auto parsedDataOrErr = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(*uiMacroString);
+
+        if (auto err = getError(parsedDataOrErr))
+        {
+            SV_ERROR(std::format("addTabInformationIfNeeded failed: couldnt parse uiMacroString: {}", *err));
+            return false;
+        }
+        const auto& parsedData = std::get<0>(parsedDataOrErr);
+
+        if (const SUP_Expr* tabArg = parsedData.getArgByName("tab"))
+        {
+            if (!tabArg->isLeaf() || !tabArg->getLeafValue()->isNumberInt())
+            {
+                SV_ERROR(std::format("addTabInformationIfNeeded failed: tabArg isnt NumberInt leaf: {}", *tabArg));
+                return false;
+            }
+
+            TabIndex tabIndex = tabArg->getLeafValue()->getNumberIntData();
+
+            if (!outWidgetOptionsOpt)
+            {
+                outWidgetOptionsOpt = QJsonObjectWithWidgetOptions();
+            }
+
+            (*outWidgetOptionsOpt)[NodeWidget::tabIndexKey] = tabIndex;
+        }
+    }
+
+    return true;
 }

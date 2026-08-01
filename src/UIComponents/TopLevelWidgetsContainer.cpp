@@ -67,19 +67,22 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWid
     deleteAllTopLevelWidgets();
     topLevelWidgets = std::move(newTopLevelWidgets);
 
-    auto tab = getOrMakeDefaultTab();
-    if (!tab)
-    {
-        SV_MSGBOX_ERROR("Cant make default tab");
-        return;
-    }
-
     for(auto widget : topLevelWidgets)
     {
         if (widget)
         {
-            SV_LOG("Adding widget to tab...");
-            //widget->show();
+            //its 1-based originally
+            TabIndex tabIndex = widget->getTabIndex().value_or(1) - 1;
+
+            auto* tab = getOrMakeTab(tabIndex);
+            if (!tab)
+            {
+                SV_ERROR(std::format("Couldnt create tab with index = [{}]", tabIndex));
+                continue;
+            }
+
+            //SV_LOG("Adding widget to tab...");
+
             tab->addWidget(widget);
         }
         else SV_ERROR("Null widget in topLevelWidgets list !");
@@ -195,14 +198,23 @@ int TopLevelWidgetsContainer::tabIndex(const TabOfTopLevelWidgets *tab)
     return -1;
 }
 
-TabOfTopLevelWidgets *TopLevelWidgetsContainer::getOrMakeDefaultTab()
+TabOfTopLevelWidgets *TopLevelWidgetsContainer::getOrMakeTab(const int index)
 {
-    if (tabsCount() == 0)
+    SV_ASSERT(index >= 0);
+
+    const int initialTabsCount = tabsCount();
+
+    if (!isValidIndex(index, initialTabsCount))
     {
-        addTab();
+        const int tabsToMake = index - initialTabsCount + 1;
+
+        for (int i = 0; i < tabsToMake; ++i)
+        {
+            addTab();
+        }
     }
 
-    return getTab(tabsCount()-1);
+    return getTab(index);
 }
 
 

@@ -10,7 +10,7 @@
 //  {
 //      struct A with 500 inner fields and widgets for them;
 //      struct B;
-//      int C;
+//      int C; + uimacrostring "tab=2"
 //  }
 //
 // Your top level widgets will be only these three: widget for A, widget for B, widget for C.
@@ -19,7 +19,10 @@
 // 
 // class TopLevelWidgetsContainer:
 //      - Holds this list of top level widgets (visual reordering doesnt change the order)
-//      - Puts these widgets into tabs (class TabOfTopLevelWidgets) 
+//      - Puts these widgets into appropriate tabs (class TabOfTopLevelWidgets) 
+//        Every top-level widget may also contain 1-based tab index representing
+//        which tab it should get added at. By default, everything goes to first tab.
+// 
 //***********************************************************************************
 
 class TabOfTopLevelWidgets;
@@ -42,7 +45,7 @@ private:
     void onTabDeleteRequested(TabOfTopLevelWidgets* tab);
     void deleteTabAndMoveWidgetsToOther(int index);
     int tabIndex(const TabOfTopLevelWidgets* tab); //-1 if not found
-    TabOfTopLevelWidgets* getOrMakeDefaultTab();
+    TabOfTopLevelWidgets* getOrMakeTab(int index);
 
 private:
     QVBoxLayout*    layout           = nullptr;
