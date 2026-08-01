@@ -62,7 +62,7 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
             SV_ERROR(std::format("buildTreeAndWidgetsForVariable: failed to make widget for {} representing seemingly native {}", node, var));
             return {};
         }
-        else widget->show(); //todo check if this is needed -- HEY I THINK ITS HARMFUL
+        //else widget->show(); //todo check if this is needed -- HEY I THINK ITS HARMFUL
 
         return NodeAndWidgetPair{node, widget};
     }

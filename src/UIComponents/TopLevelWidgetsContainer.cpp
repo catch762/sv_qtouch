@@ -79,7 +79,7 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWid
         if (widget)
         {
             SV_LOG("Adding widget to tab...");
-            widget->show();
+            //widget->show();
             tab->addWidget(widget);
         }
         else SV_ERROR("Null widget in topLevelWidgets list !");
