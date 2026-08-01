@@ -133,6 +133,12 @@ bool TreeAndWidgetsBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptio
 
             TabIndex tabIndex = tabArg->getLeafValue()->getNumberIntData();
 
+            //we dont need to save default val
+            if (tabIndex == 1)
+            {
+                return true;
+            }
+
             if (!outWidgetOptionsOpt)
             {
                 outWidgetOptionsOpt = QJsonObjectWithWidgetOptions();

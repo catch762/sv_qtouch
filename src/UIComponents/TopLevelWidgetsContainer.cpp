@@ -140,6 +140,15 @@ void TopLevelWidgetsContainer::onTabDeleteRequested(TabOfTopLevelWidgets* tab)
         return;
     }
     deleteTabAndMoveWidgetsToOther(index);
+
+
+
+
+    heres where u update indexes, and prob other places
+
+
+
+
 }
 
 void TopLevelWidgetsContainer::deleteTabAndMoveWidgetsToOther(int index)
