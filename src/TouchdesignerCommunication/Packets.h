@@ -22,18 +22,19 @@ enum class PacketType : uint32_t
 {
     TreeData = 0,
     TreeDataWithVarNames,
-    PresetsExport
+    PresetsExport,
+    LoadGlslFiles
 };
 
 class Packets
 {
 public:
     //only range [firstIndex, lastIndex] will be sent from treeData
-    static QByteArrayOpt makeTreeAsVec4Packet(const TreeAsVec4Array& treeData,
-        uint32_t firstIndex,
-        uint32_t lastIndex,
-        const std::string& presetName,
-        const TreeVarNames* optionalVarNames = nullptr)
+    static QByteArrayOpt makeTreeAsVec4Packet(  const TreeAsVec4Array&  treeData,
+                                                uint32_t                firstIndex,
+                                                uint32_t                lastIndex,
+                                                const std::string&      presetName,
+                                                const TreeVarNames*     optionalVarNames = nullptr)
     {
         if (treeData.empty())
         {
@@ -169,6 +170,43 @@ public:
         return packet;
     }
 
+//Read functions:
+public:
+    struct Header
+    {
+        uint32_t packetSize = 0;
+        PacketType packetType = PacketType::TreeData;
+
+        std::string toString() const
+        {
+            return std::format("Header{{type {}, size {}}}", uint32_t(packetType), packetSize);
+        }
+    };
+    SV_DECL_OPT(Header);
+    static HeaderOpt tryParseHeader(const QByteArray& bytes)
+    {
+        if (bytes.size() < PacketHeaderSize) return {};
+
+        Header result;
+
+        auto next = bytes.constData();
+
+        next = readFixedVar(next, result.packetSize);
+        next = readFixedVar(next, result.packetType);
+
+        return result;
+    }
+
+    using LoadGlslFilePaths = std::vector<QString>;
+    SV_DECL_OPT(LoadGlslFilePaths);
+
+    LoadGlslFilePathsOpt parseLoadGlslFilesPacketContentBlock(const QByteArray& contentBlock)
+    {
+        LoadGlslFilePaths res;
+
+        auto
+    }
+
 private:
     // When we are done building packet, we check that 'next' pointer now 
     // points at next byte after packet end -- this means we did everything correctly
@@ -219,6 +257,13 @@ private:
         return dst + sizeof(var);
     }
 
+    template<typename T>
+    static const char* readFixedVar(const char* src, T& var)
+    {
+        std::memcpy(&var, src, sizeof(var));
+        return src + sizeof(var);
+    }
+
     static char* writeBytes(char* dst, const void* source, int bytesCount)
     {
         SV_ASSERT(bytesCount >= 0);
@@ -253,27 +298,6 @@ private:
         return dst;
     };
 
-private:
+public:
     static constexpr int PacketHeaderSize = sizeof(uint32_t) * 2;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Just to avoid extra copies, we will simply return multiple bytearrays,
-// which we then feed into tcp stream sequentially,
-using PresetsExportPackets = std::vector<QByteArray>;
-SV_DECL_OPT(PresetsExportPackets);
-
-inline PresetsExportPacketsOpt makePresetExportPackets();
