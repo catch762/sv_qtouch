@@ -3,6 +3,7 @@
 #include "SerializationLogic/SerializationSystem.h"
 #include "WidgetLogic/WidgetMakerSystem.h"
 #include "WidgetLogic/NodeWidget.h"
+#include "WidgetLogic/WidgetsForNodeManager.h"
 #include "QTouchDefs.h"
 
 TreeAndTopLevelWidgetsOpt TreeAndWidgetsBuilder::buildTreeAndWidgets(const SUP_Data &data)
@@ -104,6 +105,8 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
         }
 
         auto *finalWrapperWidget = NodeWidget::makeNodeWidgetForCompositeNode(memberWidgets, node, var.name, widgetOptionsOpt);
+        WidgetsForNodeManager::registerWidgetForNode(node, finalWrapperWidget);
+
 
         return NodeAndWidgetPair{node, finalWrapperWidget};
     }
