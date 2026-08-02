@@ -42,6 +42,7 @@ public:
 private:
     void assignTabName(TabOfTopLevelWidgets* tab, int index);
     void reassignTabsNames();
+    void reassignTabIndexes();
     void onTabDeleteRequested(TabOfTopLevelWidgets* tab);
     void deleteTabAndMoveWidgetsToOther(int index);
     int tabIndex(const TabOfTopLevelWidgets* tab); //-1 if not found
@@ -60,6 +61,9 @@ private:
 //******************************************************
 // The most primitive holder of those top-level widgets:
 // simply keeps them in a vertical layout.
+// 
+// As of now it only holds NodeWidget*'s, but im not 
+// hardcoding it in this class
 //******************************************************
 class TabOfTopLevelWidgets : public QWidget
 {
@@ -67,7 +71,10 @@ class TabOfTopLevelWidgets : public QWidget
 public:
     TabOfTopLevelWidgets(QWidget* parent = nullptr);
 
-    void extractAllWidgets(QList<QWidget*> &outWidgets);
+    void extractAllWidgets(QList<QWidget*> &outWidgets); //removes them from layout and unparents
+
+    void visitAllWidgets(const std::function<void(QWidget*)>& visitor);
+
     void addWidget(QWidget *item);
 
     void setName(const QString& name);

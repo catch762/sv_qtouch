@@ -131,6 +131,24 @@ void TopLevelWidgetsContainer::reassignTabsNames()
     }
 }
 
+void TopLevelWidgetsContainer::reassignTabIndexes()
+{
+    for (int tabIndex = 0; tabIndex < tabsCount(); ++tabIndex)
+    {
+        auto tab = getTab(tabIndex);
+        SV_ASSERT(tab);
+
+        tab->visitAllWidgets([tabIndex](QWidget* w)
+        {
+            if (auto nodeWidget = dynamic_cast<NodeWidget*>(w))
+            {
+                //if its default value of 0, just reset it
+                nodeWidget->setTabIndex(tabIndex != 0 ? tabIndex : TabIndexOpt());
+            }
+        });
+    }
+}
+
 void TopLevelWidgetsContainer::onTabDeleteRequested(TabOfTopLevelWidgets* tab)
 {
     auto index = tabIndex(tab);
@@ -144,7 +162,7 @@ void TopLevelWidgetsContainer::onTabDeleteRequested(TabOfTopLevelWidgets* tab)
 
 
 
-    heres where u update indexes, and prob other places
+    //heres where u update indexes, and prob other places
 
 
 
@@ -174,11 +192,14 @@ void TopLevelWidgetsContainer::deleteTabAndMoveWidgetsToOther(int index)
 
     QList<QWidget*> extractedWidgets;
     tab->extractAllWidgets(extractedWidgets);
-    tab->deleteLater();
+    tab->deleteLater(); //crucial
 
     if (!extractedWidgets.empty())
     {
-        int tabThatInheritsIndex = tabsCount()-1;
+        // note that due to deleteLater, the deleted tab still exists under same index.
+        // so we must make sure we are not adding widgets back to it:
+        int tabThatInheritsIndex = index == 0 ? 1 : 0;
+
         TabOfTopLevelWidgets* tabThatInherits = getTab(tabThatInheritsIndex);
         if (!tabThatInherits)
         {
@@ -193,6 +214,7 @@ void TopLevelWidgetsContainer::deleteTabAndMoveWidgetsToOther(int index)
     }
 
     reassignTabsNames();
+    reassignTabIndexes();
 
     SV_LOG(std::format("Deleted tab and moved {} widgets to another.", extractedWidgets.size()));
 }
@@ -292,6 +314,20 @@ TabOfTopLevelWidgets::TabOfTopLevelWidgets(QWidget *parent) : QWidget(parent)
 void TabOfTopLevelWidgets::extractAllWidgets(QList<QWidget *> &outWidgets)
 {
     extractAllWidgetsFromLayoutAndDeleteNestedLayouts(contentLayout, &outWidgets);
+}
+
+void TabOfTopLevelWidgets::visitAllWidgets(const std::function<void(QWidget*)>& visitor)
+{
+    for (int i = 0; i < contentLayout->count(); ++i)
+    {
+        if (auto item = layout->itemAt(i))
+        {
+            if (auto widget = item->widget())
+            {
+                visitor(widget);
+            }
+        }
+    }
 }
 
 void TabOfTopLevelWidgets::addWidget(QWidget *item)
