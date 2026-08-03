@@ -102,6 +102,8 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
 
     tdClient = new TDTcpClient(this);
 
+    connect(tdClient, &TDTcpClient::loadGlslFilesPacketReceived, this, &QTouchApp::loadTreeAndWidgetsFromCode);
+
     //This is generic case of "user changed something in a widget, we are sending updated data".
     //See other 'sendTreeDataToTD' calls for other cases such as preset mixing.
     if (auto notifier = NodeWidgetChangeNotifier::instance())
@@ -143,6 +145,7 @@ bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
         widgetsView->setEnabled(true);
     }
 
+    SV_LOG(std::format("Successfully parsed [{}] GLSL code files, created tree and widgets", codeFilePaths.size()));
     return true;
 }
 
