@@ -14,11 +14,10 @@ public:
 
     explicit TDTcpClient(QObject* parent = nullptr)
         : QObject(parent)
-        , socket(nullptr)
     {
         socket = new QTcpSocket(this);
 
-        packetHandlers[PacketType::LoadGlslFiles] = std::bind(onLoadGlslPacketReceived, this, std::placeholders::_1);
+        packetHandlers[PacketType::LoadGlslFiles] = std::bind(&TDTcpClient::onLoadGlslPacketReceived, this, std::placeholders::_1);
 
         connect(socket, &QTcpSocket::connected,     this, &TDTcpClient::onConnected);
         connect(socket, &QTcpSocket::disconnected,  this, &TDTcpClient::onDisconnected);
@@ -71,6 +70,8 @@ public:
 
 signals:
     void connectionError(const QString& error);
+
+    void loadGlslFilesPacketReceived(const LoadGlslFilePaths& filePaths);
 
 private slots:
     void onConnected()
@@ -129,7 +130,7 @@ private:
         }
         else
         {
-            SV_ERROR(std::format("Couldnt find handler for arrived packet {}", *header));
+            SV_ERROR(std::format("Couldnt find handler for arrived packet {}", header->toString()));
         }
 
         //return true regardless of parsing error, we ate the data and thats all that matters
@@ -146,14 +147,14 @@ private:
 private:
     void onLoadGlslPacketReceived(QByteArray contentBlock)
     {
+        auto filePaths = Packets::parseLoadGlslFilesPacketContentBlock(contentBlock);
+        if (!filePaths)
+        {
+            SV_ERROR("LoadGlslFiles packet was received, but couldnt parse it.");
+            return;
+        }
 
-
-        //тут
-
-
-
-
-        const char* next = contentBlock.constData();
+        emit loadGlslFilesPacketReceived(*filePaths);
     }
 
 private:

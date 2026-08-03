@@ -26,6 +26,9 @@ enum class PacketType : uint32_t
     LoadGlslFiles
 };
 
+using LoadGlslFilePaths = std::vector<QString>;
+SV_DECL_OPT(LoadGlslFilePaths);
+
 class Packets
 {
 public:
@@ -172,6 +175,7 @@ public:
 
 //Read functions:
 public:
+    using ByteOffsetInt = int;
     struct Header
     {
         uint32_t packetSize = 0;
@@ -198,10 +202,7 @@ public:
         return Header{ *packetSize, PacketType(*packetType) };
     }
 
-    using LoadGlslFilePaths = std::vector<QString>;
-    SV_DECL_OPT(LoadGlslFilePaths);
-
-    LoadGlslFilePathsOpt parseLoadGlslFilesPacketContentBlock(const QByteArray& contentBlock)
+    static LoadGlslFilePathsOpt parseLoadGlslFilesPacketContentBlock(const QByteArray& contentBlock)
     {
         LoadGlslFilePaths res;
 
@@ -282,15 +283,6 @@ private:
     {
         std::memcpy(dst, &var, sizeof(var));
         return dst + sizeof(var);
-    }
-
-    using ByteOffsetInt = int;
-
-    template<typename T>
-    static ByteOffsetInt readFixedVar(const QByteArray& data, ByteOffsetInt offset, T& result)
-    {
-        std::memcpy(&var, src, sizeof(var));
-        return src + sizeof(var);
     }
 
     static bool hasSpace(const QByteArray& data, ByteOffsetInt offset, int requiredSpace)
