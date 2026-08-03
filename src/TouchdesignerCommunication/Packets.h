@@ -134,7 +134,7 @@ public:
             next = writeStringSectionToPacket(next, varName.toStdString());
         }
 
-        SV_ASSERT(pointerIsAtTheEnd(next, section));
+        SV_ASSERT(pointerExactlyAtTheEnd(next, section));
 
         return section;
     }
@@ -166,7 +166,7 @@ public:
             next = writeBytes(next, subPacket);
         }
 
-        SV_ASSERT(pointerIsAtTheEnd(next, packet));
+        SV_ASSERT(pointerExactlyAtTheEnd(next, packet));
         return packet;
     }
 
@@ -187,14 +187,15 @@ public:
     {
         if (bytes.size() < PacketHeaderSize) return {};
 
-        Header result;
+        ByteOffsetInt offset = 0;
 
-        auto next = bytes.constData();
+        auto packetSize = readFixedVar<uint32_t>(bytes, offset);
+        if (!packetSize) return {};
 
-        next = readFixedVar(next, result.packetSize);
-        next = readFixedVar(next, result.packetType);
+        auto packetType = readFixedVar<uint32_t>(bytes, offset);
+        if (!packetType) return {};
 
-        return result;
+        return Header{ *packetSize, PacketType(*packetType) };
     }
 
     using LoadGlslFilePaths = std::vector<QString>;
@@ -204,15 +205,41 @@ public:
     {
         LoadGlslFilePaths res;
 
-        auto
+        ByteOffsetInt offset = 0;
+
+        while (hasSpace(contentBlock, offset, 1))
+        {
+            auto string = readStringSection(contentBlock, offset);
+            if (!string)
+            {
+                SV_ERROR("parseLoadGlslFilesPacketContentBlock: failed to read string section");
+                return {};
+            }
+
+            res.push_back(QString::fromStdString(*string));
+        }
+
+        SV_ASSERT(offsetExactlyAtTheEnd(offset, contentBlock));
+
+        return res;
     }
 
 private:
     // When we are done building packet, we check that 'next' pointer now 
     // points at next byte after packet end -- this means we did everything correctly
-    static bool pointerIsAtTheEnd(const char* nextPointer, const QByteArray& packet)
+    static bool pointerExactlyAtTheEnd(const char* nextPointer, const QByteArray& packet)
     {
         return nextPointer == packet.data() + packet.size();
+    }
+
+    static bool pointerIsNotAtTheEnd(const char* nextPointer, const QByteArray& packet)
+    {
+        return nextPointer < (packet.data() + packet.size());
+    }
+
+    static bool offsetExactlyAtTheEnd(ByteOffsetInt offset, const QByteArray& packet)
+    {
+        return offset == packet.size();
     }
 
     // Returns packet which has header completely initialized,
@@ -257,11 +284,43 @@ private:
         return dst + sizeof(var);
     }
 
+    using ByteOffsetInt = int;
+
     template<typename T>
-    static const char* readFixedVar(const char* src, T& var)
+    static ByteOffsetInt readFixedVar(const QByteArray& data, ByteOffsetInt offset, T& result)
     {
         std::memcpy(&var, src, sizeof(var));
         return src + sizeof(var);
+    }
+
+    static bool hasSpace(const QByteArray& data, ByteOffsetInt offset, int requiredSpace)
+    {
+        const int bytesRemaining = data.size() - offset;
+        return bytesRemaining >= requiredSpace;
+    }
+
+    template<typename T>
+    static bool hasSpaceFor(const QByteArray& data, ByteOffsetInt offset)
+    {
+        return hasSpace(data, offset, sizeof(T));
+    }
+
+    template<typename T>
+    static std::optional<T> readFixedVar(const QByteArray& data, ByteOffsetInt& offset)
+    {
+        if (!hasSpaceFor<T>(data, offset))
+        {
+            SV_ERROR(std::format("readFixedVar: not enough space to read: {}", typeNameOrMangled<T>()));
+            return {};
+        }
+
+        T result;
+
+        std::memcpy(&result, data.constData() + offset, sizeof(T));
+
+        offset += sizeof(T);
+
+        return result;
     }
 
     static char* writeBytes(char* dst, const void* source, int bytesCount)
@@ -297,6 +356,23 @@ private:
 
         return dst;
     };
+
+
+    static std::optional<std::string> readStringSection(const QByteArray& data, ByteOffsetInt& offset)
+    {
+        auto stringSize = readFixedVar<uint32_t>(data, offset);
+        if (!stringSize) return {};
+
+        if (!hasSpace(data, offset, *stringSize))
+        {
+            SV_ERROR("Cant read string section, not enough data to read symbols");
+            return {};
+        }
+
+        std::string result = std::string(data.constData() + offset, *stringSize);
+        offset += *stringSize;
+        return result;
+    }
 
 public:
     static constexpr int PacketHeaderSize = sizeof(uint32_t) * 2;
