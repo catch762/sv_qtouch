@@ -433,7 +433,7 @@ DataNodeShared QTouchApp::getRootNode()
 void QTouchApp::deleteExistingTreeAndAllWidgets()
 {
     rootNode.reset();
-    widgetsView->deleteAllTopLevelWidgets();
+    widgetsView->deleteAllTopLevelWidgetsAndClearEverything();
     widgetsView->setEnabled(false);
 
     WidgetsForNodeManager::clear();

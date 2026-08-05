@@ -81,6 +81,7 @@ struct SUP_VariablesDict
 
         expr.visit([&](SUP_Expr& node)
         {
+            //we maybe will invalidate this 'token' ptr before it goes out of scope!
             if(auto* token = node.getLeafValue())
             {
                 if (token->isSymbol())
@@ -91,16 +92,12 @@ struct SUP_VariablesDict
                         //So, this token contains data:
                         //  - variable name
                         //  - flag that indicates we must take negative of that variable value.
-                        if (token->isNegative())
-                        {
-                            //we can only apply it to numbers.
-                            
-                        }
 
                         const bool mustNegateValue = token->isNegative();
 
                         //Ok, we copied it here. 'token' is invalid ptr now btw.
                         node = *exprFromDict;
+                        struct SHADOWING_TOKEN_PTR_WHICH_IS_NOW_INVALID {} token;
 
                         if (mustNegateValue)
                         {

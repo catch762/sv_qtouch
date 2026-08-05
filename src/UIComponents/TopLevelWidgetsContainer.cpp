@@ -64,7 +64,7 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWid
 {
     SV_LOG(std::format("Setting {} widgets", newTopLevelWidgets.size()));
 
-    deleteAllTopLevelWidgets();
+    deleteAllTopLevelWidgetsAndClearEverything();
     topLevelWidgets = std::move(newTopLevelWidgets);
 
     for(auto widget : topLevelWidgets)
@@ -89,9 +89,9 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWid
     }
 }
 
-void TopLevelWidgetsContainer::deleteAllTopLevelWidgets()
+void TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()
 {
-    SV_LOG("TopLevelWidgetsContainer::deleteAllTopLevelWidgets()");
+    SV_LOG("TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()");
 
     for (auto widget : topLevelWidgets)
     {
@@ -104,6 +104,15 @@ void TopLevelWidgetsContainer::deleteAllTopLevelWidgets()
                 //widget->setParent(nullptr);
                 //widget->hide();
             widget->deleteLater();
+        }
+    }
+
+    //This might introduce bugs, because im deleting tabs and widgets in one go
+    for (int i = 0; i < tabsCount(); ++i)
+    {
+        if (auto* tab = getTab(i))
+        {
+            tab->deleteLater();
         }
     }
 
@@ -158,15 +167,6 @@ void TopLevelWidgetsContainer::onTabDeleteRequested(TabOfTopLevelWidgets* tab)
         return;
     }
     deleteTabAndMoveWidgetsToOther(index);
-
-
-
-
-    //heres where u update indexes, and prob other places
-
-
-
-
 }
 
 void TopLevelWidgetsContainer::deleteTabAndMoveWidgetsToOther(int index)

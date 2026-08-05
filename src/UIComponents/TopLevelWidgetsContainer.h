@@ -33,7 +33,7 @@ public:
     TopLevelWidgetsContainer(QWidget* parent = nullptr);
 
     void setTopLevelWidgets(NodeWidgetVec&& newTopLevelWidgets);
-    void deleteAllTopLevelWidgets();
+    void deleteAllTopLevelWidgetsAndClearEverything();
 
     void addTab();
     int tabsCount();
