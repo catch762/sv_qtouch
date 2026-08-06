@@ -110,7 +110,20 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
 
 bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& codeFilePaths)
 {
-    return false;
+    if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
+
+    if (!rootNode)
+    {
+        SV_MSGBOX_ERROR("QTouchApp: cant updateCurrentTreeFromCode, tree is not loaded");
+        return false;
+    }
+
+    auto parsedVarData = SUP_DataParser().parseFiles(codeFilePaths);
+    if (!parsedVarData)
+    {
+        SV_MSGBOX_ERROR("QTouchApp: failed to parse GLSL code.");
+        return false;
+    }
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
