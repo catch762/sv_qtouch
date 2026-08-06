@@ -87,6 +87,8 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWid
         }
         else SV_ERROR("Null widget in topLevelWidgets list !");
     }
+
+    update();
 }
 
 void TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()
@@ -107,13 +109,19 @@ void TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()
         }
     }
 
-    //This might introduce bugs, because im deleting tabs and widgets in one go
-    for (int i = 0; i < tabsCount(); ++i)
+    //This might introduce bugs? because im deleting tabs and widgets in one go
+    //and apparently its not so easy? 
     {
-        if (auto* tab = getTab(i))
+        for (int i = 0; i < tabsCount(); ++i)
         {
-            tab->deleteLater();
+            if (auto* tab = getTab(i))
+            {
+                tab->deleteLater();
+            }
         }
+
+
+        extractAllWidgetsFromLayoutAndDeleteNestedLayouts(tabsLayout);
     }
 
     topLevelWidgets.clear();
