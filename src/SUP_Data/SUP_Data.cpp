@@ -5,7 +5,7 @@ std::string SUP_Variable::toString() const
     return std::format("SUP_Var[{}, {}{}]",
         type,
         name,
-        uiMacroArg ? std::format(", ui(\"{}\")", uiMacroArg) : std::string("")
+        arglistFromUiMacro ? std::format("{}", *arglistFromUiMacro) : std::string("")
     );
 }
 

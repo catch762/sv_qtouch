@@ -43,6 +43,7 @@ SV_DECL_ALIASES(UiMacroString);
 // }
 
 
+//This is needed to represent negative variable like "-someVariableName" 
 class TokenWithModifier : public BasicToken
 {
 public:
@@ -50,21 +51,19 @@ public:
     {
     }
 
-    bool isNegative()
+    bool isNegative() const
     {
         return negative;
     }
-
-public:
+private:
     bool negative = false;
 };
 SV_DECL_STD_FORMATTER(TokenWithModifier, obj.info());
 
-//using SUP_Expr = CompositeNode<BasicToken>;
 using SUP_Expr = CompositeNode<TokenWithModifier>;
 SV_DECL_ALIASES(SUP_Expr);
 
-namespace sup_expr_helpers
+namespace sup_expr_helpers //for writing tests, more than anything
 {
 template<typename... ChildrenArgs>
 inline SUP_Expr comp(ChildrenArgs... children)
@@ -106,4 +105,5 @@ public:
     std::vector<SUP_NamedExpr> namedExpressions;
 };
 SV_DECL_STD_FORMATTER(SUP_Arglist, obj.toString());
-SV_DECL_ERR(SUP_Arglist)
+SV_DECL_ALIASES(SUP_Arglist)
+SV_DECL_ERR(SUP_ArglistOpt)

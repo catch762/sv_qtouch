@@ -62,12 +62,15 @@ private:
     bool processDictEntryLine(const QString& line);
 
     void onLineError(const QString &error, const QString &line);
+    void onLineError(const std::string &error, const QString &line);
+    void onLineError(const char* error, const QString &line);
 
     // If text contains ui("12whatever34"), it will return 12whatever34, without quotes.
     // Warning:
     //  ui( "spaces within macro are ok" )
     //  ui ("but space after ui will NOT work")
-    QStringOpt tryParseUIMacroContent(const QString& text);
+    QStringOpt tryGetUIMacroContent(const QString& text);
+    SUP_ArglistOptOrError tryGetUIMacroContentAndParseArglistFromIt(const QString& text);
 
     void resetState();
 

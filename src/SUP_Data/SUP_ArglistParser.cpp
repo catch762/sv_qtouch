@@ -28,7 +28,7 @@ BasicTokenizer &SUP_getBasicTokenizerForUiString()
     return tokenizer;
 }
 
-SUP_ArglistOrError SUP_ArglistParser::parseToArglistWithoutSymbolSubstitutions(const UiMacroString &uiMacroString)
+SUP_ArglistOrError SUP_ArglistParser::parseToArglist(const UiMacroString &uiMacroString)
 {
     if (uiMacroString.isEmpty())
     {
@@ -93,7 +93,7 @@ SUP_ArglistOrError SUP_ArglistParser::parseToArglistAndReplaceSymbolTokensWithDi
     }
     */
 
-    auto arglistOrErr = parseToArglistWithoutSymbolSubstitutions(uiMacroString);
+    auto arglistOrErr = parseToArglist(uiMacroString);
     if (auto err = getError(arglistOrErr))
     {
         return *err;

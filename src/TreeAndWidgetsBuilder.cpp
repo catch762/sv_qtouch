@@ -47,14 +47,14 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
 {
     if (SUP_NativeGLSLTypeConverter::instance().hasConverterForType(var.type)) //THEN ITS A NATIVE TYPE SO WE JUST MAKE IT
     {
-        auto res = SUP_NativeGLSLTypeConverter::instance().convert(var.type, var.uiMacroArg, &data.varDict);
+        auto res = SUP_NativeGLSLTypeConverter::instance().convert(var.type, var.arglistFromUiMacro);
         if (!res)
         {
             SV_ERROR(std::format("buildTreeAndWidgetsForVariable: failed to convert seemingly native {} to C++ value", var));
             return {};
         }
 
-        if (!addTabInformationIfNeeded(res->jsonForWidget, var.uiMacroArg))
+        if (!addTabInformationIfNeeded(res->jsonForWidget, var.arglistFromUiMacro))
         {
             return {};
         }
@@ -99,7 +99,7 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
         }
 
         QJsonObjectWithWidgetOptionsOpt widgetOptionsOpt = {};
-        if (!addTabInformationIfNeeded(widgetOptionsOpt, var.uiMacroArg))
+        if (!addTabInformationIfNeeded(widgetOptionsOpt, var.arglistFromUiMacro))
         {
             return {};
         }
@@ -112,21 +112,11 @@ NodeAndWidgetPairOpt TreeAndWidgetsBuilder::buildTreeAndWidgetsForVariable(const
     }
 }
 
-bool TreeAndWidgetsBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const QStringOpt& uiMacroString)
+bool TreeAndWidgetsBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString)
 {
-    if (uiMacroString)
+    if (arglistFromMacroString)
     {
-        //we dont need substitutions here
-        auto parsedDataOrErr = SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(*uiMacroString);
-
-        if (auto err = getError(parsedDataOrErr))
-        {
-            SV_ERROR(std::format("addTabInformationIfNeeded failed: couldnt parse uiMacroString: {}", *err));
-            return false;
-        }
-        const auto& parsedData = std::get<0>(parsedDataOrErr);
-
-        if (const SUP_Expr* tabArg = parsedData.getArgByName("tab"))
+        if (const SUP_Expr* tabArg = arglistFromMacroString->getArgByName("tab"))
         {
             if (!tabArg->isLeaf() || !tabArg->getLeafValue()->isNumberInt())
             {

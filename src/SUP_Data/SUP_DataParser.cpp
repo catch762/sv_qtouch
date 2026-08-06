@@ -166,15 +166,15 @@ SUP_VariableOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
     auto parts = splitStringBySeparators(line, {"(", ",", ")"}, true);
     if (!parts)
     {
-        SV_ERROR("SUP_DataParser failed to process VarList entry line.");
+        onLineError("cant parse basic structure", line);
         return {};
     }
     SV_ASSERT(parts->size()==4);
 
-    const auto& macroName = (*parts)[0];
-    const auto& varType   = (*parts)[1];
-    const auto& varName   = (*parts)[2];
-    const auto& theRest   = (*parts)[3];
+    auto& macroName = (*parts)[0];
+    auto& varType   = (*parts)[1];
+    auto& varName   = (*parts)[2];
+    auto& theRest   = (*parts)[3];
 
     //1. macro type
     //actually we ignore it.
@@ -182,16 +182,27 @@ SUP_VariableOpt SUP_DataParser::parseVarListEntryLine(const QString& line)
     //2. var type and name
     if (varType.isEmpty())
     {
-        SV_ERROR(std::format("Empty var type within VarList entry line [{}]", line));
+        onLineError("empty var type", line);
         return {};
     }
     if (varName.isEmpty())
     {
-        SV_ERROR(std::format("Empty var name within VarList entry line [{}]", line));
+        onLineError("empty var name", line);
         return {};
     }
 
-    return SUP_Variable{varType, varName, tryParseUIMacroContent(theRest)};
+    SUP_ArglistOptOrError arglistOrErr = tryGetUIMacroContentAndParseArglistFromIt(theRest);
+    if (auto err = getError(arglistOrErr))
+    {
+        onLineError(*err, line);
+        return {};
+    }
+
+    return SUP_Variable{
+        std::move(varType),
+        std::move(varName),
+        std::get<0>(std::move(arglistOrErr))
+    };
 }
 
 bool SUP_DataParser::processStructDeclBegin(const QString& line)
@@ -290,7 +301,7 @@ SUP_VariableOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool&
         return {};
     }
 
-    const auto variableType = line.section(Comma, 0,0).trimmed();
+    auto variableType = line.section(Comma, 0,0).trimmed();
     const auto theRest = line.section(Comma,1).trimmed();
     if (variableType.isEmpty() || theRest.isEmpty())
     {
@@ -311,7 +322,7 @@ SUP_VariableOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool&
         out_isLastMember = true;
     }
 
-    const auto variableName = theRest.left(secondSep).trimmed();
+    auto variableName = theRest.left(secondSep).trimmed();
     if (variableName.isEmpty())
     {
         onLineError("Bad variableName content", line);
@@ -321,7 +332,18 @@ SUP_VariableOpt SUP_DataParser::parseStructMemberLine(const QString& line, bool&
     //everything after second separator; it may optionally contain the ui("...") macro part; it may also be empty
     const auto lastPart = theRest.mid(secondSep+1);
 
-    return SUP_Variable{variableType, variableName, tryParseUIMacroContent(theRest)};;
+    SUP_ArglistOptOrError arglistOrErr = tryGetUIMacroContentAndParseArglistFromIt(lastPart);
+    if (auto err = getError(arglistOrErr))
+    {
+        onLineError(*err, line);
+        return {};
+    }
+
+    return SUP_Variable{
+        std::move(variableType),
+        std::move(variableName),
+        std::get<0>(std::move(arglistOrErr))
+    };
 }
 
 bool SUP_DataParser::processDictEntryLine(const QString &line)
@@ -336,6 +358,12 @@ bool SUP_DataParser::processDictEntryLine(const QString &line)
     {
         return true;
     }
+
+    //  imagine 2 dict lines:
+    //      first = 10
+    //      second = first
+    //
+    //  this means on each dict line we have to look for possible previous dict entries referenced:
 
     SUP_ArglistOrError res = SUP_ArglistParser().parseToArglistAndReplaceSymbolTokensWithDictEntries(line, parseResult.varDict);
     if (auto err = getError(res))
@@ -375,7 +403,17 @@ void SUP_DataParser::onLineError(const QString &error, const QString &line)
     SV_ERROR(std::format("Error [{}] on a line: {}", error, line));
 }
 
-QStringOpt SUP_DataParser::tryParseUIMacroContent(const QString& text)
+void SUP_DataParser::onLineError(const std::string& error, const QString& line)
+{
+    return onLineError(QString::fromStdString(error), line);
+}
+
+void SUP_DataParser::onLineError(const char* error, const QString& line)
+{
+    return onLineError(QString(error), line);
+}
+
+QStringOpt SUP_DataParser::tryGetUIMacroContent(const QString& text)
 {
     auto indexUiBegin = text.indexOf(UiBegin);
     if (indexUiBegin == -1) return {};
@@ -390,6 +428,21 @@ QStringOpt SUP_DataParser::tryParseUIMacroContent(const QString& text)
     if (argumentBetweenQuotes.isEmpty()) return {};
 
     return argumentBetweenQuotes;
+}
+
+SUP_ArglistOptOrError SUP_DataParser::tryGetUIMacroContentAndParseArglistFromIt(const QString& text)
+{
+    UiMacroStringOpt uiMacroString = tryGetUIMacroContent(text);
+    if (!uiMacroString) return SUP_ArglistOpt{};
+
+    SUP_ArglistOrError res = SUP_ArglistParser().parseToArglistAndReplaceSymbolTokensWithDictEntries(
+                                                    *uiMacroString, parseResult.varDict);
+    if (auto err = getError(res))
+    {
+        return *err;
+    }
+
+    return std::get<0>(std::move(res));
 }
 
 void SUP_DataParser::resetState()

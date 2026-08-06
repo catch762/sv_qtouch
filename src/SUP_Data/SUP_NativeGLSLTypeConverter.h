@@ -47,19 +47,33 @@ public:
     };
     SV_DECL_OPT(Output);
 
-    using Converter = std::function<OutputOpt(const QStringOpt& uiMacroString, const SUP_VariablesDict* dict)>;
+    using Converter = std::function<OutputOpt(const SUP_ArglistOpt& uiMacroArglist)>;
 
-    OutputOpt convert(const QString& glslTypeName, const QStringOpt& uiMacroString, const SUP_VariablesDict* dict = nullptr) const
+    OutputOpt convert(const QString& glslTypeName, const SUP_ArglistOpt& uiMacroArglist) const
     {
         if (auto* converter = getValue(converters, glslTypeName))
         {
-            return (*converter)(uiMacroString, dict);
+            return (*converter)(uiMacroArglist);
         }
         else
         {
             SV_ERROR(std::format("SUP_NativeGLSLTypeConverter: did not find converter for glslTypeName={}", glslTypeName));
             return {};
         }
+    }
+
+    //this exists for tests more than anything
+    OutputOpt convertUsingMacroString(const QString& glslTypeName, const UiMacroString& uiMacroString) const
+    {
+        auto arglistOptOrErr = SUP_ArglistParser().parseToArglist(uiMacroString);
+        if (auto err = getError(arglistOptOrErr))
+        {
+            SV_ERROR(std::format("SUP_NativeGLSLTypeConverter couldnt convert a var, because failed to parse provided uimacrostring: {}",
+                                    *err));
+            return {};
+        }
+
+        return convert(glslTypeName, *getValue(arglistOptOrErr));
     }
 
     void registerConverter(const QString& glslTypeName, Converter converter)
@@ -181,36 +195,26 @@ private:
     //  json array of N json arrays of 3 doubles (vecN, ivecN)
     //      (If N is less than componentCount, its ok - we will use last available array in that case)
     template<StrictlyIntOrDouble UnderlyingType, int componentCount>
-    static OutputOpt convertIntsAndFloats(const QStringOpt& uiMacroString, const SUP_VariablesDict* dict)
+    static OutputOpt convertIntsAndFloats(const SUP_ArglistOpt& uiMacroArglist)
     {
-        if (uiMacroString)
+        if (uiMacroArglist)
         {
-            auto parsedDataOrErr = dict ? SUP_ArglistParser().parseToArglistAndReplaceSymbolTokensWithDictEntries(*uiMacroString, *dict) :
-                                          SUP_ArglistParser().parseToArglistWithoutSymbolSubstitutions(*uiMacroString);
-
-            if (auto err = getError(parsedDataOrErr))
-            {
-                SV_ERROR(std::format("convertIntsAndFloats failed: couldnt parse uiMacroString: {}", *err));
-                return {};
-            }
-            const auto& parsedData = std::get<0>(parsedDataOrErr);
-
             //note that we get args differently: getArg, getArgByName
 
             if constexpr(std::is_same_v<UnderlyingType, int>)
             {
-                if (const SUP_Expr* radArg = parsedData.getArgByName("rad")) //int, but its for radio button, not slider
+                if (const SUP_Expr* radArg = uiMacroArglist->getArgByName("rad")) //int, but its for radio button, not slider
                 {
                     return convertToEnum<componentCount>(*radArg);
                 }
             }
 
-            if (const SUP_Expr* limsArg = parsedData.getArg(0, "lims"))
+            if (const SUP_Expr* limsArg = uiMacroArglist->getArg(0, "lims"))
             {
                 return  convertToLimited<UnderlyingType, componentCount>(*limsArg);
             }
 
-            SV_ERROR(std::format("convertIntsAndFloats fails to deal with data: {}", parsedData));
+            SV_ERROR(std::format("convertIntsAndFloats fails to deal with data: {}", *uiMacroArglist));
             return {};
         }
         else return convertToLimited<UnderlyingType, componentCount>({});

@@ -16,7 +16,7 @@ struct SUP_Variable
 {
     QString type;
     QString name;
-    QStringOpt uiMacroArg; //not including quotes
+    SUP_ArglistOpt arglistFromUiMacro;
 
     std::string toString() const;
 };

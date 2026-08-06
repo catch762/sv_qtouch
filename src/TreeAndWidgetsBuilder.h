@@ -40,5 +40,5 @@ private:
     // nullopt, then we create it)
     //
     // Return value: 'success'
-    static bool addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const QStringOpt& uiMacroString);
+    static bool addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString);
 };
