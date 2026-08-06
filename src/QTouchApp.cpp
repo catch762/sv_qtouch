@@ -40,15 +40,7 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
         {
             presetTab = new PresetTab(rightColumn);
             //presetTab->getPresetView()->setRootPath(getPresetsSubdir().absolutePath());
-            connect(presetTab, &PresetTab::presetMixingActivated, this, [this]( const PresetNameString& presetNameA,
-                                                                                const PresetNameString& presetNameB,
-                                                                                double                  morphAtoB01 )
-                                                                                {
-                                                                                    //NodeWidgetChangeNotifier::executeWidgetChangingOperation([&]()
-                                                                                    //{
-                                                                                        onPresetMixingActivated(presetNameA, presetNameB, morphAtoB01);
-                                                                                    //});
-                                                                                });
+            connect(presetTab, &PresetTab::presetMixingActivated, this, &QTouchApp::onPresetMixingActivated);
 
             connect(presetTab, &PresetTab::presetMixingDeactivated, this, [this]()
             {
@@ -114,6 +106,11 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
         });
     }
     else SV_UNREACHABLE();
+}
+
+bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& codeFilePaths)
+{
+    return false;
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)

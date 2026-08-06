@@ -16,6 +16,7 @@ class QTouchApp : public QMainWindow
 public:
     QTouchApp(QWidget *parent = nullptr);
 
+    bool updateCurrentTreeFromCode                         (const QStringVec& codeFilePaths);
     bool loadTreeAndWidgetsFromCode             (const QStringVec& codeFilePaths);
     bool loadTreeAndWidgetsFromPresetFile       (const QString& filePath);
     bool loadTreeAndWidgetsUsingPresetFileName  (const PresetNameString& presetName);
