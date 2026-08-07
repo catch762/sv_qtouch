@@ -28,13 +28,18 @@
 using TreeAndTopLevelWidgets = std::pair<DataNodeShared, NodeWidgetVec>;
 SV_DECL_OPT(TreeAndTopLevelWidgets);
 
-class TreeAndWidgetsBuilder
+class SUP_TreeBuilder
 {
 public:
-    static TreeAndTopLevelWidgetsOpt buildTreeAndWidgets(const SUP_Data& data);
+    //If you do supply 'outTopLevelWidgets', then it will build a widget for each tree node as well,
+    //and return top level widgets in this parameter.
+    static TreeAndTopLevelWidgetsOpt buildTreeAndWidgets(const SUP_Data& data, NodeWidgetVec *outTopLevelWidgets = nullptr);
 
 private:
-    static NodeAndWidgetPairOpt buildTreeAndWidgetsForVariable(const SUP_Data& data, const SUP_Variable& var);
+    //If you do supply 'optionalOut_widget', then it will build a widget for variable as well.
+    static DataNodeShared buildTreeForVariable(   const SUP_Data&     data,
+                                                        const SUP_Variable& var,
+                                                        NodeWidget**        optionalOut_widget = nullptr);
 
     // If ui macro string contains information about tab, we are adding it to widget options. (if input widget options is 
     // nullopt, then we create it)
