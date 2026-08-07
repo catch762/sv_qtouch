@@ -2,6 +2,7 @@
 #include "SUP_Data/SUP_Data.h"
 #include "DataNode/DataNode.h"
 #include "WidgetLogic/WidgetDefs.h"
+#include "WidgetLogic/NodeWidget.h"
 
 //****************************************************************
 //
@@ -31,15 +32,24 @@ SV_DECL_OPT(TreeAndTopLevelWidgets);
 class SUP_TreeBuilder
 {
 public:
-    //If you do supply 'outTopLevelWidgets', then it will build a widget for each tree node as well,
-    //and return top level widgets in this parameter.
-    static TreeAndTopLevelWidgetsOpt buildTreeAndWidgets(const SUP_Data& data, NodeWidgetVec *outTopLevelWidgets = nullptr);
+    static DataNodeShared buildTree             (const SUP_Data& data);
+
+    //There is guarantee that it either:
+    //      - returns non-null DataNode (root) and as many widgets as root has children in 'outTopLevelWidgets';
+    //      - returns nullptr and empty 'outTopLevelWidgets'
+    //
+    //So you dont need to cleanup anything in case of failure.
+    static DataNodeShared buildTreeAndWidgets   (const SUP_Data& data, NodeWidgetVec& outTopLevelWidgets);
 
 private:
-    //If you do supply 'optionalOut_widget', then it will build a widget for variable as well.
-    static DataNodeShared buildTreeForVariable(   const SUP_Data&     data,
-                                                        const SUP_Variable& var,
-                                                        NodeWidget**        optionalOut_widget = nullptr);
+    //If you do supply 'outTopLevelWidgets', then it will build a widget for each tree node as well,
+    //and return top level widgets in this parameter.
+    static DataNodeShared buildTreeAndOptionallyWidgets(const SUP_Data& data, NodeWidgetVec* outTopLevelWidgets = nullptr);
+
+    //If you do supply 'outWidget', then it will build a widget for variable as well.
+    static DataNodeShared buildTreeForVariable( const SUP_Data&     data,
+                                                const SUP_Variable& var,
+                                                NodeWidgetUnique*   outWidget = nullptr);
 
     // If ui macro string contains information about tab, we are adding it to widget options. (if input widget options is 
     // nullopt, then we create it)

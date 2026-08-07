@@ -6,43 +6,84 @@
 #include "WidgetLogic/WidgetsForNodeManager.h"
 #include "QTouchDefs.h"
 
-DataNodeShared SUP_TreeBuilder::buildTreeAndWidgets(const SUP_Data &data, NodeWidgetVec* outTopLevelWidgets)
+bool allOrNoneRequiredResourcesAcquired(   const DataNodeShared&   resource0_tree,
+                                           const NodeWidgetUnique& resource1_widget,
+                                           bool                    widgetWasRequested )
 {
-    NodeAndWidgetPairList topLevelItems;
+    if (widgetWasRequested)
+    {
+        bool haveBoth = resource0_tree && resource1_widget;
+        bool haveNone = !resource0_tree && !resource1_widget;
+        return haveBoth || haveNone;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+DataNodeShared SUP_TreeBuilder::buildTree(const SUP_Data& data)
+{
+    return buildTreeAndOptionallyWidgets(data);
+}
+
+DataNodeShared SUP_TreeBuilder::buildTreeAndWidgets(const SUP_Data& data, NodeWidgetVec& outTopLevelWidgets)
+{
+    return buildTreeAndOptionallyWidgets(data, &outTopLevelWidgets);
+}
+
+DataNodeShared SUP_TreeBuilder::buildTreeAndOptionallyWidgets(const SUP_Data &data, NodeWidgetVec* outTopLevelWidgets)
+{
+    const bool widgetsRequested = static_cast<bool>(outTopLevelWidgets);
+
+    std::vector<DataNodeShared>     topLevelNodes;
+    std::vector<NodeWidgetUnique>   topLevelWidgets;
 
     int entryIdx = 0;
     for (auto &varlistEntry : data.varListEntries)
     {
-        NodeWidgetUnique    widgetUnique;
-        NodeWidget* optionalMemberWidget = nullptr;
-        auto node = buildTreeForVariable(data, varlistEntry, _placeholder_);
-        if (!nodeAndWidget || !nodeAndWidget->isValid())
+        NodeWidgetUnique optionalWidget;
+        auto             node = buildTreeForVariable(data, varlistEntry, widgetsRequested ? &optionalWidget : nullptr);
+
+        SV_ASSERT(allOrNoneRequiredResourcesAcquired(node, optionalWidget, widgetsRequested));
+
+        if (!node)
         {
             SV_ERROR(std::format("Failed building valid NodeAndWidgetPairList for entry [{}], {}", entryIdx, varlistEntry));
             return {};
         }
 
-        topLevelItems.push_back(*nodeAndWidget);
+        topLevelNodes.push_back(std::move(node));
+        if (widgetsRequested)
+        {
+            topLevelWidgets.push_back(std::move(optionalWidget));
+        }
 
         entryIdx++;
     }
 
-    if (topLevelItems.empty())
+    if (topLevelNodes.empty())
     {
-        SV_WARN("SUP_TreeBuilder finished operation with 0 items created");
-        return {};
+        SV_WARN("SUP_TreeBuilder finishing operation with 0 items created");
     }
 
     DataNodeShared root = DataNode::makeComposite();
-    NodeWidgetVec topLevelWidgets;
 
-    for(auto &nodeAndWidget : topLevelItems)
+    for(auto &node : topLevelNodes)
     {
-        root->addChild(nodeAndWidget.node);
-        topLevelWidgets.push_back(nodeAndWidget.widget);
+        root->addChild(node);
     }
 
-    return TreeAndTopLevelWidgets{std::move(root), std::move(topLevelWidgets)};
+    if (widgetsRequested)
+    {
+        outTopLevelWidgets->clear();
+        for (auto& widgetUnique : topLevelWidgets)
+        {
+            outTopLevelWidgets->push_back(widgetUnique.release());
+        }
+    }
+
+    return std::move(root);
 }
 
 DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
@@ -106,21 +147,12 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
         for (const auto& member : structDefinition->members)
         {
-            NodeWidgetUnique    optionalMemberWidgetUnique;
-            NodeWidget*         optionalMemberWidget = nullptr;
+            NodeWidgetUnique    optionalMemberWidget;
             auto                memberNode           = buildTreeForVariable(data, member, widgetsRequested ? &optionalMemberWidget : nullptr);
-            if (widgetsRequested)
-            {
-                //as soon as we obtain this widget, we put it to unique ptr, so we dont have to think
-                //what happens to it in case of error (unique ptr will clean it up)
-                optionalMemberWidgetUnique.reset(optionalMemberWidget);
-            }
 
-            const bool  bothObtained    =  memberNode && (widgetsRequested ?  bool(optionalMemberWidgetUnique) : true);
-            const bool  noneObtained    = !memberNode && (widgetsRequested ? !bool(optionalMemberWidgetUnique) : true);
-            SV_ASSERT(bothObtained || noneObtained);
+            SV_ASSERT(allOrNoneRequiredResourcesAcquired(memberNode, optionalMemberWidget, widgetsRequested));
 
-            if (noneObtained)
+            if (!memberNode)
             {
                 SV_ERROR(std::format("buildTreeForVariable: failed making valid member {} of struct {}", member, *structDefinition));
                 return {};
@@ -130,18 +162,16 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
             if (widgetsRequested)
             {
-                memberWidgets.push_back(std::move(optionalMemberWidgetUnique));
+                memberWidgets.push_back(std::move(optionalMemberWidget));
             }
         }
 
-        //All good, return both values:
         if (widgetsRequested)
         {
             //this cant fail
-            auto* finalWrapperWidget = NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, widgetOptionsOpt);
-            SV_ASSERT(finalWrapperWidget);
-            WidgetsForNodeManager::registerWidgetForNode(node, finalWrapperWidget);
-            *outWidget = finalWrapperWidget;
+            outWidget->reset(NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, widgetOptionsOpt));
+            SV_ASSERT(*outWidget);
+            WidgetsForNodeManager::registerWidgetForNode(node, outWidget->get());
         }
         return node;
     }

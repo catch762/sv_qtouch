@@ -143,15 +143,17 @@ bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
         SV_LOG(parsedVarData->toString());
     }
 
-    auto rootNodeAndTopLevelWidgets = SUP_TreeBuilder::buildTreeAndWidgets(*parsedVarData);
-    if (!rootNodeAndTopLevelWidgets)
+    NodeWidgetVec   topLevelWidgets;
+    auto            newRootNode = SUP_TreeBuilder::buildTreeAndWidgets(*parsedVarData, topLevelWidgets);
+
+    if (!newRootNode)
     {
         SV_MSGBOX_ERROR("QTouchApp: failed to create root node and top level widgets for GLSL code variables.");
         return false;
     }
     else{
-        rootNode = std::move(rootNodeAndTopLevelWidgets->first);
-        widgetsView->setTopLevelWidgets(std::move(rootNodeAndTopLevelWidgets->second));
+        rootNode = std::move(newRootNode);
+        widgetsView->setTopLevelWidgets(std::move(topLevelWidgets));
         widgetsView->setEnabled(true);
     }
 
