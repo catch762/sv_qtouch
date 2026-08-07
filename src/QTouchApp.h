@@ -3,7 +3,7 @@
 #include <QMainWindow>
 
 #include "SUP_Data/SUP_DataParser.h"
-#include "TreeAndWidgetsBuilder.h"
+#include "SUP_Data/SUP_TreeBuilder.h"
 
 #include "TouchdesignerCommunication/TDTcpCLient.h"
 

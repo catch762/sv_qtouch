@@ -108,7 +108,7 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     else SV_UNREACHABLE();
 }
 
-bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& codeFilePaths)
+bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 {
     if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
 
@@ -118,12 +118,14 @@ bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& codeFilePaths)
         return false;
     }
 
-    auto parsedVarData = SUP_DataParser().parseFiles(codeFilePaths);
-    if (!parsedVarData)
+    auto newVarData = SUP_DataParser().parseFiles(newCodeFilePaths);
+    if (!newVarData)
     {
         SV_MSGBOX_ERROR("QTouchApp: failed to parse GLSL code.");
         return false;
     }
+
+    auto newTree = SUP_TreeBuilder::buildTree(*newVarData);
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
