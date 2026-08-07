@@ -96,14 +96,6 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
     const bool widgetsRequested = static_cast<bool>(outWidget);
 
-    //nullopt is perfectly fine value here
-    auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
-    if (auto err = getError(widgetOptionsOptOrErr))
-    {
-        SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
-        return {};
-    }
-
     if (SUP_NativeGLSLTypeConverter::instance().hasConverterForType(var.type)) //THEN ITS A NATIVE TYPE SO WE JUST MAKE IT
     {
         anyOpt res = SUP_NativeGLSLTypeConverter::instance().convert(var.type, var.arglistFromUiMacro);
@@ -118,6 +110,13 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
         if (widgetsRequested)
         {
+            auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
+            if (auto err = getError(widgetOptionsOptOrErr))
+            {
+                SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
+                return {};
+            }
+
             outWidget->reset( WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, *getValue(widgetOptionsOptOrErr)) );
             if (!outWidget)
             {
@@ -164,6 +163,13 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
         if (widgetsRequested)
         {
+            auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
+            if (auto err = getError(widgetOptionsOptOrErr))
+            {
+                SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
+                return {};
+            }
+
             //this cant fail
             outWidget->reset(NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, *getValue(widgetOptionsOptOrErr)));
             SV_ASSERT(*outWidget);
