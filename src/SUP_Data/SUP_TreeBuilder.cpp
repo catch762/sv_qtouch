@@ -96,27 +96,29 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
     const bool widgetsRequested = static_cast<bool>(outWidget);
 
+    //nullopt is perfectly fine value here
+    auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
+    if (auto err = getError(widgetOptionsOptOrErr))
+    {
+        SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
+        return {};
+    }
+
     if (SUP_NativeGLSLTypeConverter::instance().hasConverterForType(var.type)) //THEN ITS A NATIVE TYPE SO WE JUST MAKE IT
     {
-        auto res = SUP_NativeGLSLTypeConverter::instance().convert(var.type, var.arglistFromUiMacro);
+        anyOpt res = SUP_NativeGLSLTypeConverter::instance().convert(var.type, var.arglistFromUiMacro);
         if (!res)
         {
             SV_ERROR(std::format("buildTreeForVariable: failed to convert seemingly native {} to C++ value", var));
             return {};
         }
 
-        if (!addTabInformationIfNeeded(res->jsonForWidget, var.arglistFromUiMacro))
-        {
-            return {};
-        }
-
-        auto node = DataNode::makeLeaf(var.name, res->value);
+        auto node = DataNode::makeLeaf(var.name, *res);
         SV_ASSERT(node);
-
 
         if (widgetsRequested)
         {
-            outWidget->reset( WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, res->jsonForWidget) );
+            outWidget->reset( WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, *getValue(widgetOptionsOptOrErr)) );
             if (!outWidget)
             {
                 SV_ERROR(std::format("buildTreeForVariable: failed to make widget for {} representing seemingly native {}", node, var));
@@ -134,12 +136,6 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
         if (!structDefinition)
         {
             SV_ERROR(std::format("buildTreeForVariable: failed, no struct definition exists for {}", var));
-            return {};
-        }
-
-        QJsonObjectWithWidgetOptionsOpt widgetOptionsOpt = {};
-        if (!addTabInformationIfNeeded(widgetOptionsOpt, var.arglistFromUiMacro))
-        {
             return {};
         }
 
@@ -169,7 +165,7 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
         if (widgetsRequested)
         {
             //this cant fail
-            outWidget->reset(NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, widgetOptionsOpt));
+            outWidget->reset(NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, *getValue(widgetOptionsOptOrErr)));
             SV_ASSERT(*outWidget);
             WidgetsForNodeManager::registerWidgetForNode(node, outWidget->get());
         }
@@ -177,7 +173,19 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
     }
 }
 
-bool SUP_TreeBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString)
+QJsonObjectWithWidgetOptionsOptOrError SUP_TreeBuilder::makeWidgetOptionsFromMacroArglist(const SUP_ArglistOpt& arglistFromMacroString)
+{
+    QJsonObjectWithWidgetOptionsOpt widgetOptionsOpt = {};
+
+    if (auto err = addTabInformationIfNeeded(widgetOptionsOpt, arglistFromMacroString))
+    {
+        return *err;
+    }
+
+    return widgetOptionsOpt;
+}
+
+StringErrOpt SUP_TreeBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString)
 {
     if (arglistFromMacroString)
     {
@@ -185,8 +193,7 @@ bool SUP_TreeBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt&
         {
             if (!tabArg->isLeaf() || !tabArg->getLeafValue()->isNumberInt())
             {
-                SV_ERROR(std::format("addTabInformationIfNeeded failed: tabArg isnt NumberInt leaf: {}", *tabArg));
-                return false;
+                return std::format("addTabInformationIfNeeded failed: tabArg isnt NumberInt leaf: {}", *tabArg);
             }
 
             TabIndex tabIndex = tabArg->getLeafValue()->getNumberIntData();
@@ -194,7 +201,7 @@ bool SUP_TreeBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt&
             //we dont need to save default val
             if (tabIndex == 1)
             {
-                return true;
+                return {};
             }
 
             if (!outWidgetOptionsOpt)
@@ -206,5 +213,5 @@ bool SUP_TreeBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt&
         }
     }
 
-    return true;
+    return {};
 }

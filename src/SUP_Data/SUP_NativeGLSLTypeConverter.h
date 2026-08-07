@@ -34,22 +34,9 @@
 class SUP_NativeGLSLTypeConverter
 {
 public:
-    struct Output
-    {
-        std::any value;
-        QJsonObjectWithWidgetOptionsOpt jsonForWidget;
+    using Converter = std::function<anyOpt(const SUP_ArglistOpt& uiMacroArglist)>;
 
-        template<typename T>
-        bool variantHoldsType()
-        {
-            return anyHoldsType<T>(value);
-        }
-    };
-    SV_DECL_OPT(Output);
-
-    using Converter = std::function<OutputOpt(const SUP_ArglistOpt& uiMacroArglist)>;
-
-    OutputOpt convert(const QString& glslTypeName, const SUP_ArglistOpt& uiMacroArglist) const
+    anyOpt convert(const QString& glslTypeName, const SUP_ArglistOpt& uiMacroArglist) const
     {
         if (auto* converter = getValue(converters, glslTypeName))
         {
@@ -63,7 +50,7 @@ public:
     }
 
     //this exists for tests more than anything
-    OutputOpt convertUsingMacroString(const QString& glslTypeName, const UiMacroString& uiMacroString) const
+    anyOpt convertUsingMacroString(const QString& glslTypeName, const UiMacroString& uiMacroString) const
     {
         auto arglistOptOrErr = SUP_ArglistParser().parseToArglist(uiMacroString);
         if (auto err = getError(arglistOptOrErr))
@@ -195,7 +182,7 @@ private:
     //  json array of N json arrays of 3 doubles (vecN, ivecN)
     //      (If N is less than componentCount, its ok - we will use last available array in that case)
     template<StrictlyIntOrDouble UnderlyingType, int componentCount>
-    static OutputOpt convertIntsAndFloats(const SUP_ArglistOpt& uiMacroArglist)
+    static anyOpt convertIntsAndFloats(const SUP_ArglistOpt& uiMacroArglist)
     {
         if (uiMacroArglist)
         {
@@ -221,7 +208,7 @@ private:
     }
 
     template<StrictlyIntOrDouble UnderlyingType, int componentCount>
-    static OutputOpt convertToLimited(const SUP_ExprOpt& settings)
+    static anyOpt convertToLimited(const SUP_ExprOpt& settings)
     {
         SV_ASSERT(componentCount >= 1 && componentCount <= 4);
 
@@ -234,7 +221,7 @@ private:
             if (!settings)
             {
                 //return whatever was default-constructed.
-                return Output{ std::any(limitedValue) };
+                return std::any(limitedValue);
             }
 
             auto threeNumbers = getThreeNumbers<UnderlyingType>(*settings);
@@ -247,7 +234,7 @@ private:
             limitedValue = LimitedT{threeNumbers->at(2),
                                     threeNumbers->at(0),
                                     threeNumbers->at(1)};
-            return Output{ std::any(limitedValue) };
+            return std::any(limitedValue);
         }
         else
         {
@@ -257,7 +244,7 @@ private:
             if (!settings)
             {
                 //return whatever was default-constructed.
-                return Output{ std::any(limitedVec) };
+                return std::any(limitedVec);
             }
 
             for (int i = 0; i < componentCount; ++i)
@@ -281,7 +268,7 @@ private:
                                             threeNumbers->at(1) };
             }
 
-            return Output{ std::any(limitedVec) };
+            return std::any(limitedVec);
         }
     }
 
@@ -377,7 +364,7 @@ private:
     }
 
     template<int componentCount>
-    static OutputOpt convertToEnum(const SUP_Expr& settings)
+    static anyOpt convertToEnum(const SUP_Expr& settings)
     {
         SV_ASSERT(componentCount >= 1 && componentCount <= 4);
 
@@ -390,7 +377,7 @@ private:
                 return {};
             }
 
-            return Output{ std::any(std::move(*theEnum)) };
+            return std::any(std::move(*theEnum));
         }
         else
         {
@@ -416,7 +403,7 @@ private:
                 vecOfEnums.push_back(std::move(*theEnum));
             }
 
-            return Output{ std::any(std::move(vecOfEnums)) };
+            return std::any(std::move(vecOfEnums));
         }
     }
 
