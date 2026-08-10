@@ -108,24 +108,126 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     else SV_UNREACHABLE();
 }
 
+//It will assert that arguments do have same name, because the point is we are updating same variable node
+bool oldNodeShouldBeCompletelyRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
+{
+    if (!oldNode)
+    {
+        return true;
+    }
+
+    SV_ASSERT(newNode);
+    SV_ASSERT(oldNode->getName() == newNode->getName());
+
+    const bool oldIsLeaf = oldNode->isLeaf();
+    const bool newIsLeaf = newNode->isLeaf();
+
+    // comp/leaf mismatch
+    if (oldIsLeaf != newIsLeaf)
+    {
+        return true;
+    }
+
+    // leaf type mismatch
+    if (oldIsLeaf && newIsLeaf && !anyHoldSameType(oldNode->tryGetLeafvalue(), newNode->tryGetLeafvalue()))
+    {
+        return true;
+    }
+
+    // everything else is fine
+    return false;
+}
+
+//void completelyRemakeOldNode
+
+//-It will assert that arguments do have same name, because the point is we are updating same variable node
+//-This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
+void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& newNode)
+{
+    SV_ASSERT(oldNode);
+    SV_ASSERT(newNode);
+    SV_ASSERT(oldNode->getName() == newNode->getName());
+
+    const bool oldIsLeaf = oldNode->isLeaf();
+    const bool newIsLeaf = newNode->isLeaf();
+
+    if (oldNodeShouldBeCompletelyRemade(oldNode, newNode))
+    {
+        oldNode = DataNode::makeCopy(newNode);
+        //and somehow update map of widgetoptions
+        return;
+    }
+    
+    SV_ASSERT(oldIsLeaf == newIsLeaf);
+
+    if (oldIsLeaf)
+    {
+        //not handling leaves for now
+        return;
+    }
+
+    const auto& oldChildren = oldNode->tryGetCompositeData()->getChildren();
+    const auto& newChildren = newNode->tryGetCompositeData()->getChildren();
+
+    std::vector<DataNodeShared> updatedChildren;
+
+    for (int i = 0; i < newChildren.size(); ++i)
+    {
+        const DataNodeShared& newChild = newChildren[i];
+
+        DataNodeShared oldChildWithSameName = oldNode->tryGetCompositeData()->getChild(newChild->getName());
+        
+        const bool shouldRemake = oldNodeShouldBeCompletelyRemade(oldChildWithSameName, newChild);
+
+        if (shouldRemake)
+        {
+            DataNodeShared remadeChild = DataNode::makeCopy(newChild);
+            updatedChildren.push_back(remadeChild);
+        }
+        else
+        {
+            SV_ASSERT(oldChildWithSameName);
+
+            tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild);
+
+            updatedChildren.push_back(oldChildWithSameName);
+        }
+    }
+
+    oldNode->tryGetCompositeData()->setChildren(updatedChildren, oldNode);
+}
+
 bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 {
     if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
 
+    auto showErr = [](std::string err)
+    {
+        SV_MSGBOX_ERROR(std::format("updateCurrentTreeFromCode failed: {}", err));
+    };
+
     if (!rootNode)
     {
-        SV_MSGBOX_ERROR("QTouchApp: cant updateCurrentTreeFromCode, tree is not loaded");
+        showErr("tree is not loaded");
         return false;
     }
 
     auto newVarData = SUP_DataParser().parseFiles(newCodeFilePaths);
     if (!newVarData)
     {
-        SV_MSGBOX_ERROR("QTouchApp: failed to parse GLSL code.");
+        showErr("failed to parse GLSL code.");
         return false;
     }
 
-    auto newTree = SUP_TreeBuilder::buildTree(*newVarData);
+    MapOfWidgetOptionsForNodes newWidgetOptions;
+    auto newTree = SUP_TreeBuilder::buildTree(*newVarData, &newWidgetOptions);
+    if (!newTree)
+    {
+        showErr("couldnt build new tree");
+        return false;
+    }
+
+    
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
