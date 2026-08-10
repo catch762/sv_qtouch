@@ -179,9 +179,9 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
     }
 }
 
-QJsonObjectWithWidgetOptionsOptOrError SUP_TreeBuilder::makeWidgetOptionsFromMacroArglist(const SUP_ArglistOpt& arglistFromMacroString)
+WidgetOptionsJsonOptOrError SUP_TreeBuilder::makeWidgetOptionsFromMacroArglist(const SUP_ArglistOpt& arglistFromMacroString)
 {
-    QJsonObjectWithWidgetOptionsOpt widgetOptionsOpt = {};
+    WidgetOptionsJsonOpt widgetOptionsOpt = {};
 
     if (auto err = addTabInformationIfNeeded(widgetOptionsOpt, arglistFromMacroString))
     {
@@ -191,7 +191,7 @@ QJsonObjectWithWidgetOptionsOptOrError SUP_TreeBuilder::makeWidgetOptionsFromMac
     return widgetOptionsOpt;
 }
 
-StringErrOpt SUP_TreeBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString)
+StringErrOpt SUP_TreeBuilder::addTabInformationIfNeeded(WidgetOptionsJsonOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString)
 {
     if (arglistFromMacroString)
     {
@@ -212,7 +212,7 @@ StringErrOpt SUP_TreeBuilder::addTabInformationIfNeeded(QJsonObjectWithWidgetOpt
 
             if (!outWidgetOptionsOpt)
             {
-                outWidgetOptionsOpt = QJsonObjectWithWidgetOptions();
+                outWidgetOptionsOpt = WidgetOptionsJson();
             }
 
             (*outWidgetOptionsOpt)[NodeWidget::tabIndexKey] = tabIndex;

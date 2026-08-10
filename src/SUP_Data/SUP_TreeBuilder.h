@@ -51,11 +51,11 @@ private:
                                                 const SUP_Variable& var,
                                                 NodeWidgetUnique*   outWidget = nullptr);
 
-    static QJsonObjectWithWidgetOptionsOptOrError makeWidgetOptionsFromMacroArglist(const SUP_ArglistOpt& arglistFromMacroString);
+    static WidgetOptionsJsonOptOrError makeWidgetOptionsFromMacroArglist(const SUP_ArglistOpt& arglistFromMacroString);
 
     // If ui macro string contains information about tab, we are adding it to widget options. (if input widget options is 
     // nullopt, then we create it)
     //
     // Return value: 'success'
-    static StringErrOpt addTabInformationIfNeeded(QJsonObjectWithWidgetOptionsOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString);
+    static StringErrOpt addTabInformationIfNeeded(WidgetOptionsJsonOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString);
 };
