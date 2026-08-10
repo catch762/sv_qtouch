@@ -22,9 +22,13 @@ bool allOrNoneRequiredResourcesAcquired(   const DataNodeShared&   resource0_tre
     }
 }
 
-DataNodeShared SUP_TreeBuilder::buildTree(const SUP_Data& data)
+DataNodeShared SUP_TreeBuilder::buildTree(const SUP_Data& data, MapOfWidgetOptionsForNodes* outWidgetOptions)
 {
-    return buildTreeAndOptionallyWidgets(data);
+    auto result = buildTreeAndOptionallyWidgets(data, nullptr, outWidgetOptions);
+
+    if (!result && outWidgetOptions) outWidgetOptions->clear();
+
+    return result;
 }
 
 DataNodeShared SUP_TreeBuilder::buildTreeAndWidgets(const SUP_Data& data, NodeWidgetVec& outTopLevelWidgets)
@@ -32,7 +36,9 @@ DataNodeShared SUP_TreeBuilder::buildTreeAndWidgets(const SUP_Data& data, NodeWi
     return buildTreeAndOptionallyWidgets(data, &outTopLevelWidgets);
 }
 
-DataNodeShared SUP_TreeBuilder::buildTreeAndOptionallyWidgets(const SUP_Data &data, NodeWidgetVec* outTopLevelWidgets)
+DataNodeShared SUP_TreeBuilder::buildTreeAndOptionallyWidgets(  const SUP_Data&             data, 
+                                                                NodeWidgetVec*              outTopLevelWidgets, 
+                                                                MapOfWidgetOptionsForNodes* outWidgetOptions )
 {
     const bool widgetsRequested = static_cast<bool>(outTopLevelWidgets);
 
@@ -43,7 +49,10 @@ DataNodeShared SUP_TreeBuilder::buildTreeAndOptionallyWidgets(const SUP_Data &da
     for (auto &varlistEntry : data.varListEntries)
     {
         NodeWidgetUnique optionalWidget;
-        auto             node = buildTreeForVariable(data, varlistEntry, widgetsRequested ? &optionalWidget : nullptr);
+        auto             node = buildTreeForVariable(data,
+                                                     varlistEntry, 
+                                                     widgetsRequested ? &optionalWidget : nullptr,
+                                                     outWidgetOptions);
 
         SV_ASSERT(allOrNoneRequiredResourcesAcquired(node, optionalWidget, widgetsRequested));
 
@@ -86,15 +95,34 @@ DataNodeShared SUP_TreeBuilder::buildTreeAndOptionallyWidgets(const SUP_Data &da
     return std::move(root);
 }
 
-DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
-                                                      const SUP_Variable& var,
-                                                      NodeWidgetUnique*   outWidget)
+DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&             data,
+                                                      const SUP_Variable&         var,
+                                                      NodeWidgetUnique*           outWidget,
+                                                      MapOfWidgetOptionsForNodes* outWidgetOptions)
 {
     // Note: if im creating widgets, and then encounter error and return --
     // raw Widget* ptrs would remain in memory. So UNTIL i do return successfully,
     // widgets are wrapped in unique ptrs.
 
-    const bool widgetsRequested = static_cast<bool>(outWidget);
+    const bool widgetsRequested         = static_cast<bool>(outWidget);
+    const bool widgetOptionsRequested   = static_cast<bool>(outWidgetOptions);
+
+    auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
+    if (auto err = getError(widgetOptionsOptOrErr))
+    {
+        SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
+        return {};
+    }
+
+    auto saveWidgetOptionsIfNeeded = [&](ConstDataNodeWeak nodeKey)
+    {
+        auto widgetOptionsOpt = getValue(widgetOptionsOptOrErr);
+
+        if (widgetOptionsRequested && widgetOptionsOpt->has_value())
+        {
+            (*outWidgetOptions)[nodeKey] = std::move(widgetOptionsOpt->value());
+        }
+    };
 
     if (SUP_NativeGLSLTypeConverter::instance().hasConverterForType(var.type)) //THEN ITS A NATIVE TYPE SO WE JUST MAKE IT
     {
@@ -110,13 +138,6 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
         if (widgetsRequested)
         {
-            auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
-            if (auto err = getError(widgetOptionsOptOrErr))
-            {
-                SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
-                return {};
-            }
-
             outWidget->reset( WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, *getValue(widgetOptionsOptOrErr)) );
             if (!outWidget)
             {
@@ -125,6 +146,8 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
             }
         }
 
+        
+        saveWidgetOptionsIfNeeded(node);
         return node;
     }
     else //THEN ITS A STRUCT, SO WE BUILD IT RECOURSIVELY
@@ -143,7 +166,10 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
         for (const auto& member : structDefinition->members)
         {
             NodeWidgetUnique    optionalMemberWidget;
-            auto                memberNode           = buildTreeForVariable(data, member, widgetsRequested ? &optionalMemberWidget : nullptr);
+            auto                memberNode           = buildTreeForVariable(data,
+                                                                            member, 
+                                                                            widgetsRequested ? &optionalMemberWidget : nullptr,
+                                                                            outWidgetOptions);
 
             SV_ASSERT(allOrNoneRequiredResourcesAcquired(memberNode, optionalMemberWidget, widgetsRequested));
 
@@ -163,18 +189,13 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&     data,
 
         if (widgetsRequested)
         {
-            auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
-            if (auto err = getError(widgetOptionsOptOrErr))
-            {
-                SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
-                return {};
-            }
-
             //this cant fail
             outWidget->reset(NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, *getValue(widgetOptionsOptOrErr)));
             SV_ASSERT(*outWidget);
             WidgetsForNodeManager::registerWidgetForNode(node, outWidget->get());
         }
+
+        saveWidgetOptionsIfNeeded(node);
         return node;
     }
 }
