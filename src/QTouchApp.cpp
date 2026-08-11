@@ -153,6 +153,7 @@ void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& n
 
     if (oldNodeShouldBeCompletelyRemade(oldNode, newNode))
     {
+        SV_LOG("upd", std::format("Should be remade from the get go: {} -> {}", oldNode, newNode));
         oldNode = DataNode::makeCopy(newNode);
         //and somehow update map of widgetoptions
         return;
@@ -163,38 +164,37 @@ void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& n
     if (oldIsLeaf)
     {
         //not handling leaves for now
+        SV_LOG("upd", std::format("Skipping leaf update: {} -> {}", oldNode, newNode));
         return;
     }
 
-    const auto& oldChildren = oldNode->tryGetCompositeData()->getChildren();
-    const auto& newChildren = newNode->tryGetCompositeData()->getChildren();
+    std::vector<DataNodeShared> updatedChildrenListForOldNode;
 
-    std::vector<DataNodeShared> updatedChildren;
-
-    for (int i = 0; i < newChildren.size(); ++i)
+    for (const DataNodeShared& newChild : newNode->tryGetCompositeData()->getChildren())
     {
-        const DataNodeShared& newChild = newChildren[i];
-
         DataNodeShared oldChildWithSameName = oldNode->tryGetCompositeData()->getChild(newChild->getName());
         
         const bool shouldRemake = oldNodeShouldBeCompletelyRemade(oldChildWithSameName, newChild);
 
         if (shouldRemake)
         {
+            SV_LOG("upd", std::format("Updating {} --> remaking child {}", oldNode, newChild));
             DataNodeShared remadeChild = DataNode::makeCopy(newChild);
-            updatedChildren.push_back(remadeChild);
+            updatedChildrenListForOldNode.push_back(remadeChild);
         }
         else
         {
             SV_ASSERT(oldChildWithSameName);
 
+            SV_LOG("upd", std::format("Updating {} --> updating child subtree {}", oldNode, newChild));
+
             tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild);
 
-            updatedChildren.push_back(oldChildWithSameName);
+            updatedChildrenListForOldNode.push_back(oldChildWithSameName);
         }
     }
 
-    oldNode->tryGetCompositeData()->setChildren(updatedChildren, oldNode);
+    oldNode->tryGetCompositeData()->setChildren(updatedChildrenListForOldNode, oldNode);
 }
 
 bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
@@ -643,6 +643,31 @@ void QTouchApp::initMenuBar()
         });
 
         projectMenu->addAction(loadCodeAction);
+    }
+
+    //loadCodeAndUpgradeAction
+    {
+        loadCodeAndUpgradeAction = new QAction("Load GLSL code and upgrade current tree", this);
+        connect(loadCodeAndUpgradeAction, &QAction::triggered, this, [this]()
+        {
+            if (!requireProjectIsOpenedFor("Load GLSL code and upgrade current tree")) return;
+
+            const QString codeFilePath = QFileDialog::getOpenFileName(
+                this,
+                tr("Open code file for upgrade"),
+                getProjectDir().value().absolutePath(),
+                tr("All Files (*)")
+            );
+
+            if (codeFilePath.isEmpty())
+            {
+                return;
+            }
+
+            updateCurrentTreeFromCode({codeFilePath});
+        });
+
+        projectMenu->addAction(loadCodeAndUpgradeAction);
     }
 }
 

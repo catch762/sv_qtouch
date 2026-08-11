@@ -99,9 +99,10 @@ private:
     void createOrOpenProjectAction();
     void closeProject();
 
-    QAction* closeProjectAction = nullptr;
-    QAction* loadCodeAction = nullptr;
-    QAction* saveProjectAction = nullptr;
+    QAction* closeProjectAction         = nullptr;
+    QAction* loadCodeAction             = nullptr;
+    QAction* loadCodeAndUpgradeAction   = nullptr;
+    QAction* saveProjectAction          = nullptr;
 
 private:
     QDirOpt projectDir; //no value means no project is opened

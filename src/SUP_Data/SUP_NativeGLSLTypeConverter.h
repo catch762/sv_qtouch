@@ -184,6 +184,8 @@ private:
     template<StrictlyIntOrDouble UnderlyingType, int componentCount>
     static anyOpt convertIntsAndFloats(const SUP_ArglistOpt& uiMacroArglist)
     {
+        // First see if theres anything in 'uiMacroArglist' that should 
+        // influence what we do here:
         if (uiMacroArglist)
         {
             //note that we get args differently: getArg, getArgByName
@@ -200,11 +202,10 @@ private:
             {
                 return  convertToLimited<UnderlyingType, componentCount>(*limsArg);
             }
-
-            SV_ERROR(std::format("convertIntsAndFloats fails to deal with data: {}", *uiMacroArglist));
-            return {};
         }
-        else return convertToLimited<UnderlyingType, componentCount>({});
+
+
+        return convertToLimited<UnderlyingType, componentCount>({});
     }
 
     template<StrictlyIntOrDouble UnderlyingType, int componentCount>
