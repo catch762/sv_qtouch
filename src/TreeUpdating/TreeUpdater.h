@@ -1,6 +1,10 @@
+#pragma once
 #include "sv_qtcommon.h"
 #include "DataNode/DataNodeHeader.h"
 #include "SUP_Data/SUP_Data.h"
+#include "SUP_Data/SUP_DataParser.h"
+#include "SUP_Data/SUP_TreeBuilder.h"
+#include "WidgetLogic/WidgetsForNodeManager.h"
 
 class TreeUpdater
 {
@@ -55,10 +59,12 @@ public:
         if (treesAreStructurallyEqual(*newTree.get(), *oldTree.get()))
         {
             SV_LOG("Upgrading oldTree to newTree succeeded - they are structurally equal now.");
+            return true;
         }
         else
         {
             SV_ERROR("Upgrading oldTree to newTree failed - they are NOT structurally equal");
+            return false;
         }
     }
 
