@@ -9,16 +9,6 @@
 class TreeUpdater
 {
 public:
-    static void deleteWidgetForNode(const DataNodeShared& node)
-    {
-        if (!node) return;
-
-        if (auto widget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(node))
-        {
-            widget->deleteLater();
-        }
-    }
-
     static bool updateTreeFromCode(DataNodeShared& oldTree, const QStringVec& newCodeFilePaths)
     {
         SV_LOG(std::format("Updating from new code: {}", newCodeFilePaths));
@@ -122,6 +112,7 @@ public:
         oldNode->tryGetCompositeData()->setChildren(updatedChildrenListForOldNode, oldNode);
     }
 
+private:
     // This function checks if these two nodes are clearly very different (and thus it doesnt make sense
     // updating the old node, we are gonna just remake it from scratch).
     // 
@@ -154,5 +145,15 @@ public:
 
         // everything else is fine
         return false;
+    }
+
+    static void deleteWidgetForNode(const DataNodeShared& node)
+    {
+        if (!node) return;
+
+        if (auto widget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(node))
+        {
+            widget->deleteLater();
+        }
     }
 };
