@@ -12,6 +12,8 @@
 #include "DataToTDFormat\TDFormatTreeConverter.h"
 #include "WidgetLogic/NodeWidgetChangeNotifier.h"
 
+#include "TreeUpdating/TreeUpdater.h"
+
 namespace
 {
     constexpr auto ProjectJsonFileName = "project.json";
@@ -108,142 +110,11 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     else SV_UNREACHABLE();
 }
 
-void deleteWidgetForNode(const DataNodeShared& node)
-{
-    if (!node) return;
-
-    if (auto widget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(node))
-    {
-        widget->deleteLater();
-    }
-}
-
-//It will assert that arguments do have same name, because the point is we are updating same variable node
-bool oldNodeShouldBeCompletelyRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
-{
-    if (!oldNode)
-    {
-        return true;
-    }
-
-    SV_ASSERT(newNode);
-    SV_ASSERT(oldNode->getName() == newNode->getName());
-
-    const bool oldIsLeaf = oldNode->isLeaf();
-    const bool newIsLeaf = newNode->isLeaf();
-
-    // comp/leaf mismatch
-    if (oldIsLeaf != newIsLeaf)
-    {
-        return true;
-    }
-
-    // leaf type mismatch
-    if (oldIsLeaf && newIsLeaf && !anyHoldSameType(oldNode->tryGetLeafvalue(), newNode->tryGetLeafvalue()))
-    {
-        return true;
-    }
-
-    // everything else is fine
-    return false;
-}
-
-//void completelyRemakeOldNode
-
-//-It will assert that arguments do have same name, because the point is we are updating same variable node
-//-This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
-void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& newNode)
-{
-    SV_ASSERT(oldNode);
-    SV_ASSERT(newNode);
-    SV_ASSERT(oldNode->getName() == newNode->getName());
-
-    const bool oldIsLeaf = oldNode->isLeaf();
-    const bool newIsLeaf = newNode->isLeaf();
-
-    if (oldNodeShouldBeCompletelyRemade(oldNode, newNode))
-    {
-        SV_LOG("upd", std::format("Should be remade from the get go: {}", oldNode->getName()));
-
-        deleteWidgetForNode(oldNode);
-        oldNode = DataNode::makeCopy(newNode);
-
-        return;
-    }
-    
-    SV_ASSERT(oldIsLeaf == newIsLeaf);
-
-    if (oldIsLeaf)
-    {
-        //not handling leaves for now
-        SV_LOG("upd", std::format("Skipping leaf update: {}", oldNode->getName()));
-        return;
-    }
-
-    std::vector<DataNodeShared> updatedChildrenListForOldNode;
-
-    for (const DataNodeShared& newChild : newNode->tryGetCompositeData()->getChildren())
-    {
-        DataNodeShared oldChildWithSameName = oldNode->tryGetCompositeData()->getChild(newChild->getName());
-        
-        const bool shouldRemake = oldNodeShouldBeCompletelyRemade(oldChildWithSameName, newChild);
-
-        if (shouldRemake)
-        {
-            SV_LOG("upd", std::format("Updating {} --> remaking child {}", oldNode->getName(), newChild->getName()));
-
-            deleteWidgetForNode(oldChildWithSameName);
-            DataNodeShared remadeChild = DataNode::makeCopy(newChild);
-            updatedChildrenListForOldNode.push_back(remadeChild);
-        }
-        else
-        {
-            SV_ASSERT(oldChildWithSameName);
-
-            SV_LOG("upd", std::format("Updating {} --> updating child subtree {}", oldNode->getName(), newChild->getName()));
-
-            tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild);
-
-            updatedChildrenListForOldNode.push_back(oldChildWithSameName);
-        }
-    }
-
-    oldNode->tryGetCompositeData()->setChildren(updatedChildrenListForOldNode, oldNode);
-}
-
 bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 {
     if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
 
-    SV_LOG(std::format("Updating from new code: {}", newCodeFilePaths));
-
-    auto showErr = [](std::string err)
-    {
-        SV_MSGBOX_ERROR(std::format("updateCurrentTreeFromCode failed: {}", err));
-    };
-
-    if (!rootNode)
-    {
-        showErr("tree is not loaded");
-        return false;
-    }
-
-    auto newVarData = SUP_DataParser().parseFiles(newCodeFilePaths);
-    if (!newVarData)
-    {
-        showErr("failed to parse GLSL code.");
-        return false;
-    }
-
-    MapOfWidgetOptionsForNodes newWidgetOptions;
-    auto newTree = SUP_TreeBuilder::buildTree(*newVarData, &newWidgetOptions);
-    if (!newTree)
-    {
-        showErr("couldnt build new tree");
-        return false;
-    }
-
-    tryUpdateOldSubtreeFromNew(rootNode, newTree);
+    return TreeUpdater::updateTreeFromCode(rootNode, newCodeFilePaths);
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
