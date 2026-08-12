@@ -62,9 +62,13 @@ public:
         }
     }
 
-
-    //-It will assert that arguments do have same name, because the point is we are updating same variable node
-    //-This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
+    // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
+    // doing as little change as possible. It applies itself to subnodes recursively.
+    // 
+    // Note:
+    //      - 'oldNode' is REFERENCE to shared ptr! Because it might remake the node and drop old value.
+    //      - It will assert that arguments do have same name, because the point is we are updating same variable node
+    //      - This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
     static void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& newNode)
     {
         SV_ASSERT(oldNode);
@@ -74,7 +78,7 @@ public:
         const bool oldIsLeaf = oldNode->isLeaf();
         const bool newIsLeaf = newNode->isLeaf();
 
-        if (oldNodeShouldBeCompletelyRemade(oldNode, newNode))
+        if (oldNodeShouldClearlyBeCompletelyRemade(oldNode, newNode))
         {
             SV_LOG("upd", std::format("Should be remade from the get go: {}", oldNode->getName()));
 
@@ -99,7 +103,7 @@ public:
         {
             DataNodeShared oldChildWithSameName = oldNode->tryGetCompositeData()->getChild(newChild->getName());
 
-            const bool shouldRemake = oldNodeShouldBeCompletelyRemade(oldChildWithSameName, newChild);
+            const bool shouldRemake = oldNodeShouldClearlyBeCompletelyRemade(oldChildWithSameName, newChild);
 
             if (shouldRemake)
             {
@@ -124,8 +128,12 @@ public:
         oldNode->tryGetCompositeData()->setChildren(updatedChildrenListForOldNode, oldNode);
     }
 
-    //It will assert that arguments do have same name, because the point is we are updating same variable node
-    static bool oldNodeShouldBeCompletelyRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
+    // This function checks if these two nodes are clearly very different (and thus it doesnt make sense
+    // updating the old node, we are gonna just remake it from scratch).
+    // 
+    // It will ASSERT that arguments do have same name, because the point is
+    // we are updating same variable in two trees. 
+    static bool oldNodeShouldClearlyBeCompletelyRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
     {
         if (!oldNode)
         {
