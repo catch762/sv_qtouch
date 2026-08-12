@@ -17,6 +17,7 @@ DataNodeShared baseTree()
 
 TEST_CASE("Updating tree: simple insert new nodes")
 {
+	auto oldTree = baseTree();
 	auto newTree = baseTree();
 	{
 		newTree->tryGetChild("b")->addChild(
@@ -29,11 +30,7 @@ TEST_CASE("Updating tree: simple insert new nodes")
 		);
 	}
 
-	auto oldTree = baseTree();
-
 	TreeUpdater::tryUpdateOldSubtreeFromNew(oldTree, newTree);
 
 	CHECK(treesAreStructurallyEqual(*oldTree.get(), *newTree.get()));
-
-	SV_WARN("ok it did run");
 }
