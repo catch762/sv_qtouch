@@ -34,3 +34,20 @@ TEST_CASE("Updating tree: simple insert new nodes")
 
 	CHECK(treesAreStructurallyEqual(*oldTree.get(), *newTree.get()));
 }
+
+TEST_CASE("Updating tree: renames")
+{
+	auto oldTree = baseTree();
+	auto newTree = baseTree();
+	{
+		auto b = newTree->tryGetChild("b");
+
+		b->setName("b_renamed");
+		b->tryGetChild("c")->setName("c_renamed");
+		b->tryGetChild("d")->setName("d_renamed");
+	}
+
+	TreeUpdater::tryUpdateOldSubtreeFromNew(oldTree, newTree);
+
+	CHECK(treesAreStructurallyEqual(*oldTree.get(), *newTree.get()));
+}

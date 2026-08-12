@@ -73,20 +73,17 @@ public:
     // 
     // Note:
     //      - 'oldNode' is REFERENCE to shared ptr! Because it might remake the node and drop old value.
+    //      - 'oldNode' may be nullptr.
     //      - It will assert that arguments do have same name, because the point is we are updating same variable node
     //      - This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
     static void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& newNode)
     {
-        SV_ASSERT(oldNode);
         SV_ASSERT(newNode);
-        SV_ASSERT(oldNode->getName() == newNode->getName());
 
-        const bool oldIsLeaf = oldNode->isLeaf();
-        const bool newIsLeaf = newNode->isLeaf();
-
+        // If oldNode is nullptr, its handled here
         if (oldNodeShouldClearlyBeCompletelyRemade(oldNode, newNode))
         {
-            SV_LOG("upd", std::format("Should be remade from the get go: {}", oldNode->getName()));
+            SV_LOG("upd", std::format("Should be remade from the get go: {}", newNode->getName()));
 
             deleteWidgetForNode(oldNode);
             oldNode = DataNode::makeCopy(newNode);
@@ -94,6 +91,11 @@ public:
             return;
         }
 
+        // Now we are sure oldNode is not nullptr, and we can run some asserts:
+        const bool oldIsLeaf = oldNode->isLeaf();
+        const bool newIsLeaf = newNode->isLeaf();
+        SV_ASSERT(oldNode);
+        SV_ASSERT(oldNode->getName() == newNode->getName());
         SV_ASSERT(oldIsLeaf == newIsLeaf);
 
         if (oldIsLeaf)
@@ -103,32 +105,18 @@ public:
             return;
         }
 
+        SV_LOG("upd", std::format("Gonna update children: {}", oldNode->getName()));
+
         std::vector<DataNodeShared> updatedChildrenListForOldNode;
 
         for (const DataNodeShared& newChild : newNode->tryGetCompositeData()->getChildren())
         {
+            //may be null and its fine
             DataNodeShared oldChildWithSameName = oldNode->tryGetCompositeData()->getChild(newChild->getName());
 
-            const bool shouldRemake = oldNodeShouldClearlyBeCompletelyRemade(oldChildWithSameName, newChild);
+            tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild);
 
-            if (shouldRemake)
-            {
-                SV_LOG("upd", std::format("Updating {} --> remaking child {}", oldNode->getName(), newChild->getName()));
-
-                deleteWidgetForNode(oldChildWithSameName);
-                DataNodeShared remadeChild = DataNode::makeCopy(newChild);
-                updatedChildrenListForOldNode.push_back(remadeChild);
-            }
-            else
-            {
-                SV_ASSERT(oldChildWithSameName);
-
-                SV_LOG("upd", std::format("Updating {} --> updating child subtree {}", oldNode->getName(), newChild->getName()));
-
-                tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild);
-
-                updatedChildrenListForOldNode.push_back(oldChildWithSameName);
-            }
+            updatedChildrenListForOldNode.push_back(oldChildWithSameName);
         }
 
         oldNode->tryGetCompositeData()->setChildren(updatedChildrenListForOldNode, oldNode);
