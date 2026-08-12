@@ -108,6 +108,16 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     else SV_UNREACHABLE();
 }
 
+void deleteWidgetForNode(const DataNodeShared& node)
+{
+    if (!node) return;
+
+    if (auto widget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(node))
+    {
+        widget->deleteLater();
+    }
+}
+
 //It will assert that arguments do have same name, because the point is we are updating same variable node
 bool oldNodeShouldBeCompletelyRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
 {
@@ -153,9 +163,11 @@ void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& n
 
     if (oldNodeShouldBeCompletelyRemade(oldNode, newNode))
     {
-        SV_LOG("upd", std::format("Should be remade from the get go: {} -> {}", oldNode, newNode));
+        SV_LOG("upd", std::format("Should be remade from the get go: {}", oldNode->getName()));
+
+        deleteWidgetForNode(oldNode);
         oldNode = DataNode::makeCopy(newNode);
-        //and somehow update map of widgetoptions
+
         return;
     }
     
@@ -164,7 +176,7 @@ void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& n
     if (oldIsLeaf)
     {
         //not handling leaves for now
-        SV_LOG("upd", std::format("Skipping leaf update: {} -> {}", oldNode, newNode));
+        SV_LOG("upd", std::format("Skipping leaf update: {}", oldNode->getName()));
         return;
     }
 
@@ -178,7 +190,9 @@ void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& n
 
         if (shouldRemake)
         {
-            SV_LOG("upd", std::format("Updating {} --> remaking child {}", oldNode, newChild));
+            SV_LOG("upd", std::format("Updating {} --> remaking child {}", oldNode->getName(), newChild->getName()));
+
+            deleteWidgetForNode(oldChildWithSameName);
             DataNodeShared remadeChild = DataNode::makeCopy(newChild);
             updatedChildrenListForOldNode.push_back(remadeChild);
         }
@@ -186,7 +200,7 @@ void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& n
         {
             SV_ASSERT(oldChildWithSameName);
 
-            SV_LOG("upd", std::format("Updating {} --> updating child subtree {}", oldNode, newChild));
+            SV_LOG("upd", std::format("Updating {} --> updating child subtree {}", oldNode->getName(), newChild->getName()));
 
             tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild);
 
@@ -200,6 +214,8 @@ void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& n
 bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 {
     if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
+
+    SV_LOG(std::format("Updating from new code: {}", newCodeFilePaths));
 
     auto showErr = [](std::string err)
     {
@@ -227,7 +243,7 @@ bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
         return false;
     }
 
-    
+    tryUpdateOldSubtreeFromNew(rootNode, newTree);
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)

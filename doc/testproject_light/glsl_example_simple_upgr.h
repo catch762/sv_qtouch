@@ -16,11 +16,10 @@ SUP_ADDTODICT_END
 */
 
 
-#define STRMETA_Hello(V,N) STRMAIN_ARG5(Hello,V,N,\
+#define STRMETA_Hello(V,N) STRMAIN_ARG4(Hello,V,N,\
 ivec2, 	a,		ui("lims=camdata")\
 ivec4,	b,		ui("rad = [ ['a','d','ddd'], ['x','xx','ss','dd',>,'ff','eeeeeee'] ]")\ 
 int,	c,		ui("rad = ['hey', >,'bro', 'a', 'bbbbbbbbbbbbbbbbbbbb', 'c','ddd','e']")\
-int,	cXXX,		ui("rad = ['hey', >,'bro', 'a', 'bbbbbbbbbbbbbbbbbbbb', 'c','ddd','e']")\
 vec4,	d)		ui("[0, 5, 2]")
 STRDECL(Hello)
 
