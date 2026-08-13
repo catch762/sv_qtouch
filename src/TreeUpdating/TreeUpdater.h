@@ -42,7 +42,21 @@ public:
         SV_LOG(std::format("New tree:\n{}\n", newTree->toString()));
         SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
 
-        tryUpdateOldSubtreeFromNew(oldTree, newTree);
+        auto replaceOldNodeWithRemadeNode = [&](DataNodeShared&         oldNodeBeingReplaced, 
+                                                DataNodeShared          reconstructedNode,
+                                                const DataNodeShared&   newNodeReference)
+        {
+            //1. Delete old widget for existing node that we are replacing
+            deleteWidgetForNode(oldNodeBeingReplaced);
+
+            //2. Replace node
+            oldNodeBeingReplaced = reconstructedNode;
+
+            //3. Remake widget
+            WidgetOptionsJsonOpt optionsToRemakeWidget = getValueOpt(newWidgetOptions, ConstDataNodeWeak(newNodeReference));
+        };
+
+        tryUpdateOldSubtreeFromNew(oldTree, newTree, replaceOldNodeWithRemadeNode);
 
         SV_LOG(std::format("Upgraded old tree:\n{}\n", oldTree->toString()));
 
@@ -58,6 +72,17 @@ public:
         }
     }
 
+    //*******************************************************************************************************
+    //  Shortest impl would be:
+    //      oldNodeBeingReplaced = reconstructedNode;
+    // 
+    //  But you probably also want to delete old widget, reconstruct it, etc.
+    //  All of this shouldnt be concern of 'tryUpdateOldSubtreeFromNew', so i pass this NodeReplacer into it.
+    //*******************************************************************************************************
+    using NodeReplacer = std::function<void(DataNodeShared&         oldNodeBeingReplaced, 
+                                            DataNodeShared          reconstructedNode,
+                                            const DataNodeShared&   newNodeReference)>;
+
     // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
     // doing as little change as possible. It applies itself to subnodes recursively.
     // 
@@ -66,17 +91,18 @@ public:
     //      - 'oldNode' may be nullptr.
     //      - It will assert that arguments do have same name, because the point is we are updating same variable node
     //      - This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
-    static void tryUpdateOldSubtreeFromNew(DataNodeShared& oldNode, const DataNodeShared& newNode)
+    static void tryUpdateOldSubtreeFromNew( DataNodeShared&         oldNode, 
+                                            const DataNodeShared&   newNode, 
+                                            const NodeReplacer&     nodeReplacer = TreeUpdater::basicNodeReplacer)
     {
         SV_ASSERT(newNode);
 
         // If oldNode is nullptr, its handled here
         if (oldNodeShouldClearlyBeCompletelyRemade(oldNode, newNode))
         {
-            SV_LOG("upd", std::format("Should be remade from the get go: {}", newNode->getName()));
+            SV_LOG("upd", std::format("Remaking from the get go: {}", newNode->getName()));
 
-            deleteWidgetForNode(oldNode);
-            oldNode = DataNode::makeCopy(newNode);
+            nodeReplacer(oldNode, DataNode::makeCopy(newNode), newNode);
 
             return;
         }
@@ -104,7 +130,7 @@ public:
             //may be null and its fine
             DataNodeShared oldChildWithSameName = oldNode->tryGetCompositeData()->getChild(newChild->getName());
 
-            tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild);
+            tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild, nodeReplacer);
 
             updatedChildrenListForOldNode.push_back(oldChildWithSameName);
         }
@@ -155,5 +181,12 @@ private:
         {
             widget->deleteLater();
         }
+    }
+
+    static void basicNodeReplacer(  DataNodeShared&         oldNodeBeingReplaced, 
+                                    DataNodeShared          reconstructedNode,
+                                    const DataNodeShared&   newNodeReference )
+    {
+        oldNodeBeingReplaced = reconstructedNode;
     }
 };
