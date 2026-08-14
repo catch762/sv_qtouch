@@ -60,11 +60,12 @@ TabOfTopLevelWidgets *TopLevelWidgetsContainer::getTab(int index)
     return dynamic_cast<TabOfTopLevelWidgets*>(widget); //there cant be anything else, but just in case.
 }
 
-void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWidgets)
+void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetQPointerVec &&newTopLevelWidgets, ExistingWidgetsPolicy existingWidgetsPolicy)
 {
     SV_LOG(std::format("Setting {} widgets", newTopLevelWidgets.size()));
 
-    deleteAllTopLevelWidgetsAndClearEverything();
+    clearEverything(existingWidgetsPolicy);
+
     topLevelWidgets = std::move(newTopLevelWidgets);
 
     for(auto widget : topLevelWidgets)
@@ -91,9 +92,9 @@ void TopLevelWidgetsContainer::setTopLevelWidgets(NodeWidgetVec &&newTopLevelWid
     update();
 }
 
-void TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()
+void TopLevelWidgetsContainer::clearEverything(ExistingWidgetsPolicy existingWidgetsPolicy)
 {
-    SV_LOG("TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()");
+    SV_LOG("TopLevelWidgetsContainer::clearEverything()");
 
     for (auto widget : topLevelWidgets)
     {
@@ -102,12 +103,15 @@ void TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()
             //if i just write 'delete widget;' it crashes and i dont fucking understand why.
             //it should be perfectly fine either way, but its not.
             
-            //these two are not needed, apparently
-                //widget->setParent(nullptr);
-                //widget->hide();
-            widget->deleteLater();
+            widget->setParent(nullptr);
+
+            if (existingWidgetsPolicy == ExistingWidgetsPolicy::Delete)
+            {
+                widget->deleteLater();
+            }
         }
     }
+    topLevelWidgets.clear();
 
     //This might introduce bugs? because im deleting tabs and widgets in one go
     //and apparently its not so easy? 
@@ -123,8 +127,6 @@ void TopLevelWidgetsContainer::deleteAllTopLevelWidgetsAndClearEverything()
 
         extractAllWidgetsFromLayoutAndDeleteNestedLayouts(tabsLayout);
     }
-
-    topLevelWidgets.clear();
 }
 
 void TopLevelWidgetsContainer::assignTabName(TabOfTopLevelWidgets *tab, int index)
@@ -199,7 +201,7 @@ void TopLevelWidgetsContainer::deleteTabAndMoveWidgetsToOther(int index)
     }
 
     QList<QWidget*> extractedWidgets;
-    tab->extractAllWidgets(extractedWidgets);
+    tab->extractAllWidgets(&extractedWidgets);
     tab->deleteLater(); //crucial
 
     if (!extractedWidgets.empty())
@@ -319,9 +321,9 @@ TabOfTopLevelWidgets::TabOfTopLevelWidgets(QWidget *parent) : QWidget(parent)
     setMinimumHeight(100);
 }
 
-void TabOfTopLevelWidgets::extractAllWidgets(QList<QWidget *> &outWidgets)
+void TabOfTopLevelWidgets::extractAllWidgets(QList<QWidget *> *outWidgets)
 {
-    extractAllWidgetsFromLayoutAndDeleteNestedLayouts(contentLayout, &outWidgets);
+    extractAllWidgetsFromLayoutAndDeleteNestedLayouts(contentLayout, outWidgets);
 }
 
 void TabOfTopLevelWidgets::visitAllWidgets(const std::function<void(QWidget*)>& visitor)

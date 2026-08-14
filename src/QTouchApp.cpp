@@ -134,7 +134,7 @@ bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
         SV_LOG(parsedVarData->toString());
     }
 
-    NodeWidgetVec   topLevelWidgets;
+    NodeWidgetQPointerVec   topLevelWidgets;
     auto            newRootNode = SUP_TreeBuilder::buildTreeAndWidgets(*parsedVarData, topLevelWidgets);
 
     if (!newRootNode)
@@ -436,7 +436,7 @@ DataNodeShared QTouchApp::getRootNode()
 void QTouchApp::deleteExistingTreeAndAllWidgets()
 {
     rootNode.reset();
-    widgetsView->deleteAllTopLevelWidgetsAndClearEverything();
+    widgetsView->clearEverything();
     widgetsView->setEnabled(false);
 
     WidgetsForNodeManager::clear();
@@ -444,7 +444,7 @@ void QTouchApp::deleteExistingTreeAndAllWidgets()
     setTreeType(TreeType::Standalone);
 }
 
-std::optional<std::tuple<DataNodeShared, NodeWidgetVec>> QTouchApp::createTreeAndWidgetsFromFile(const QString &filePath)
+std::optional<std::tuple<DataNodeShared, NodeWidgetQPointerVec>> QTouchApp::createTreeAndWidgetsFromFile(const QString &filePath)
 {
     auto json = loadJsonFromFile(filePath);
     if (!json)

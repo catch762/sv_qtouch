@@ -2,6 +2,8 @@
 #include "sv_qtcommon.h"
 #include "WidgetLogic/WidgetDefs.h"
 
+// todo ! make em qpointer bro
+
 //***********************************************************************************
 // So, when we make widgets for a data tree, we typically operate on
 // a list of top-level widgets.
@@ -32,8 +34,17 @@ class TopLevelWidgetsContainer : public QWidget
 public:
     TopLevelWidgetsContainer(QWidget* parent = nullptr);
 
-    void setTopLevelWidgets(NodeWidgetVec&& newTopLevelWidgets);
-    void deleteAllTopLevelWidgetsAndClearEverything();
+    enum ExistingWidgetsPolicy
+    {
+        Delete,
+        UnparentButKeepAlive
+    };
+
+    void setTopLevelWidgets(NodeWidgetQPointerVec&& newTopLevelWidgets, 
+                            ExistingWidgetsPolicy   existingWidgetsPolicy = ExistingWidgetsPolicy::Delete);
+
+    
+    void clearEverything(ExistingWidgetsPolicy existingWidgetsPolicy = ExistingWidgetsPolicy::Delete);
 
     void addTab();
     int tabsCount();
@@ -55,7 +66,7 @@ private:
     QPushButton*    addTabButton     = nullptr;
 
 private:
-    NodeWidgetVec topLevelWidgets;
+    NodeWidgetQPointerVec topLevelWidgets;
 };
 
 //******************************************************
@@ -71,7 +82,7 @@ class TabOfTopLevelWidgets : public QWidget
 public:
     TabOfTopLevelWidgets(QWidget* parent = nullptr);
 
-    void extractAllWidgets(QList<QWidget*> &outWidgets); //removes them from layout and unparents
+    void extractAllWidgets(QList<QWidget*> *outWidgets = nullptr); //removes them from layout and unparents
 
     void visitAllWidgets(const std::function<void(QWidget*)>& visitor);
 

@@ -26,8 +26,11 @@
 //    from code / deserializing process. Just so we unite them all in one node, and
 //    not in vector of nodes. There is no widget for 'root'.
 // 2. NodeWidgetVec is vector of widgets for all immediate children of 'root'
-using TreeAndTopLevelWidgets = std::pair<DataNodeShared, NodeWidgetVec>;
-SV_DECL_OPT(TreeAndTopLevelWidgets);
+// 
+
+//todo remove 
+//using TreeAndTopLevelWidgets = std::pair<DataNodeShared, NodeWidgetVec>;
+//SV_DECL_OPT(TreeAndTopLevelWidgets);
 
 class SUP_TreeBuilder
 {
@@ -37,7 +40,7 @@ public:
     //      - returns nullptr and empty 'outTopLevelWidgets'
     //
     //So you dont need to cleanup anything in case of failure.
-    static DataNodeShared buildTreeAndWidgets(const SUP_Data& data, NodeWidgetVec& outTopLevelWidgets);
+    static DataNodeShared buildTreeAndWidgets(const SUP_Data& data, NodeWidgetQPointerVec& outTopLevelWidgets);
 
 
     static DataNodeShared buildTree(const SUP_Data& data, MapOfWidgetOptionsForNodes* outWidgetOptions = nullptr);
@@ -49,7 +52,9 @@ private:
     //          and return top level widgets in this parameter.
     //      -outWidgetOptions
     //          Will put every non-empty WidgetOptions in that map
-    static DataNodeShared buildTreeAndOptionallyWidgets(const SUP_Data& data, NodeWidgetVec* outTopLevelWidgets = nullptr, MapOfWidgetOptionsForNodes* outWidgetOptions = nullptr);
+    static DataNodeShared buildTreeAndOptionallyWidgets(const SUP_Data&             data, 
+                                                        NodeWidgetQPointerVec*      outTopLevelWidgets = nullptr, 
+                                                        MapOfWidgetOptionsForNodes* outWidgetOptions = nullptr);
 
     //If you do supply 'outWidget', then it will build a widget for variable as well.
     //If you do supply 'outWidgetOptions', it will put every non-empty WidgetOptions for the entire subtree of this variable
@@ -64,5 +69,6 @@ private:
     // nullopt, then we create it)
     //
     // Return value: 'success'
-    static StringErrOpt addTabInformationIfNeeded(WidgetOptionsJsonOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString);
+    static StringErrOpt addTabInformationIfNeeded(  WidgetOptionsJsonOpt& outWidgetOptionsOpt, 
+                                                    const SUP_ArglistOpt& arglistFromMacroString);
 };

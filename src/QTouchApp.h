@@ -78,7 +78,7 @@ private:
 
     void deleteExistingTreeAndAllWidgets();
     
-    static std::optional< std::tuple<DataNodeShared, NodeWidgetVec> > createTreeAndWidgetsFromFile(const QString& filePath);
+    static std::optional< std::tuple<DataNodeShared, NodeWidgetQPointerVec> > createTreeAndWidgetsFromFile(const QString& filePath);
 
     
     QString absPathForPresetJsonFile    (const PresetNameString& presetName) const;

@@ -31,13 +31,13 @@ DataNodeShared SUP_TreeBuilder::buildTree(const SUP_Data& data, MapOfWidgetOptio
     return result;
 }
 
-DataNodeShared SUP_TreeBuilder::buildTreeAndWidgets(const SUP_Data& data, NodeWidgetVec& outTopLevelWidgets)
+DataNodeShared SUP_TreeBuilder::buildTreeAndWidgets(const SUP_Data& data, NodeWidgetQPointerVec& outTopLevelWidgets)
 {
     return buildTreeAndOptionallyWidgets(data, &outTopLevelWidgets);
 }
 
 DataNodeShared SUP_TreeBuilder::buildTreeAndOptionallyWidgets(  const SUP_Data&             data, 
-                                                                NodeWidgetVec*              outTopLevelWidgets, 
+                                                                NodeWidgetQPointerVec*      outTopLevelWidgets, 
                                                                 MapOfWidgetOptionsForNodes* outWidgetOptions )
 {
     const bool widgetsRequested = static_cast<bool>(outTopLevelWidgets);

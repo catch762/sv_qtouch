@@ -5,12 +5,19 @@
 #include "SUP_Data/SUP_DataParser.h"
 #include "SUP_Data/SUP_TreeBuilder.h"
 #include "WidgetLogic/WidgetsForNodeManager.h"
+#include "WidgetLogic/WidgetMakerSystem.h"
+
+#include "UiComponents/TopLevelWidgetsContainer.h"
 
 class TreeUpdater
 {
 public:
-    static bool updateTreeFromCode(DataNodeShared& oldTree, const QStringVec& newCodeFilePaths)
+    static bool updateTreeFromCode( DataNodeShared&             oldTree, 
+                                    const QStringVec&           newCodeFilePaths, 
+                                    TopLevelWidgetsContainer*   topLevelWidgetContainer = nullptr )
     {
+        bool updatingWidgetsRequested = topLevelWidgetContainer;
+
         SV_LOG(std::format("Updating from new code: {}", newCodeFilePaths));
 
         auto showErr = [](std::string err)
@@ -42,9 +49,9 @@ public:
         SV_LOG(std::format("New tree:\n{}\n", newTree->toString()));
         SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
 
-        auto replaceOldNodeWithRemadeNode = [&](DataNodeShared&         oldNodeBeingReplaced, 
-                                                DataNodeShared          reconstructedNode,
-                                                const DataNodeShared&   newNodeReference)
+        auto replaceOldNodeWithRemadeNodeAndRemakeWidget = [&newWidgetOptions]( DataNodeShared&         oldNodeBeingReplaced, 
+                                                                                DataNodeShared          reconstructedNode,
+                                                                                const DataNodeShared&   newNodeReference )
         {
             //1. Delete old widget for existing node that we are replacing
             deleteWidgetForNode(oldNodeBeingReplaced);
@@ -52,36 +59,88 @@ public:
             //2. Replace node
             oldNodeBeingReplaced = reconstructedNode;
 
-            //3. Remake widget
+            //3. Remake widget with appropriate options and insert it in appropriate parent widget
             WidgetOptionsJsonOpt optionsToRemakeWidget = getValueOpt(newWidgetOptions, ConstDataNodeWeak(newNodeReference));
+            auto createdWidget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(oldNodeBeingReplaced, optionsToRemakeWidget);
         };
 
-        tryUpdateOldSubtreeFromNew(oldTree, newTree, replaceOldNodeWithRemadeNode);
+        tryUpdateOldSubtreeFromNew( oldTree,
+                                    newTree,
+                                    updatingWidgetsRequested ? replaceOldNodeWithRemadeNodeAndRemakeWidget : NodeReplacer() );
 
         SV_LOG(std::format("Upgraded old tree:\n{}\n", oldTree->toString()));
 
-        if (treesAreStructurallyEqual(*newTree.get(), *oldTree.get()))
-        {
-            SV_LOG("Upgrading oldTree to newTree succeeded - they are structurally equal now.");
-            return true;
-        }
-        else
+        if (!treesAreStructurallyEqual(*newTree.get(), *oldTree.get()))
         {
             SV_ERROR("Upgrading oldTree to newTree failed - they are NOT structurally equal");
             return false;
         }
+
+        if (updatingWidgetsRequested)
+        {
+            NodeWidgetQPointerVec topLevelWidgets;
+            SV_ASSERT(oldTree);
+            SV_ASSERT(oldTree->isComposite());
+
+            for (const auto& topLevelChild : oldTree->tryGetCompositeData()->getChildren())
+            {
+                auto topLevelWidget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(topLevelChild);
+                if (!topLevelWidget)
+                {
+                    SV_ERROR(std::format("Upgrading oldTree to newTree failed, oldTree itself was updated and is equal to "
+                                         "newTree, but its immediate child [{}] doesnt have widget associated with it!",
+                                         topLevelChild));
+
+                    //this is serious, perhaps we should delete all widgets now?
+
+                    return false;
+                }
+
+                topLevelWidgets.push_back(topLevelWidget);
+            }
+
+            // Some of previously existing widgets are already deleted, but some of existing widgets might have persisted,
+            // and are now in 'topLevelWidgets'. So we are not deleting any.
+            topLevelWidgetContainer->setTopLevelWidgets(std::move(topLevelWidgets), 
+                TopLevelWidgetsContainer::ExistingWidgetsPolicy::UnparentButKeepAlive);
+        }
+
+        SV_LOG("Upgrading oldTree to newTree succeeded - they are structurally equal now.");
+
+        return true;
     }
 
     //*******************************************************************************************************
+    // 
+    //  This is called both when we are replacing node and when we are creating it
+    //  for the first time ('oldNodeBeingReplaced' is empty in this case)
+    // 
     //  Shortest impl would be:
     //      oldNodeBeingReplaced = reconstructedNode;
     // 
     //  But you probably also want to delete old widget, reconstruct it, etc.
     //  All of this shouldnt be concern of 'tryUpdateOldSubtreeFromNew', so i pass this NodeReplacer into it.
+    // 
     //*******************************************************************************************************
     using NodeReplacer = std::function<void(DataNodeShared&         oldNodeBeingReplaced, 
                                             DataNodeShared          reconstructedNode,
                                             const DataNodeShared&   newNodeReference)>;
+
+    //If nodeReplacer is null, provides simple default behaviour
+    static void executeNodeReplacer(    const NodeReplacer&     nodeReplacer,
+                                        DataNodeShared&         oldNodeBeingReplaced,
+                                        DataNodeShared          reconstructedNode,
+                                        const DataNodeShared&   newNodeReference )
+    {
+        if (nodeReplacer)
+        {
+            nodeReplacer(oldNodeBeingReplaced, reconstructedNode, newNodeReference);
+        }
+        else
+        {
+            oldNodeBeingReplaced = reconstructedNode;
+        }
+    }
 
     // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
     // doing as little change as possible. It applies itself to subnodes recursively.
@@ -102,7 +161,7 @@ public:
         {
             SV_LOG("upd", std::format("Remaking from the get go: {}", newNode->getName()));
 
-            nodeReplacer(oldNode, DataNode::makeCopy(newNode), newNode);
+            executeNodeReplacer(nodeReplacer, oldNode, DataNode::makeCopy(newNode), newNode);
 
             return;
         }
@@ -134,6 +193,8 @@ public:
 
             updatedChildrenListForOldNode.push_back(oldChildWithSameName);
         }
+
+        //ok and you arent deleting widgets for deleted members bro. todo
 
         oldNode->tryGetCompositeData()->setChildren(updatedChildrenListForOldNode, oldNode);
     }
