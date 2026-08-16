@@ -72,6 +72,13 @@ private:
         auto createdWidget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, optionsToRemakeWidget);
         SV_ASSERT(createdWidget);
 
+
+
+
+
+
+
+
         createdWidget->show();
         return createdWidget;
     }
@@ -168,21 +175,7 @@ public:
         return true;
     }
 
-    //*******************************************************************************************************
-    // 
-    //  This is called both when we are replacing node and when we are creating it
-    //  for the first time ('oldNodeBeingReplaced' is empty in this case)
-    // 
-    //  Shortest impl would be:
-    //      oldNodeBeingReplaced = reconstructedNode;
-    // 
-    //  But you probably also want to delete old widget, reconstruct it, etc.
-    //  All of this shouldnt be concern of 'tryUpdateOldSubtreeFromNew', so i pass this OnNodeReplacing into it.
-    // 
-    //*******************************************************************************************************
-    using OnNodeReplacing = std::function<void(DataNodeShared&      oldNodeBeingReplaced, 
-                                            DataNodeShared          reconstructedNode,
-                                            const DataNodeShared&   newNodeReference)>;
+
 
     // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
     // doing as little change as possible. It applies itself to subnodes recursively.

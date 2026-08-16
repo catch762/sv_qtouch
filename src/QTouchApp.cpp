@@ -114,7 +114,7 @@ bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 {
     if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
 
-    return TreeUpdater::updateTreeFromCode(rootNode, newCodeFilePaths);
+    return TreeUpdater::updateTreeFromCode(rootNode, newCodeFilePaths, widgetsView);
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
