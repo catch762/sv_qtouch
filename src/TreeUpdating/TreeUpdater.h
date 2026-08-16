@@ -9,6 +9,77 @@
 
 #include "UiComponents/TopLevelWidgetsContainer.h"
 
+
+class TreeUpdateOperations
+{
+public:
+    virtual void beforeReplacingNode(const DataNodeShared&   oldNodeBeingReplaced,
+                                     const DataNodeShared&   newNodeReference,
+                                     DataNodeShared&         replacementNode)
+    {
+    }
+
+    virtual void beforeAddingCompletelyNewNode(DataNodeShared& nodeAdded,
+                                               const DataNodeShared& newNodeReference)
+    {
+    }
+
+    virtual void beforeRemovingNode(const DataNodeShared& nodeThatWillBeRemoved)
+    {
+    }
+};
+
+class TreeUpdateOperationsWithWidgetsUpdating : public TreeUpdateOperations
+{
+public:
+    TreeUpdateOperationsWithWidgetsUpdating(MapOfWidgetOptionsForNodes&& _newWidgetOptions)
+    {
+        newWidgetOptions = std::move(_newWidgetOptions);
+    }
+
+    void beforeReplacingNode(const DataNodeShared& oldNodeBeingReplaced,
+                             const DataNodeShared& newNodeReference,
+                             DataNodeShared&       replacementNode) override
+    {
+        deleteWidgetForNode(oldNodeBeingReplaced);
+
+        auto widget = createWidgetForNode(replacementNode, newNodeReference);
+    }
+
+    void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
+                                       const DataNodeShared& newNodeReference) override
+    {
+        auto widget = createWidgetForNode(nodeAdded, newNodeReference);
+    }
+
+    void beforeRemovingNode(const DataNodeShared& nodeThatWillBeRemoved) override
+    {
+        deleteWidgetForNode(nodeThatWillBeRemoved);
+    }
+
+private:
+    static void deleteWidgetForNode(const DataNodeShared& node)
+    {
+        if (auto widget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(node))
+        {
+            widget->deleteLater();
+        }
+    }
+
+    NodeWidget* createWidgetForNode(const DataNodeShared& node, const DataNodeShared& newNodeReference)
+    {
+        WidgetOptionsJsonOpt optionsToRemakeWidget = getValueOpt(newWidgetOptions, ConstDataNodeWeak(newNodeReference));
+        auto createdWidget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, optionsToRemakeWidget);
+        SV_ASSERT(createdWidget);
+
+        createdWidget->show();
+        return createdWidget;
+    }
+
+private:
+    MapOfWidgetOptionsForNodes newWidgetOptions;
+};
+
 class TreeUpdater
 {
 public:
@@ -49,24 +120,11 @@ public:
         SV_LOG(std::format("New tree:\n{}\n", newTree->toString()));
         SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
 
-        auto replaceOldNodeWithRemadeNodeAndRemakeWidget = [&newWidgetOptions]( DataNodeShared&         oldNodeBeingReplaced, 
-                                                                                DataNodeShared          reconstructedNode,
-                                                                                const DataNodeShared&   newNodeReference )
-        {
-            //1. Delete old widget for existing node that we are replacing
-            deleteWidgetForNode(oldNodeBeingReplaced);
-
-            //2. Replace node
-            oldNodeBeingReplaced = reconstructedNode;
-
-            //3. Remake widget with appropriate options and insert it in appropriate parent widget
-            WidgetOptionsJsonOpt optionsToRemakeWidget = getValueOpt(newWidgetOptions, ConstDataNodeWeak(newNodeReference));
-            auto createdWidget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(oldNodeBeingReplaced, optionsToRemakeWidget);
-        };
+        auto updateOperationsWithWidgets = std::make_unique<TreeUpdateOperationsWithWidgetsUpdating>(std::move(newWidgetOptions));
 
         tryUpdateOldSubtreeFromNew( oldTree,
                                     newTree,
-                                    updatingWidgetsRequested ? replaceOldNodeWithRemadeNodeAndRemakeWidget : NodeReplacer() );
+                                    updatingWidgetsRequested ? updateOperationsWithWidgets.get() : nullptr);
 
         SV_LOG(std::format("Upgraded old tree:\n{}\n", oldTree->toString()));
 
@@ -119,28 +177,12 @@ public:
     //      oldNodeBeingReplaced = reconstructedNode;
     // 
     //  But you probably also want to delete old widget, reconstruct it, etc.
-    //  All of this shouldnt be concern of 'tryUpdateOldSubtreeFromNew', so i pass this NodeReplacer into it.
+    //  All of this shouldnt be concern of 'tryUpdateOldSubtreeFromNew', so i pass this OnNodeReplacing into it.
     // 
     //*******************************************************************************************************
-    using NodeReplacer = std::function<void(DataNodeShared&         oldNodeBeingReplaced, 
+    using OnNodeReplacing = std::function<void(DataNodeShared&      oldNodeBeingReplaced, 
                                             DataNodeShared          reconstructedNode,
                                             const DataNodeShared&   newNodeReference)>;
-
-    //If nodeReplacer is null, provides simple default behaviour
-    static void executeNodeReplacer(    const NodeReplacer&     nodeReplacer,
-                                        DataNodeShared&         oldNodeBeingReplaced,
-                                        DataNodeShared          reconstructedNode,
-                                        const DataNodeShared&   newNodeReference )
-    {
-        if (nodeReplacer)
-        {
-            nodeReplacer(oldNodeBeingReplaced, reconstructedNode, newNodeReference);
-        }
-        else
-        {
-            oldNodeBeingReplaced = reconstructedNode;
-        }
-    }
 
     // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
     // doing as little change as possible. It applies itself to subnodes recursively.
@@ -150,20 +192,27 @@ public:
     //      - 'oldNode' may be nullptr.
     //      - It will assert that arguments do have same name, because the point is we are updating same variable node
     //      - This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
-    static void tryUpdateOldSubtreeFromNew( DataNodeShared&         oldNode, 
-                                            const DataNodeShared&   newNode, 
-                                            const NodeReplacer&     nodeReplacer = TreeUpdater::basicNodeReplacer)
+    static DataNodeShared tryUpdateOldSubtreeFromNew( DataNodeShared&         oldNode,
+                                                      const DataNodeShared&   newNode, 
+                                                      TreeUpdateOperations*   operations = nullptr )
     {
         SV_ASSERT(newNode);
 
         // If oldNode is nullptr, its handled here
         if (oldNodeShouldClearlyBeCompletelyRemade(oldNode, newNode))
         {
-            SV_LOG("upd", std::format("Remaking from the get go: {}", newNode->getName()));
-
-            executeNodeReplacer(nodeReplacer, oldNode, DataNode::makeCopy(newNode), newNode);
-
-            return;
+            auto reconstructedNode = DataNode::makeCopy(newNode);
+            if (oldNode)
+            {
+                SV_LOG("upd", std::format("Replacing node: {}", newNode->getName()));
+                if (operations) operations->beforeReplacingNode(oldNode, newNode, reconstructedNode);
+            }
+            else
+            {
+                SV_LOG("upd", std::format("Creating comepletely new node: {}", newNode->getName()));
+                if (operations) operations->beforeAddingCompletelyNewNode(reconstructedNode, newNode);
+            }
+            return reconstructedNode;
         }
 
         // Now we are sure oldNode is not nullptr, and we can run some asserts:
@@ -177,26 +226,54 @@ public:
         {
             //not handling leaves for now
             SV_LOG("upd", std::format("Skipping leaf update: {}", oldNode->getName()));
-            return;
+            return oldNode;
         }
 
-        SV_LOG("upd", std::format("Gonna update children: {}", oldNode->getName()));
+        SV_LOG("upd", std::format("> Gonna update children: {}", oldNode->getName()));
 
         std::vector<DataNodeShared> updatedChildrenListForOldNode;
 
+        //So we can track which child in old node we need to delete afterwards
+        std::vector<bool> oldChildrenStillExistsRegistry(oldNode->childrenCount(), false);
+
         for (const DataNodeShared& newChild : newNode->tryGetCompositeData()->getChildren())
         {
-            //may be null and its fine
-            DataNodeShared oldChildWithSameName = oldNode->tryGetCompositeData()->getChild(newChild->getName());
+            //May not exist, and its fine
+            int             oldChildWithSameNameIndex = -1;
+            DataNodeShared  oldChildWithSameName      = oldNode->tryGetCompositeData()->getChild(newChild->getName(), &oldChildWithSameNameIndex);
 
-            tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild, nodeReplacer);
+            DataNodeShared  updatedChild              = tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild, operations);
 
-            updatedChildrenListForOldNode.push_back(oldChildWithSameName);
+            updatedChildrenListForOldNode.push_back(updatedChild);
+
+            if (oldChildWithSameNameIndex != -1)
+            {
+                SV_ASSERT(isValidIndex(oldChildWithSameNameIndex, oldChildrenStillExistsRegistry.size()));
+
+                oldChildrenStillExistsRegistry[oldChildWithSameNameIndex] = true;
+            }
         }
 
-        //ok and you arent deleting widgets for deleted members bro. todo
+        // Handling children of oldNode that will be deleted: 
+        for (int oldChildIndex = 0; oldChildIndex < oldNode->childrenCount(); ++oldChildIndex)
+        {
+            SV_ASSERT(isValidIndex(oldChildIndex, oldChildrenStillExistsRegistry.size()));
 
+            bool oldChildWillBeDeletedNow = !oldChildrenStillExistsRegistry[oldChildIndex];
+            if (oldChildWillBeDeletedNow)
+            {
+                auto oldChildToBeDeleted = oldNode->tryGetChild(oldChildIndex);
+
+                SV_LOG("upd", std::format("Deleting child node: {}", oldChildToBeDeleted->getName()));
+                if (operations) operations->beforeRemovingNode(oldChildToBeDeleted);
+            }
+        }
+
+        // The line that actually removes those 'to be deleted' children is just this one.
+        // (assuming nothing else holds their shared pointers, these children will go out of scope now)
         oldNode->tryGetCompositeData()->setChildren(updatedChildrenListForOldNode, oldNode);
+
+        return oldNode;
     }
 
 private:
@@ -232,22 +309,5 @@ private:
 
         // everything else is fine
         return false;
-    }
-
-    static void deleteWidgetForNode(const DataNodeShared& node)
-    {
-        if (!node) return;
-
-        if (auto widget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(node))
-        {
-            widget->deleteLater();
-        }
-    }
-
-    static void basicNodeReplacer(  DataNodeShared&         oldNodeBeingReplaced, 
-                                    DataNodeShared          reconstructedNode,
-                                    const DataNodeShared&   newNodeReference )
-    {
-        oldNodeBeingReplaced = reconstructedNode;
     }
 };
