@@ -67,6 +67,8 @@ public:
             return false;
         }
     }
+
+    virtual ~TreeUpdateOperations() = default;
 };
 
 class UpdateOperationsForPlainTreeWithoutWidgets : public TreeUpdateOperations
@@ -306,11 +308,13 @@ public:
             SV_ASSERT(oldNode->getName() == newNode->getName());
         }
 
-        auto shouldRemakeOldNode = [&]() -> bool
+        
+        auto shouldRemakeOldNode = [&](std::string &remakeReason) -> bool
         {
             // 1. old node doesnt even exist
             if (!oldNode)
             {
+                remakeReason = "NodeDoesntExist";
                 return true;
             }
 
@@ -320,12 +324,14 @@ public:
             // 2. comp/leaf mismatch
             if (oldIsLeaf != newIsLeaf)
             {
+                remakeReason = "NodeCategoryMismatch";
                 return true;
             }
 
             // 3. leaf type mismatch
             if (oldIsLeaf && !anyHoldSameType(oldNode->tryGetLeafvalue(), newNode->tryGetLeafvalue()))
             {
+                remakeReason = "LeafAnyTypeMismatch";
                 return true;
             }
 
@@ -334,6 +340,7 @@ public:
             // This decision is a bit controversial but should be fine.
             if (oldIsLeaf && !operations.nodesHaveSameCreationStringInOptions(oldNode, newNode))
             {
+                remakeReason = "LeafCreationStringMismatch";
                 return true;
             }
 
@@ -341,17 +348,18 @@ public:
             return false;
         };
 
-        if (shouldRemakeOldNode())
+        std::string remakeReason;
+        if (shouldRemakeOldNode(remakeReason))
         {
             auto reconstructedNode = DataNode::makeCopy(newNode);
             if (oldNode)
             {
-                SV_LOG("upd", std::format("Replacing node: {}", newNode->getName()));
+                SV_LOG("upd", std::format("Replacing node due to [{}]: {}", remakeReason, newNode->getName()));
                 operations.beforeReplacingNode(oldNode, newNode, reconstructedNode, oldNodeParenting);
             }
             else
             {
-                SV_LOG("upd", std::format("Creating comepletely new node: {}", newNode->getName()));
+                SV_LOG("upd", std::format("Creating completely new node due to [{}]: {}", remakeReason, newNode->getName()));
                 operations.beforeAddingCompletelyNewNode(reconstructedNode, oldNodeParenting, newNode);
             }
             return reconstructedNode;
