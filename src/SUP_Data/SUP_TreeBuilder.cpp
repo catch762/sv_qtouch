@@ -209,6 +209,19 @@ WidgetOptionsJsonOptOrError SUP_TreeBuilder::makeWidgetOptionsFromMacroArglist(c
         return *err;
     }
 
+    if (arglistFromMacroString)
+    {
+        if (!widgetOptionsOpt)
+        {
+            widgetOptionsOpt = WidgetOptionsJson();
+        }
+
+        std::string creationStdString = arglistFromMacroString->toString();
+        std::erase(creationStdString, '\n');
+
+        setCreationString(*widgetOptionsOpt, QString::fromStdString(creationStdString));
+    }
+
     return widgetOptionsOpt;
 }
 

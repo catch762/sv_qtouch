@@ -9,17 +9,28 @@
 
 #include "UiComponents/TopLevelWidgetsContainer.h"
 
+//This struct represents parent of some other child node; it is used in context
+//of algorithm which needs to operate on (future) parent before its
+//actually set on the child node. So it cant just get it via 'childNode->getParent()'.
+struct ParentingData
+{
+    DataNodeShared  parentNode;
+    int             indexInParent = -1;
+};
+SV_DECL_OPT(ParentingData);
 
 class TreeUpdateOperations
 {
 public:
     virtual void beforeReplacingNode(const DataNodeShared&   oldNodeBeingReplaced,
                                      const DataNodeShared&   newNodeReference,
-                                     DataNodeShared&         replacementNode)
+                                     DataNodeShared&         replacementNode,
+                                     ParentingDataOpt        replacementParenting)
     {
     }
 
-    virtual void beforeAddingCompletelyNewNode(DataNodeShared& nodeAdded,
+    virtual void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
+        ParentingDataOpt         nodeParenting,
                                                const DataNodeShared& newNodeReference)
     {
     }
@@ -27,34 +38,102 @@ public:
     virtual void beforeRemovingNode(const DataNodeShared& nodeThatWillBeRemoved)
     {
     }
+
+    virtual WidgetOptionsJsonOpt getOptionsForOldNode(ConstDataNodeWeak oldNode) = 0;
+    virtual WidgetOptionsJsonOpt getOptionsForNewNode(ConstDataNodeWeak newNode) = 0;
+
+public:
+    bool nodesHaveSameCreationStringInOptions(ConstDataNodeWeak oldNode, ConstDataNodeWeak newNode)
+    {
+        QStringOpt oldCreationString = getCreationStringOpt(getOptionsForOldNode(oldNode));
+        QStringOpt newCreationString = getCreationStringOpt(getOptionsForNewNode(newNode));
+
+        const auto hasOld = bool(oldCreationString);
+        const auto hasNew = bool(newCreationString);
+
+        if (hasOld == hasNew)
+        {
+            if (hasOld && hasNew)
+            {
+                return *oldCreationString == *newCreationString;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
 };
 
-class TreeUpdateOperationsWithWidgetsUpdating : public TreeUpdateOperations
+class UpdateOperationsForPlainTreeWithoutWidgets : public TreeUpdateOperations
 {
 public:
-    TreeUpdateOperationsWithWidgetsUpdating(MapOfWidgetOptionsForNodes&& _newWidgetOptions)
+    UpdateOperationsForPlainTreeWithoutWidgets(MapOfWidgetOptionsForNodes&& _oldWidgetOptions,
+                                               MapOfWidgetOptionsForNodes&& _newWidgetOptions)
+    {
+        oldWidgetOptions = std::move(_oldWidgetOptions);
+        newWidgetOptions = std::move(_newWidgetOptions);
+    }
+
+    WidgetOptionsJsonOpt getOptionsForOldNode(ConstDataNodeWeak oldNode) override
+    {
+        return getValueOpt(oldWidgetOptions, oldNode);
+    }
+    WidgetOptionsJsonOpt getOptionsForNewNode(ConstDataNodeWeak newNode) override
+    {
+        return getValueOpt(newWidgetOptions, newNode);
+    }
+
+private:
+    MapOfWidgetOptionsForNodes oldWidgetOptions;
+    MapOfWidgetOptionsForNodes newWidgetOptions;
+};
+
+class UpdateOperationsForLiveTreeWithWidgets : public TreeUpdateOperations
+{
+public:
+    UpdateOperationsForLiveTreeWithWidgets(MapOfWidgetOptionsForNodes&& _newWidgetOptions)
     {
         newWidgetOptions = std::move(_newWidgetOptions);
     }
 
     void beforeReplacingNode(const DataNodeShared& oldNodeBeingReplaced,
                              const DataNodeShared& newNodeReference,
-                             DataNodeShared&       replacementNode) override
+                             DataNodeShared&       replacementNode,
+                             ParentingDataOpt      replacementParenting) override
     {
         deleteWidgetForNode(oldNodeBeingReplaced);
 
-        auto widget = createWidgetForNode(replacementNode, newNodeReference);
+        auto widget = createWidgetForNode(replacementNode, replacementParenting, newNodeReference);
     }
 
     void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
+                                       ParentingDataOpt      nodeParenting,
                                        const DataNodeShared& newNodeReference) override
     {
-        auto widget = createWidgetForNode(nodeAdded, newNodeReference);
+        auto widget = createWidgetForNode(nodeAdded, nodeParenting, newNodeReference);
     }
 
     void beforeRemovingNode(const DataNodeShared& nodeThatWillBeRemoved) override
     {
         deleteWidgetForNode(nodeThatWillBeRemoved);
+    }
+
+    WidgetOptionsJsonOpt getOptionsForOldNode(ConstDataNodeWeak oldNode) override
+    {
+        if (auto widget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(oldNode))
+        {
+            return widget->makeOptions();
+        }
+        else return {};
+    }
+    WidgetOptionsJsonOpt getOptionsForNewNode(ConstDataNodeWeak newNode) override
+    {
+        return getValueOpt(newWidgetOptions, newNode);
     }
 
 private:
@@ -66,26 +145,35 @@ private:
         }
     }
 
-    NodeWidget* createWidgetForNode(const DataNodeShared& node, const DataNodeShared& newNodeReference)
+    NodeWidget* createWidgetForNode(const DataNodeShared& node,
+                                    ParentingDataOpt      nodeParenting,
+                                    const DataNodeShared& newNodeReference)
     {
         WidgetOptionsJsonOpt optionsToRemakeWidget = getValueOpt(newWidgetOptions, ConstDataNodeWeak(newNodeReference));
-        auto createdWidget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, optionsToRemakeWidget);
+        auto createdWidget = WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node,
+                                                                                          optionsToRemakeWidget,
+                                                                                          &newWidgetOptions);
         SV_ASSERT(createdWidget);
 
+        if (nodeParenting)
+        {
+            //ParentWidget will not exist for top level widgets. But if it exists, we need to add this widget to it
+            if (auto parentWidget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(nodeParenting->parentNode))
+            {
+                parentWidget->addContentWidget(createdWidget, nodeParenting->indexInParent);
+            }
+        }
 
-
-
-
-
-
-
-        createdWidget->show();
+        //createdWidget->show();
         return createdWidget;
     }
 
 private:
     MapOfWidgetOptionsForNodes newWidgetOptions;
 };
+
+//This exists because there are 2 cases: obtaining options from parsed json and from a live widget
+using WidgetOptionsGetter = std::function<WidgetOptionsJsonOpt(ConstDataNodeWeak)>;
 
 class TreeUpdater
 {
@@ -127,11 +215,28 @@ public:
         SV_LOG(std::format("New tree:\n{}\n", newTree->toString()));
         SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
 
-        auto updateOperationsWithWidgets = std::make_unique<TreeUpdateOperationsWithWidgetsUpdating>(std::move(newWidgetOptions));
+        auto makeUpdateOperation = [&]() -> std::unique_ptr<TreeUpdateOperations>
+        {
+            if (updatingWidgetsRequested)
+            {
+                return std::make_unique<UpdateOperationsForLiveTreeWithWidgets>(std::move(newWidgetOptions));
+            }
+            else
+            {
+                //todo oldWidgetOptions
+                return std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(MapOfWidgetOptionsForNodes(),
+                                                                                    std::move(newWidgetOptions));
+            }
+        };
+        auto updateOperations = makeUpdateOperation();
+
+
+        //todo and from json - add map of options to parameter
 
         tryUpdateOldSubtreeFromNew( oldTree,
                                     newTree,
-                                    updatingWidgetsRequested ? updateOperationsWithWidgets.get() : nullptr);
+                                    {},
+                                    *updateOperations);
 
         SV_LOG(std::format("Upgraded old tree:\n{}\n", oldTree->toString()));
 
@@ -175,7 +280,12 @@ public:
         return true;
     }
 
+    static bool leafShouldBeRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
+    {
+        SV_ASSERT(oldNode && oldNode->isLeaf());
+        SV_ASSERT(newNode && newNode->isLeaf());
 
+    }
 
     // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
     // doing as little change as possible. It applies itself to subnodes recursively.
@@ -185,57 +295,102 @@ public:
     //      - 'oldNode' may be nullptr.
     //      - It will assert that arguments do have same name, because the point is we are updating same variable node
     //      - This also assumes there cant be 2 children with same name (as of now, there actually can be multiple in DataNode)
-    static DataNodeShared tryUpdateOldSubtreeFromNew( DataNodeShared&         oldNode,
-                                                      const DataNodeShared&   newNode, 
-                                                      TreeUpdateOperations*   operations = nullptr )
+    static DataNodeShared tryUpdateOldSubtreeFromNew( DataNodeShared&            oldNode,
+                                                      const DataNodeShared&      newNode,
+                                                      ParentingDataOpt           oldNodeParenting,
+                                                      TreeUpdateOperations&      operations)
     {
         SV_ASSERT(newNode);
+        if (oldNode)
+        {
+            SV_ASSERT(oldNode->getName() == newNode->getName());
+        }
 
-        // If oldNode is nullptr, its handled here
-        if (oldNodeShouldClearlyBeCompletelyRemade(oldNode, newNode))
+        auto shouldRemakeOldNode = [&]() -> bool
+        {
+            // 1. old node doesnt even exist
+            if (!oldNode)
+            {
+                return true;
+            }
+
+            const bool oldIsLeaf = oldNode->isLeaf();
+            const bool newIsLeaf = newNode->isLeaf();
+
+            // 2. comp/leaf mismatch
+            if (oldIsLeaf != newIsLeaf)
+            {
+                return true;
+            }
+
+            // 3. leaf type mismatch
+            if (oldIsLeaf && !anyHoldSameType(oldNode->tryGetLeafvalue(), newNode->tryGetLeafvalue()))
+            {
+                return true;
+            }
+
+            // 4. different creation string, which we only check for leaves for now, cause we dont
+            // want to remake comp nodes which only had their tab changed in widget options (cuz theres nothing else).
+            // This decision is a bit controversial but should be fine.
+            if (oldIsLeaf && !operations.nodesHaveSameCreationStringInOptions(oldNode, newNode))
+            {
+                return true;
+            }
+
+            //no mismatches
+            return false;
+        };
+
+        if (shouldRemakeOldNode())
         {
             auto reconstructedNode = DataNode::makeCopy(newNode);
             if (oldNode)
             {
                 SV_LOG("upd", std::format("Replacing node: {}", newNode->getName()));
-                if (operations) operations->beforeReplacingNode(oldNode, newNode, reconstructedNode);
+                operations.beforeReplacingNode(oldNode, newNode, reconstructedNode, oldNodeParenting);
             }
             else
             {
                 SV_LOG("upd", std::format("Creating comepletely new node: {}", newNode->getName()));
-                if (operations) operations->beforeAddingCompletelyNewNode(reconstructedNode, newNode);
+                operations.beforeAddingCompletelyNewNode(reconstructedNode, oldNodeParenting, newNode);
             }
             return reconstructedNode;
         }
 
         // Now we are sure oldNode is not nullptr, and we can run some asserts:
+        SV_ASSERT(oldNode);
         const bool oldIsLeaf = oldNode->isLeaf();
         const bool newIsLeaf = newNode->isLeaf();
-        SV_ASSERT(oldNode);
-        SV_ASSERT(oldNode->getName() == newNode->getName());
         SV_ASSERT(oldIsLeaf == newIsLeaf);
 
-        if (oldIsLeaf)
+        //Now we update comp node content, but for leaves we dont do anything else
+        if (oldIsLeaf && newIsLeaf)
         {
-            //not handling leaves for now
-            SV_LOG("upd", std::format("Skipping leaf update: {}", oldNode->getName()));
+            SV_LOG("upd", std::format("Leaf was not remade, used existing: {}", oldNode->getName()));
             return oldNode;
         }
 
-        SV_LOG("upd", std::format("> Gonna update children: {}", oldNode->getName()));
+        SV_LOG("upd", std::format("Comp was not remade, so gonna update children: {}", oldNode->getName()));
 
         std::vector<DataNodeShared> updatedChildrenListForOldNode;
 
         //So we can track which child in old node we need to delete afterwards
         std::vector<bool> oldChildrenStillExistsRegistry(oldNode->childrenCount(), false);
 
-        for (const DataNodeShared& newChild : newNode->tryGetCompositeData()->getChildren())
+        for (int newChildIndex = 0; newChildIndex < newNode->childrenCount(); ++newChildIndex)
         {
+            DataNodeShared newChild = newNode->tryGetChild(newChildIndex);
+
             //May not exist, and its fine
             int             oldChildWithSameNameIndex = -1;
             DataNodeShared  oldChildWithSameName      = oldNode->tryGetCompositeData()->getChild(newChild->getName(), &oldChildWithSameNameIndex);
 
-            DataNodeShared  updatedChild              = tryUpdateOldSubtreeFromNew(oldChildWithSameName, newChild, operations);
+            ParentingData   parentingOfUpdatedChild = { oldNode, newChildIndex };
+
+            DataNodeShared  updatedChild              = tryUpdateOldSubtreeFromNew( oldChildWithSameName,
+                                                                                    newChild,
+                                                                                    parentingOfUpdatedChild,
+                                                                                    operations );
 
             updatedChildrenListForOldNode.push_back(updatedChild);
 
@@ -258,7 +413,7 @@ public:
                 auto oldChildToBeDeleted = oldNode->tryGetChild(oldChildIndex);
 
                 SV_LOG("upd", std::format("Deleting child node: {}", oldChildToBeDeleted->getName()));
-                if (operations) operations->beforeRemovingNode(oldChildToBeDeleted);
+                operations.beforeRemovingNode(oldChildToBeDeleted);
             }
         }
 
@@ -269,38 +424,16 @@ public:
         return oldNode;
     }
 
-private:
-    // This function checks if these two nodes are clearly very different (and thus it doesnt make sense
-    // updating the old node, we are gonna just remake it from scratch).
-    // 
-    // It will ASSERT that arguments do have same name, because the point is
-    // we are updating same variable in two trees. 
-    static bool oldNodeShouldClearlyBeCompletelyRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
+    //The most simple version which will not even compare widget options or do anything about widgets at all
+    static DataNodeShared tryUpdateOldSubtreeFromNew(DataNodeShared&        oldNode,
+                                                     const DataNodeShared&  newNode)
     {
-        if (!oldNode)
-        {
-            return true;
-        }
+        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>( MapOfWidgetOptionsForNodes(),
+                                                                                        MapOfWidgetOptionsForNodes() );
 
-        SV_ASSERT(newNode);
-        SV_ASSERT(oldNode->getName() == newNode->getName());
-
-        const bool oldIsLeaf = oldNode->isLeaf();
-        const bool newIsLeaf = newNode->isLeaf();
-
-        // comp/leaf mismatch
-        if (oldIsLeaf != newIsLeaf)
-        {
-            return true;
-        }
-
-        // leaf type mismatch
-        if (oldIsLeaf && newIsLeaf && !anyHoldSameType(oldNode->tryGetLeafvalue(), newNode->tryGetLeafvalue()))
-        {
-            return true;
-        }
-
-        // everything else is fine
-        return false;
+        return tryUpdateOldSubtreeFromNew(oldNode, newNode, {}, *operations);
     }
+
+private:
+
 };
