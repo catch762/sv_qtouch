@@ -285,12 +285,6 @@ public:
         return true;
     }
 
-    static bool leafShouldBeRemade(const DataNodeShared& oldNode, const DataNodeShared& newNode)
-    {
-        SV_ASSERT(oldNode && oldNode->isLeaf());
-        SV_ASSERT(newNode && newNode->isLeaf());
-
-    }
 
     // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
     // doing as little change as possible. It applies itself to subnodes recursively.
