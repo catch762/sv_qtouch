@@ -228,7 +228,8 @@ private:
             auto threeNumbers = getThreeNumbers<UnderlyingType>(*settings);
             if (!threeNumbers)
             {
-                SV_ERROR(std::format("Could not parse three numbers from {}", *settings));
+                SV_ERROR(std::format("Could not parse three [{}] numbers from {}",
+                    typeNameOrMangled<UnderlyingType>(), *settings));
                 return {};
             }
 

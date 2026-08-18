@@ -7,9 +7,9 @@ std::string SUP_Arglist::toString() const
 
     std::string res = "SUP_Arglist{\n";
     int idx = 0;
-    for (auto& expr : namedExpressions)
+    for (const SUP_NamedExpr& expr : namedExpressions)
     {
-        res += std::format("{}) \"{}\": {}\n", idx, expr.first, expr.second);
+        res += std::format("{}) '{}': {}\n", idx, expr.first, expr.second.toString(false));
         idx++;
     }
     res += "}";

@@ -10,17 +10,24 @@
 /*
 SUP_ADDTODICT_BEGIN
 cr 				= 10
-camdata 		= [-cr, cr, 0]
+camdata 		= [-cr, cr, 777777]
 Ny 				= 'no yes'
 SUP_ADDTODICT_END
 */
 
+//a: different creation string due to camdata
+//b -> bbb: renamed
+//c: different creation string
+//XXX: new added var
+//d: same
+
+//theVar: diff type
 
 #define STRMETA_Hello(V,N) STRMAIN_ARG5(Hello,V,N,\
 ivec2, 	a,		ui("lims=camdata")\
-ivec4,	b,		ui("rad = [ ['a','d','ddd'], ['x','xx','ss','dd',>,'ff','eeeeeee'] ]")\ 
-int,	c,		ui("rad = ['hey', >,'bro', 'a', 'bbbbbbbbbbbbbbbbbbbb', 'c','ddd','e']")\
-int,	XXX,		ui("rad = ['hey', >,'bro', 'a', 'bbbbbbbbbbbbbbbbbbbb', 'c','ddd','e']")\
+ivec4,	bbb,	ui("rad = [ ['a','d','ddd'], ['x','xx','ss','dd',>,'ff','eeeeeee'] ]")\ 
+int,	c,		ui("[1, 2, 1]")\
+int,	XXX,	ui("rad = ['hey', >,'bro', 'a', 'bbbbbbbbbbbbbbbbbbbb', 'c','ddd','e']")\
 vec4,	d)		ui("[0, 5, 2]")
 STRDECL(Hello)
 
@@ -28,13 +35,5 @@ STRDECL(Hello)
 SUP_VARS_BEGIN
 		STR(Hello, hello) 	ui("")
 #line	ooo(Hello)
-		VAR(vec4, theVar)	ui("tab = 2")
-SUP_VARS_END
-
-
-SUP_VARS_BEGIN
-		VAR(float, a)	ui("")
-		VAR(vec3, b)	ui("")
-		VAR(int, c)		ui("")
-		VAR(vec4, d)	ui("[10, 30, 20]")
+		VAR(vec3, theVar)	ui("tab = 3")
 SUP_VARS_END

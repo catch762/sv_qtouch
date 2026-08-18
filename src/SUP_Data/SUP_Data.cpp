@@ -2,10 +2,10 @@
 
 std::string SUP_Variable::toString() const
 {
-    return std::format("SUP_Var[{}, {}{}]",
+    return std::format("SUP_Var[{}, '{}'{}]",
         type,
         name,
-        arglistFromUiMacro ? std::format("{}", *arglistFromUiMacro) : std::string("")
+        arglistFromUiMacro ? std::format(", {}", *arglistFromUiMacro) : std::string("")
     );
 }
 
@@ -28,7 +28,7 @@ bool SUP_StructDefinition::isValid() const
 
 std::string SUP_Data::toString() const
 {
-    std::string res = std::format(  "SUP_Data BEGIN [\n"
+    std::string res = std::format(  "\n\nSUP_Data BEGIN [\n"
                                     "Struct Definitions ({}):\n", structDefinitions.size());
     for (auto &structDef : structDefinitions)
     {
@@ -44,7 +44,7 @@ std::string SUP_Data::toString() const
 
     res += varDict.toString();
 
-    res += "] SUP_Data END";
+    res += "\n] SUP_Data END\n";
     return res;
 }
 

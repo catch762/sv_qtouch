@@ -63,12 +63,13 @@ private:
                                                 NodeWidgetUnique*           outWidget = nullptr,
                                                 MapOfWidgetOptionsForNodes* outWidgetOptions = nullptr);
 
-    static WidgetOptionsJsonOptOrError makeWidgetOptionsFromMacroArglist(const SUP_ArglistOpt& arglistFromMacroString);
+
+    static WidgetOptionsJsonOrError makeWidgetOptionsFromMacroArglistAndVarType(const SUP_ArglistOpt& arglistFromMacroString, const QString& varType);
 
     // If ui macro string contains information about tab, we are adding it to widget options. (if input widget options is 
     // nullopt, then we create it)
     //
     // Return value: 'success'
-    static StringErrOpt addTabInformationIfNeeded(  WidgetOptionsJsonOpt& outWidgetOptionsOpt, 
+    static StringErrOpt addTabInformationIfNeeded(  WidgetOptionsJson& outWidgetOptions, 
                                                     const SUP_ArglistOpt& arglistFromMacroString);
 };

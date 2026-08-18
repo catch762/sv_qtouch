@@ -110,14 +110,14 @@ public:
     {
         deleteWidgetForNode(oldNodeBeingReplaced);
 
-        auto widget = createWidgetForNode(replacementNode, replacementParenting, newNodeReference);
+        auto widget = createWidgetForNode(replacementNode, replacementParenting, UpdateStatus::RemadeVariable, newNodeReference);
     }
 
     void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
                                        ParentingDataOpt      nodeParenting,
                                        const DataNodeShared& newNodeReference) override
     {
-        auto widget = createWidgetForNode(nodeAdded, nodeParenting, newNodeReference);
+        auto widget = createWidgetForNode(nodeAdded, nodeParenting, UpdateStatus::NewlyMadeVariable, newNodeReference);
     }
 
     void beforeRemovingNode(const DataNodeShared& nodeThatWillBeRemoved) override
@@ -149,6 +149,7 @@ private:
 
     NodeWidget* createWidgetForNode(const DataNodeShared& node,
                                     ParentingDataOpt      nodeParenting,
+                                    UpdateStatus          nodeUpdateStatus,
                                     const DataNodeShared& newNodeReference)
     {
         WidgetOptionsJsonOpt optionsToRemakeWidget = getValueOpt(newWidgetOptions, ConstDataNodeWeak(newNodeReference));
@@ -156,6 +157,8 @@ private:
                                                                                           optionsToRemakeWidget,
                                                                                           &newWidgetOptions);
         SV_ASSERT(createdWidget);
+
+        createdWidget->setUpdateStatus(nodeUpdateStatus);
 
         if (nodeParenting)
         {

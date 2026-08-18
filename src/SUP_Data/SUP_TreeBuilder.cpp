@@ -107,20 +107,19 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&           
     const bool widgetsRequested         = static_cast<bool>(outWidget);
     const bool widgetOptionsRequested   = static_cast<bool>(outWidgetOptions);
 
-    auto widgetOptionsOptOrErr = makeWidgetOptionsFromMacroArglist(var.arglistFromUiMacro);
-    if (auto err = getError(widgetOptionsOptOrErr))
+    auto widgetOptionsOrErr = makeWidgetOptionsFromMacroArglistAndVarType(var.arglistFromUiMacro, var.type);
+    if (auto err = getError(widgetOptionsOrErr))
     {
         SV_ERROR(std::format("buildTreeForVariable: failed to make widget options, error: {}", *err));
         return {};
     }
+    auto widgetOptions = getValue(widgetOptionsOrErr);
 
     auto saveWidgetOptionsIfNeeded = [&](ConstDataNodeWeak nodeKey)
     {
-        auto widgetOptionsOpt = getValue(widgetOptionsOptOrErr);
-
-        if (widgetOptionsRequested && widgetOptionsOpt->has_value())
+        if (widgetOptionsRequested)
         {
-            (*outWidgetOptions)[nodeKey] = std::move(widgetOptionsOpt->value());
+            (*outWidgetOptions)[nodeKey] = *widgetOptions;
         }
     };
 
@@ -138,7 +137,7 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&           
 
         if (widgetsRequested)
         {
-            outWidget->reset( WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, *getValue(widgetOptionsOptOrErr)) );
+            outWidget->reset( WidgetMakerSystem::instance().createAndRegisterWidgetForNode(node, *widgetOptions) );
             if (!outWidget)
             {
                 SV_ERROR(std::format("buildTreeForVariable: failed to make widget for {} representing seemingly native {}", node, var));
@@ -190,7 +189,7 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&           
         if (widgetsRequested)
         {
             //this cant fail
-            outWidget->reset(NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, *getValue(widgetOptionsOptOrErr)));
+            outWidget->reset(NodeWidget::makeNodeWidgetForCompositeNodeStealingContentWidgets(memberWidgets, node, var.name, *widgetOptions));
             SV_ASSERT(*outWidget);
             WidgetsForNodeManager::registerWidgetForNode(node, outWidget->get());
         }
@@ -200,32 +199,38 @@ DataNodeShared SUP_TreeBuilder::buildTreeForVariable( const SUP_Data&           
     }
 }
 
-WidgetOptionsJsonOptOrError SUP_TreeBuilder::makeWidgetOptionsFromMacroArglist(const SUP_ArglistOpt& arglistFromMacroString)
+WidgetOptionsJsonOrError SUP_TreeBuilder::makeWidgetOptionsFromMacroArglistAndVarType(const SUP_ArglistOpt& arglistFromMacroString,
+                                                                                         const QString& varType)
 {
-    WidgetOptionsJsonOpt widgetOptionsOpt = {};
+    WidgetOptionsJson widgetOptions;
 
-    if (auto err = addTabInformationIfNeeded(widgetOptionsOpt, arglistFromMacroString))
+    if (auto err = addTabInformationIfNeeded(widgetOptions, arglistFromMacroString))
     {
         return *err;
     }
 
-    if (arglistFromMacroString)
+    //This is a bit dirty workaround: we are including type name.
+    //Because: imagine we changed glsl type from vec3 to vec4. DataNode would still have same type: LimitedDoubleVec.
+    //And this change would not be picked by TreeUpdater. So we make sure CreationString, at least, would change,
+    //since it includes type name. And that would mark node to be updated.
     {
-        if (!widgetOptionsOpt)
+        QString creationString = varType;
+
+        if (arglistFromMacroString)
         {
-            widgetOptionsOpt = WidgetOptionsJson();
+            std::string macroArgListString = arglistFromMacroString->toString();
+            std::erase(macroArgListString, '\n');
+
+            creationString = QString("%1; %2").arg(creationString).arg(macroArgListString);
         }
 
-        std::string creationStdString = arglistFromMacroString->toString();
-        std::erase(creationStdString, '\n');
-
-        setCreationString(*widgetOptionsOpt, QString::fromStdString(creationStdString));
+        setCreationString(widgetOptions, creationString);
     }
 
-    return widgetOptionsOpt;
+    return widgetOptions;
 }
 
-StringErrOpt SUP_TreeBuilder::addTabInformationIfNeeded(WidgetOptionsJsonOpt& outWidgetOptionsOpt, const SUP_ArglistOpt& arglistFromMacroString)
+StringErrOpt SUP_TreeBuilder::addTabInformationIfNeeded(WidgetOptionsJson& outWidgetOptions, const SUP_ArglistOpt& arglistFromMacroString)
 {
     if (arglistFromMacroString)
     {
@@ -244,12 +249,7 @@ StringErrOpt SUP_TreeBuilder::addTabInformationIfNeeded(WidgetOptionsJsonOpt& ou
                 return {};
             }
 
-            if (!outWidgetOptionsOpt)
-            {
-                outWidgetOptionsOpt = WidgetOptionsJson();
-            }
-
-            (*outWidgetOptionsOpt)[NodeWidget::tabIndexKey] = tabIndex;
+            outWidgetOptions[NodeWidget::tabIndexKey] = tabIndex;
         }
     }
 
