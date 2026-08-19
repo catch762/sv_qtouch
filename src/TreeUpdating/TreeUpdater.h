@@ -30,7 +30,7 @@ public:
     }
 
     virtual void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
-        ParentingDataOpt         nodeParenting,
+                                               ParentingDataOpt      nodeParenting,
                                                const DataNodeShared& newNodeReference)
     {
     }
@@ -74,11 +74,11 @@ public:
 class UpdateOperationsForPlainTreeWithoutWidgets : public TreeUpdateOperations
 {
 public:
-    UpdateOperationsForPlainTreeWithoutWidgets(MapOfWidgetOptionsForNodes&& _oldWidgetOptions,
-                                               MapOfWidgetOptionsForNodes&& _newWidgetOptions)
+    UpdateOperationsForPlainTreeWithoutWidgets(const MapOfWidgetOptionsForNodes& _oldWidgetOptions,
+                                               const MapOfWidgetOptionsForNodes& _newWidgetOptions)
+        :   oldWidgetOptions(_oldWidgetOptions), 
+            newWidgetOptions(_newWidgetOptions)
     {
-        oldWidgetOptions = std::move(_oldWidgetOptions);
-        newWidgetOptions = std::move(_newWidgetOptions);
     }
 
     WidgetOptionsJsonOpt getOptionsForOldNode(ConstDataNodeWeak oldNode) override
@@ -91,16 +91,16 @@ public:
     }
 
 private:
-    MapOfWidgetOptionsForNodes oldWidgetOptions;
-    MapOfWidgetOptionsForNodes newWidgetOptions;
+    const MapOfWidgetOptionsForNodes& oldWidgetOptions;
+    const MapOfWidgetOptionsForNodes& newWidgetOptions;
 };
 
 class UpdateOperationsForLiveTreeWithWidgets : public TreeUpdateOperations
 {
 public:
-    UpdateOperationsForLiveTreeWithWidgets(MapOfWidgetOptionsForNodes&& _newWidgetOptions)
+    UpdateOperationsForLiveTreeWithWidgets(const MapOfWidgetOptionsForNodes& _newWidgetOptions)
+        : newWidgetOptions(_newWidgetOptions)
     {
-        newWidgetOptions = std::move(_newWidgetOptions);
     }
 
     void beforeReplacingNode(const DataNodeShared& oldNodeBeingReplaced,
@@ -174,117 +174,125 @@ private:
     }
 
 private:
-    MapOfWidgetOptionsForNodes newWidgetOptions;
+    const MapOfWidgetOptionsForNodes& newWidgetOptions;
 };
 
 //This exists because there are 2 cases: obtaining options from parsed json and from a live widget
-using WidgetOptionsGetter = std::function<WidgetOptionsJsonOpt(ConstDataNodeWeak)>;
+//using WidgetOptionsGetter = std::function<WidgetOptionsJsonOpt(ConstDataNodeWeak)>;
 
 class TreeUpdater
 {
 public:
-    static bool updateTreeFromCode( DataNodeShared&             oldTree, 
-                                    const QStringVec&           newCodeFilePaths, 
-                                    TopLevelWidgetsContainer*   topLevelWidgetContainer = nullptr )
+
+
+    static StringErrOpt updateTree( DataNodeShared&       oldTree, 
+                                    const DataNodeShared& newTree, 
+                                    TreeUpdateOperations& updateOperations )
     {
-        bool updatingWidgetsRequested = topLevelWidgetContainer;
+        oldTree = tryUpdateOldSubtreeFromNew(oldTree,
+                                             newTree,
+                                             {},
+                                             updateOperations);
 
-        SV_LOG(std::format("Updating from new code: {}", newCodeFilePaths));
-
-        auto showErr = [](std::string err)
+        if (auto mismatchErrOpt = treesAreStructurallyEqual_withMismatchInfo(*newTree.get(), *oldTree.get()))
         {
-            SV_MSGBOX_ERROR(std::format("updateTreeFromCode failed: {}", err));
+            return std::format("updating tree failed, result not structurally equal to reference:\n{}", *mismatchErrOpt);
+        }
+
+        return {};
+    }
+
+    static StringErrOpt updateTreeAndWidgetsFromCode(   DataNodeShared&             oldTree, 
+                                                        const QStringVec&           newCodeFilePaths, 
+                                                        TopLevelWidgetsContainer&   topLevelWidgetContainer)
+    {
+        auto wrapErr = [](const std::string &err)
+        {
+            return std::format("updateTreeAndWidgetsFromCode failed: {}", err);
         };
 
         if (!oldTree)
         {
-            showErr("old tree is null");
-            return false;
+            return wrapErr("old tree is null");
         }
 
         auto newVarData = SUP_DataParser().parseFiles(newCodeFilePaths);
         if (!newVarData)
         {
-            showErr("failed to parse new GLSL code.");
-            return false;
+            return wrapErr("failed to parse new GLSL code.");
         }
 
         MapOfWidgetOptionsForNodes newWidgetOptions;
         auto newTree = SUP_TreeBuilder::buildTree(*newVarData, &newWidgetOptions);
         if (!newTree)
         {
-            showErr("couldnt build new tree from parsed new GLSL code");
-            return false;
+            return wrapErr("couldnt build new tree from parsed new GLSL code");
         }
 
-        SV_LOG(std::format("New tree:\n{}\n", newTree->toString()));
-        SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
-
-        auto makeUpdateOperation = [&]() -> std::unique_ptr<TreeUpdateOperations>
+        auto updateErrOpt = updateTreeAndWidgetsFromCode(oldTree, newTree, newWidgetOptions, topLevelWidgetContainer);
+        if (updateErrOpt)
         {
-            if (updatingWidgetsRequested)
-            {
-                return std::make_unique<UpdateOperationsForLiveTreeWithWidgets>(std::move(newWidgetOptions));
-            }
-            else
-            {
-                //todo oldWidgetOptions
-                return std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(MapOfWidgetOptionsForNodes(),
-                                                                                    std::move(newWidgetOptions));
-            }
-        };
-        auto updateOperations = makeUpdateOperation();
-
-
-        //todo and from json - add map of options to parameter
-
-        tryUpdateOldSubtreeFromNew( oldTree,
-                                    newTree,
-                                    {},
-                                    *updateOperations);
-
-        SV_LOG(std::format("Upgraded old tree:\n{}\n", oldTree->toString()));
-
-        if (!treesAreStructurallyEqual(*newTree.get(), *oldTree.get()))
-        {
-            SV_ERROR("Upgrading oldTree to newTree failed - they are NOT structurally equal");
-            return false;
+            return wrapErr(*updateErrOpt);
         }
 
-        if (updatingWidgetsRequested)
-        {
-            NodeWidgetQPointerVec topLevelWidgets;
-            SV_ASSERT(oldTree);
-            SV_ASSERT(oldTree->isComposite());
-
-            for (const auto& topLevelChild : oldTree->tryGetCompositeData()->getChildren())
-            {
-                auto topLevelWidget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(topLevelChild);
-                if (!topLevelWidget)
-                {
-                    SV_ERROR(std::format("Upgrading oldTree to newTree failed, oldTree itself was updated and is equal to "
-                                         "newTree, but its immediate child [{}] doesnt have widget associated with it!",
-                                         topLevelChild));
-
-                    //this is serious, perhaps we should delete all widgets now?
-
-                    return false;
-                }
-
-                topLevelWidgets.push_back(topLevelWidget);
-            }
-
-            // Some of previously existing widgets are already deleted, but some of existing widgets might have persisted,
-            // and are now in 'topLevelWidgets'. So we are not deleting any.
-            topLevelWidgetContainer->setTopLevelWidgets(std::move(topLevelWidgets), 
-                TopLevelWidgetsContainer::ExistingWidgetsPolicy::UnparentButKeepAlive);
-        }
-
-        SV_LOG("Upgrading oldTree to newTree succeeded - they are structurally equal now.");
-
-        return true;
+        return {};
     }
 
+    
+
+    static StringErrOpt updateTreeAndWidgetsFromCode(   DataNodeShared&                     oldTree,
+                                                        const DataNodeShared&               newTree,
+                                                        const MapOfWidgetOptionsForNodes&   newWidgetOptions,
+                                                        TopLevelWidgetsContainer&           topLevelWidgetContainer )
+    {
+        //SV_LOG(std::format("New tree:\n{}\n", newTree->toString()));
+        //SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
+
+        auto updateOperations = std::make_unique<UpdateOperationsForLiveTreeWithWidgets>(newWidgetOptions);
+        auto updateErrOpt     = updateTree(oldTree, newTree, *updateOperations);
+
+        //SV_LOG(std::format("Updated old tree:\n{}\n", oldTree->toString()));
+
+        if (updateErrOpt)
+        {
+            return *updateErrOpt;
+        }
+
+        auto widgetUpdateErrOpt = setUpdatedTopLevelWidgetsOfTree(oldTree, topLevelWidgetContainer);
+        if (widgetUpdateErrOpt)
+        {
+            return *widgetUpdateErrOpt;
+        }
+
+        return {};
+    }
+
+    static StringErrOpt setUpdatedTopLevelWidgetsOfTree(const DataNodeShared&     updatedOldTree, 
+                                                        TopLevelWidgetsContainer& topLevelWidgetContainer)
+    {
+        NodeWidgetQPointerVec topLevelWidgets;
+        SV_ASSERT(updatedOldTree);
+        SV_ASSERT(updatedOldTree->isComposite());
+
+        for (const auto& topLevelChild : updatedOldTree->tryGetCompositeData()->getChildren())
+        {
+            auto topLevelWidget = WidgetsForNodeManager::getSaveablePrimaryWidgetForNode(topLevelChild);
+            if (!topLevelWidget)
+            {
+                return std::format("Updated tree's immediate child {} doesnt have widget associated with it, so cant "
+                                   "set new widgets to TopLevelWidgetsContainer", topLevelChild);
+            }
+
+            topLevelWidgets.push_back(topLevelWidget);
+        }
+
+        // Some of previously existing widgets are already deleted, but some of existing widgets might have persisted,
+        // and are now in 'topLevelWidgets'. So we are not deleting any.
+        topLevelWidgetContainer.setTopLevelWidgets(std::move(topLevelWidgets),
+                                                   TopLevelWidgetsContainer::ExistingWidgetsPolicy::UnparentButKeepAlive);
+
+        return {};
+    }
 
     // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
     // doing as little change as possible. It applies itself to subnodes recursively.
@@ -433,8 +441,8 @@ public:
     static DataNodeShared tryUpdateOldSubtreeFromNew(DataNodeShared&        oldNode,
                                                      const DataNodeShared&  newNode)
     {
-        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>( MapOfWidgetOptionsForNodes(),
-                                                                                        MapOfWidgetOptionsForNodes() );
+        auto emptyOptions = MapOfWidgetOptionsForNodes();
+        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(emptyOptions, emptyOptions);
 
         return tryUpdateOldSubtreeFromNew(oldNode, newNode, {}, *operations);
     }

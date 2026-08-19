@@ -114,7 +114,10 @@ bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 {
     if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
 
-    return TreeUpdater::updateTreeFromCode(rootNode, newCodeFilePaths, widgetsView);
+    if (auto updateErr = TreeUpdater::updateTreeAndWidgetsFromCode(rootNode, newCodeFilePaths, *widgetsView))
+    {
+        SV_MSGBOX_ERROR(*updateErr);
+    }
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
@@ -662,9 +665,9 @@ bool QTouchApp::setTreeAndWidgetsForPresetMixing(const PresetNameString& presetN
 
     if (!alreadyHadAAndBLoaded)
     {                                    
-        if (!treesAreStructurallyEqual_withMismatchLog(*presetForMixing_A.rootNode, *presetForMixing_B.rootNode))
+        if (auto mismatchErr = treesAreStructurallyEqual_withMismatchInfo(*presetForMixing_A.rootNode, *presetForMixing_B.rootNode))
         {
-            SV_MSGBOX_ERROR("Preset mixing failed, A/B trees not structurally equal");
+            SV_MSGBOX_ERROR(std::format("Preset mixing failed, A/B trees not structurally equal, mismatch:\n{}", *mismatchErr));
             setTreeType(TreeType::Standalone);
             return true;
         }
