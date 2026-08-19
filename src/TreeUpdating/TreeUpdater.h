@@ -74,11 +74,26 @@ public:
 class UpdateOperationsForPlainTreeWithoutWidgets : public TreeUpdateOperations
 {
 public:
-    UpdateOperationsForPlainTreeWithoutWidgets(const MapOfWidgetOptionsForNodes& _oldWidgetOptions,
+    UpdateOperationsForPlainTreeWithoutWidgets(MapOfWidgetOptionsForNodes& _oldWidgetOptions,
                                                const MapOfWidgetOptionsForNodes& _newWidgetOptions)
         :   oldWidgetOptions(_oldWidgetOptions), 
             newWidgetOptions(_newWidgetOptions)
     {
+    }
+
+    void beforeReplacingNode(const DataNodeShared& oldNodeBeingReplaced,
+                             const DataNodeShared& newNodeReference,
+                             DataNodeShared&       replacementNode,
+                             ParentingDataOpt      replacementParenting) override
+    {
+        saveOptionsForAllNodesInFreshlyMadeTree(replacementNode, newNodeReference);
+    }
+
+    void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
+                                       ParentingDataOpt      nodeParenting,
+                                       const DataNodeShared& newNodeReference) override
+    {
+        saveOptionsForAllNodesInFreshlyMadeTree(nodeAdded, newNodeReference);
     }
 
     WidgetOptionsJsonOpt getOptionsForOldNode(ConstDataNodeWeak oldNode) override
@@ -90,9 +105,43 @@ public:
         return getValueOpt(newWidgetOptions, newNode);
     }
 
+    StringErrOpt getFirstError()
+    {
+        return firstError;
+    }
+
 private:
-    const MapOfWidgetOptionsForNodes& oldWidgetOptions;
-    const MapOfWidgetOptionsForNodes& newWidgetOptions;
+    // we might have copied subtree from newTree, and then (for each subnode, possibly) we have to pull 
+    // widget options from that newTree widget options map
+    void saveOptionsForAllNodesInFreshlyMadeTree(const DataNodeShared& nodeAdded, const DataNodeShared& newNodeReference)
+    {
+        SV_ASSERT(nodeAdded);
+        SV_ASSERT(newNodeReference);
+
+        auto mismatchInfo = visitTwoStructurallyEqualTrees_withMismatchInfo(*nodeAdded, *newNodeReference,
+            [&](const DataNode& nodeAddedToOldTree, const DataNode& newNodeReference)
+            {
+                ConstDataNodeWeak nodeAddedToOldTreeWeak = nodeAddedToOldTree.weak_from_this();
+                ConstDataNodeWeak newNodeReferenceWeak   = newNodeReference.weak_from_this();
+
+                if (const WidgetOptionsJson* widgetOptions = getValue(newWidgetOptions, newNodeReferenceWeak))
+                {
+                    oldWidgetOptions[nodeAddedToOldTreeWeak] = *widgetOptions;
+                }
+            });
+
+        if (mismatchInfo)
+        {
+            firstError = std::format("saveOptionsOfAllNodesInFreshlyMadeTree: mismatch between freshly made subtree and reference subtree: {}",
+                                     *mismatchInfo);
+        }
+    }
+
+private:
+    MapOfWidgetOptionsForNodes&         oldWidgetOptions;
+    const MapOfWidgetOptionsForNodes&   newWidgetOptions;
+
+    StringErrOpt                        firstError;
 };
 
 class UpdateOperationsForLiveTreeWithWidgets : public TreeUpdateOperations
@@ -183,25 +232,6 @@ private:
 class TreeUpdater
 {
 public:
-
-
-    static StringErrOpt updateTree( DataNodeShared&       oldTree, 
-                                    const DataNodeShared& newTree, 
-                                    TreeUpdateOperations& updateOperations )
-    {
-        oldTree = tryUpdateOldSubtreeFromNew(oldTree,
-                                             newTree,
-                                             {},
-                                             updateOperations);
-
-        if (auto mismatchErrOpt = treesAreStructurallyEqual_withMismatchInfo(*newTree.get(), *oldTree.get()))
-        {
-            return std::format("updating tree failed, result not structurally equal to reference:\n{}", *mismatchErrOpt);
-        }
-
-        return {};
-    }
-
     static StringErrOpt updateTreeAndWidgetsFromCode(   DataNodeShared&             oldTree, 
                                                         const QStringVec&           newCodeFilePaths, 
                                                         TopLevelWidgetsContainer&   topLevelWidgetContainer)
@@ -238,8 +268,55 @@ public:
         return {};
     }
 
-    
+    static StringErrOpt updatePreset(   const QString&                      oldPresetJsonAbsPath,
+                                        const DataNodeShared&               newTree,
+                                        const MapOfWidgetOptionsForNodes&   newWidgetOptions )
+    {
+        auto wrapErr = [&](const std::string& err)
+        {
+            return std::format("updatePreset from file=[{}] failed: {}", oldPresetJsonAbsPath, err);
+        };
 
+        auto oldPresetJson = loadJsonFromFile(oldPresetJsonAbsPath);
+        if (!oldPresetJson)
+        {
+            return wrapErr("couldnt load json from file");
+        }
+
+        auto [oldPresetTree, oldPresetWidgetOptions] = SerializerForDataNodeTreeAndItsWidgets::jsonToRootNodeAndWidgetOptions(*oldPresetJson);
+        if (!oldPresetTree)
+        {
+            return wrapErr("couldnt load tree from json");
+        }
+
+        //note: this is gonna update oldPresetWidgetOptions
+        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(oldPresetWidgetOptions, newWidgetOptions);
+
+        oldPresetTree = tryUpdateOldSubtreeFromNew(oldPresetTree, newTree, {}, *operations);
+        SV_ASSERT(oldPresetTree);
+
+        if (auto firstErrFromOperations = operations->getFirstError())
+        {
+            return wrapErr(*firstErrFromOperations);
+        }
+
+        auto updatedTreeJson = SerializerForDataNodeTreeAndItsWidgets::toJson(oldPresetTree, oldPresetWidgetOptions);
+        if (!updatedTreeJson)
+        {
+            return wrapErr("couldnt serialize updated tree back to json");
+        }
+
+        bool saved = saveJsonValueToFile(*updatedTreeJson, oldPresetJsonAbsPath);
+        if (!saved)
+        {
+            return wrapErr("couldnt save updated tree json to file");
+        }
+
+        return {};
+    }
+
+
+private:
     static StringErrOpt updateTreeAndWidgetsFromCode(   DataNodeShared&                     oldTree,
                                                         const DataNodeShared&               newTree,
                                                         const MapOfWidgetOptionsForNodes&   newWidgetOptions,
@@ -294,8 +371,29 @@ public:
         return {};
     }
 
-    // This function makes 'oldNode' subtree structurally equal to 'newNode' subtree,
-    // doing as little change as possible. It applies itself to subnodes recursively.
+    static StringErrOpt updateTree( DataNodeShared&       oldTree, 
+                                    const DataNodeShared& newTree, 
+                                    TreeUpdateOperations& updateOperations )
+    {
+        oldTree = tryUpdateOldSubtreeFromNew(oldTree,
+                                             newTree,
+                                             {},
+                                             updateOperations);
+
+        if (auto mismatchErrOpt = treesAreStructurallyEqual_withMismatchInfo(*newTree.get(), *oldTree.get()))
+        {
+            return std::format("updating tree failed, result not structurally equal to reference:\n{}", *mismatchErrOpt);
+        }
+
+        return {};
+    }
+
+    // WARNING !!! CORRECT USAGE IS: 
+    //      oldNode = tryUpdateOldSubtreeFromNew(oldNode, newNode, ...);
+    //
+    // This function returns subtree structurally equal to 'newNode' subtree,
+    // doing as little change as possible. It may return same 'oldNode', if remaking is not necessary.
+    // It applies itself to subnodes recursively.
     // 
     // Note:
     //      - 'oldNode' is REFERENCE to shared ptr! Because it might remake the node and drop old value.
@@ -437,12 +535,15 @@ public:
         return oldNode;
     }
 
-    //The most simple version which will not even compare widget options or do anything about widgets at all
+public:
+    // The most simple version which will not even compare widget options
+    // or do anything about widgets at all. Used for tests
     static DataNodeShared tryUpdateOldSubtreeFromNew(DataNodeShared&        oldNode,
                                                      const DataNodeShared&  newNode)
     {
-        auto emptyOptions = MapOfWidgetOptionsForNodes();
-        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(emptyOptions, emptyOptions);
+        auto emptyOptionsOld = MapOfWidgetOptionsForNodes();
+        auto emptyOptionsNew = MapOfWidgetOptionsForNodes();
+        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(emptyOptionsOld, emptyOptionsNew);
 
         return tryUpdateOldSubtreeFromNew(oldNode, newNode, {}, *operations);
     }
