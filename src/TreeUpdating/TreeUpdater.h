@@ -24,12 +24,12 @@ class TreeUpdateOperations
 public:
     virtual void beforeReplacingNode(const DataNodeShared&   oldNodeBeingReplaced,
                                      const DataNodeShared&   newNodeReference,
-                                     DataNodeShared&         replacementNode,
+                                     const DataNodeShared&   replacementNode,
                                      ParentingDataOpt        replacementParenting)
     {
     }
 
-    virtual void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
+    virtual void beforeAddingCompletelyNewNode(const DataNodeShared& nodeAdded,
                                                ParentingDataOpt      nodeParenting,
                                                const DataNodeShared& newNodeReference)
     {
@@ -83,13 +83,13 @@ public:
 
     void beforeReplacingNode(const DataNodeShared& oldNodeBeingReplaced,
                              const DataNodeShared& newNodeReference,
-                             DataNodeShared&       replacementNode,
+                             const DataNodeShared& replacementNode,
                              ParentingDataOpt      replacementParenting) override
     {
         saveOptionsForAllNodesInFreshlyMadeTree(replacementNode, newNodeReference);
     }
 
-    void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
+    void beforeAddingCompletelyNewNode(const DataNodeShared& nodeAdded,
                                        ParentingDataOpt      nodeParenting,
                                        const DataNodeShared& newNodeReference) override
     {
@@ -154,7 +154,7 @@ public:
 
     void beforeReplacingNode(const DataNodeShared& oldNodeBeingReplaced,
                              const DataNodeShared& newNodeReference,
-                             DataNodeShared&       replacementNode,
+                             const DataNodeShared& replacementNode,
                              ParentingDataOpt      replacementParenting) override
     {
         deleteWidgetForNode(oldNodeBeingReplaced);
@@ -162,7 +162,7 @@ public:
         auto widget = createWidgetForNode(replacementNode, replacementParenting, UpdateStatus::RemadeVariable, newNodeReference);
     }
 
-    void beforeAddingCompletelyNewNode(DataNodeShared&       nodeAdded,
+    void beforeAddingCompletelyNewNode(const DataNodeShared& nodeAdded,
                                        ParentingDataOpt      nodeParenting,
                                        const DataNodeShared& newNodeReference) override
     {
@@ -322,13 +322,13 @@ private:
                                                         const MapOfWidgetOptionsForNodes&   newWidgetOptions,
                                                         TopLevelWidgetsContainer&           topLevelWidgetContainer )
     {
-        //SV_LOG(std::format("New tree:\n{}\n", newTree->toString()));
-        //SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
+        SV_LOG(std::format("\nNew tree:\n{}\n", newTree->toString()));
+        SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
 
         auto updateOperations = std::make_unique<UpdateOperationsForLiveTreeWithWidgets>(newWidgetOptions);
         auto updateErrOpt     = updateTree(oldTree, newTree, *updateOperations);
 
-        //SV_LOG(std::format("Updated old tree:\n{}\n", oldTree->toString()));
+        SV_LOG(std::format("Updated old tree:\n{}\n", oldTree->toString()));
 
         if (updateErrOpt)
         {
