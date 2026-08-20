@@ -97,35 +97,16 @@ void TopLevelWidgetsContainer::clearEverything(ExistingWidgetsPolicy existingWid
     SV_LOG("TopLevelWidgetsContainer::clearEverything()");
 
     //1. move existing top level widget pointer to a set
-
     std::set<QPointer<NodeWidget>> topLevelWidgetsSet;
-    for (QPointer<NodeWidget> widgetQPointer : topLevelWidgets)
     {
-        topLevelWidgetsSet.insert(widgetQPointer);
-    }
-    topLevelWidgets.clear();
-
-    /*
-    for (auto widget : topLevelWidgets)
-    {
-        if (widget)
+        for (QPointer<NodeWidget> widgetQPointer : topLevelWidgets)
         {
-            //if i just write 'delete widget;' it crashes and i dont fucking understand why.
-            //it should be perfectly fine either way, but its not.
-            
-            widget->setParent(nullptr);
-
-            if (existingWidgetsPolicy == ExistingWidgetsPolicy::Delete)
-            {
-                widget->deleteLater();
-            }
+            topLevelWidgetsSet.insert(widgetQPointer);
         }
+        topLevelWidgets.clear();
     }
-    topLevelWidgets.clear();
-    */
 
     //2. extract all tabs
-
     std::vector<TabOfTopLevelWidgets*> extractedTabs;
     {
         QList<QWidget*> tabsAsQWidgets;
@@ -141,48 +122,49 @@ void TopLevelWidgetsContainer::clearEverything(ExistingWidgetsPolicy existingWid
     }
 
     //3. check that infact all tabs were extracted
-
     SV_ASSERT(tabsCount() == 0);
 
     //4. extract all widgets from tabs
-
     std::set<QPointer<NodeWidget>> extractedTopLevelWidgetsSet;
-    for (TabOfTopLevelWidgets* tab : extractedTabs)
     {
-        QList<QWidget*> extractedWidgets;
-        tab->extractAllWidgets(&extractedWidgets);
-
-        for (QWidget* extractedQWidget : extractedWidgets)
+        for (TabOfTopLevelWidgets* tab : extractedTabs)
         {
-            NodeWidget* extractedNodeWidget = dynamic_cast<NodeWidget*>(extractedQWidget);
-            SV_ASSERT(extractedNodeWidget && "we are not expecting any other type here");
-            extractedTopLevelWidgetsSet.insert(QPointer<NodeWidget>(extractedNodeWidget));
+            QList<QWidget*> extractedWidgets;
+            tab->extractAllWidgets(&extractedWidgets);
+
+            for (QWidget* extractedQWidget : extractedWidgets)
+            {
+                NodeWidget* extractedNodeWidget = dynamic_cast<NodeWidget*>(extractedQWidget);
+                SV_ASSERT(extractedNodeWidget && "we are not expecting any other type here");
+                extractedTopLevelWidgetsSet.insert(QPointer<NodeWidget>(extractedNodeWidget));
+            }
         }
     }
 
     //5. check that initial list of top level widgets is exact same as what we extracted
-
     SV_ASSERT(topLevelWidgetsSet == extractedTopLevelWidgetsSet);
 
     //6. i guess lets go bottom-first, and first delete the widgets (if we need to)
-
-    if (existingWidgetsPolicy == ExistingWidgetsPolicy::Delete)
     {
-        for (auto widget : extractedTopLevelWidgetsSet)
+        if (existingWidgetsPolicy == ExistingWidgetsPolicy::Delete)
         {
-            widget->deleteLater();
+            for (auto widget : extractedTopLevelWidgetsSet)
+            {
+                widget->deleteLater();
+            }
         }
+        topLevelWidgetsSet.clear();
+        extractedTopLevelWidgetsSet.clear();
     }
-    topLevelWidgetsSet.clear();
-    extractedTopLevelWidgetsSet.clear();
 
     //7. finally, delete tabs themselves (they are empty now)
-
-    for (auto* tab : extractedTabs)
     {
-        tab->deleteLater();
+        for (auto* tab : extractedTabs)
+        {
+            tab->deleteLater();
+        }
+        extractedTabs.clear();
     }
-    extractedTabs.clear();
 }
 
 void TopLevelWidgetsContainer::assignTabName(TabOfTopLevelWidgets *tab, int index)
