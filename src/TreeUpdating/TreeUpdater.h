@@ -232,38 +232,95 @@ private:
 class TreeUpdater
 {
 public:
-    static StringErrOpt updateTreeAndWidgetsFromCode(   DataNodeShared&             oldTree, 
-                                                        const QStringVec&           newCodeFilePaths, 
-                                                        TopLevelWidgetsContainer&   topLevelWidgetContainer)
+    enum OnPresetError
     {
-        auto wrapErr = [](const std::string &err)
+        StopUpdatingPresetsAndReturnError,
+        AskUserToContinueUpdating
+    };
+    static bool updateTreeAndWidgetsAndPresetsFromCode( DataNodeShared&             oldTree, 
+                                                        const QStringVec&           newCodeFilePaths, 
+                                                        TopLevelWidgetsContainer&   topLevelWidgetContainer,
+                                                        const QStringVec&           oldPresetsJsonAbsPathsToUpdate = {},
+                                                        OnPresetError               onPresetErr = OnPresetError::AskUserToContinueUpdating)
+    {
+        auto showErr = [](const std::string &err)
         {
-            return std::format("updateTreeAndWidgetsFromCode failed: {}", err);
+            SV_MSGBOX_ERROR("updateTreeAndWidgetsFromCode failed: {}", err);
         };
 
         if (!oldTree)
         {
-            return wrapErr("old tree is null");
+            showErr("old tree is null");
+            return false;
         }
 
         auto newVarData = SUP_DataParser().parseFiles(newCodeFilePaths);
         if (!newVarData)
         {
-            return wrapErr("failed to parse new GLSL code.");
+            showErr("failed to parse new GLSL code.");
+            return false;
         }
 
         MapOfWidgetOptionsForNodes newWidgetOptions;
         auto newTree = SUP_TreeBuilder::buildTree(*newVarData, &newWidgetOptions);
         if (!newTree)
         {
-            return wrapErr("couldnt build new tree from parsed new GLSL code");
+            showErr("couldnt build new tree from parsed new GLSL code");
+            return false;
         }
 
         auto updateErrOpt = updateTreeAndWidgetsFromCode(oldTree, newTree, newWidgetOptions, topLevelWidgetContainer);
         if (updateErrOpt)
         {
-            return wrapErr(*updateErrOpt);
+            showErr(*updateErrOpt);
+            return false;
         }
+
+        //Updating live tree and widgets succeeded. Now presets:
+        
+        for (int presetIdx = 0; presetIdx < oldPresetsJsonAbsPathsToUpdate.size(); ++presetIdx)
+        {
+            const auto& oldPresetJsonAbsPath = oldPresetsJsonAbsPathsToUpdate[presetIdx];
+            const bool  isLast               = presetIdx == oldPresetsJsonAbsPathsToUpdate.size() - 1;
+
+            if (auto presetUpdatingErr = updatePreset(oldPresetJsonAbsPath, newTree, newWidgetOptions))
+            {
+                if (onPresetErr == OnPresetError::AskUserToContinueUpdating && !isLast)
+                {
+                    QString message = QString(  "Updating current tree and widgets succeeded, but updating preset "
+                                                "[%1/%2] at path [%3] resulted in error.\n"
+                                                "Do you want to continue loading presets? Btw error is:\n\n%4" )
+                                                    .arg(presetIdx + 1)
+                                                    .arg(oldPresetsJsonAbsPathsToUpdate.size())
+                                                    .arg(oldPresetJsonAbsPath)
+                                                    .arg(*presetUpdatingErr);
+
+                    const auto userWantsToContinue = QMessageBox::critical( nullptr,
+                                                                            "Error updating preset",
+                                                                            message,
+                                                                            QMessageBox::Yes | QMessageBox::No,
+                                                                            QMessageBox::No 
+                                                                          ) == QMessageBox::Yes;
+
+                    if (userWantsToContinue)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        //we already did show error, so just quit
+                        return false;
+                    }
+                }
+                else if (onPresetErr == OnPresetError::StopUpdatingPresetsAndReturnError)
+                {
+                    showErr(*presetUpdatingErr);
+                    return false;
+                }
+                else SV_UNREACHABLE();
+            }
+        }
+
 
         return {};
     }
@@ -289,12 +346,14 @@ public:
             return wrapErr("couldnt load tree from json");
         }
 
-        //note: this is gonna update oldPresetWidgetOptions
+        //NOTE: this is gonna update 'oldPresetWidgetOptions'
         auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(std::ref(oldPresetWidgetOptions), 
                                                                                        std::cref(newWidgetOptions));
 
         oldPresetTree = tryUpdateOldSubtreeFromNew(oldPresetTree, newTree, {}, *operations);
         SV_ASSERT(oldPresetTree);
+
+        //At this point 'oldPresetWidgetOptions' is updated to match updated 'oldPresetTree' and its new nodes
 
         if (auto firstErrFromOperations = operations->getFirstError())
         {

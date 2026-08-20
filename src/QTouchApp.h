@@ -93,6 +93,8 @@ private:
 
     void sendTreeDataToTD(bool withVarNames);
 
+    QStringVec getAllPresetsJsonAbsPaths() const;
+
 //Menu bar and its actions:
 private:
     void initMenuBar();

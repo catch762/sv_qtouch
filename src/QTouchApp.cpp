@@ -114,13 +114,25 @@ bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 {
     if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
 
-    if (auto updateErr = TreeUpdater::updateTreeAndWidgetsFromCode(rootNode, newCodeFilePaths, *widgetsView))
-    {
-        SV_MSGBOX_ERROR(*updateErr);
-        return false;
-    }
+    auto presetAbsPaths = getAllPresetsJsonAbsPaths();
 
-    return true;
+    QString message = QString("Do you want to update [%1] presets as well?")
+                              .arg(presetAbsPaths.size());
+
+    const auto userWantsToUpdatePresets = QMessageBox::question( nullptr,
+                                                                 "Update is pending",
+                                                                 message,
+                                                                 QMessageBox::Yes | QMessageBox::No,
+                                                                 QMessageBox::No 
+                                                               ) == QMessageBox::Yes;
+
+    //this handles logging / messageboxes inside.
+    bool success = TreeUpdater::updateTreeAndWidgetsAndPresetsFromCode( rootNode,
+                                                                        newCodeFilePaths,
+                                                                        *widgetsView,
+                                                                        userWantsToUpdatePresets ? presetAbsPaths : QStringVec{} );
+
+    return success;
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
@@ -363,6 +375,16 @@ void QTouchApp::sendTreeDataToTD(bool withVarNames)
         tdClient->sendTreeData(data, QTouchUITreePresetName);
     }
     
+}
+
+QStringVec QTouchApp::getAllPresetsJsonAbsPaths() const
+{
+    if (!requireProjectIsOpenedFor("getAllPresetsJsonAbsPaths")) return {};
+
+    auto presetsDir = getPresetsSubdir();
+    SV_ASSERT(presetsDir);
+
+    return getAbsPathsOfAllFilesInDirectory(presetsDir->absolutePath(), { "json" });
 }
 
 QDirOpt QTouchApp::getProjectDir() const
