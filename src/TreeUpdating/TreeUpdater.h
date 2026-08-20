@@ -290,7 +290,8 @@ public:
         }
 
         //note: this is gonna update oldPresetWidgetOptions
-        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(oldPresetWidgetOptions, newWidgetOptions);
+        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(std::ref(oldPresetWidgetOptions), 
+                                                                                       std::cref(newWidgetOptions));
 
         oldPresetTree = tryUpdateOldSubtreeFromNew(oldPresetTree, newTree, {}, *operations);
         SV_ASSERT(oldPresetTree);
@@ -325,7 +326,7 @@ private:
         SV_LOG(std::format("\nNew tree:\n{}\n", newTree->toString()));
         SV_LOG(std::format("Old tree:\n{}\n", oldTree->toString()));
 
-        auto updateOperations = std::make_unique<UpdateOperationsForLiveTreeWithWidgets>(newWidgetOptions);
+        auto updateOperations = std::make_unique<UpdateOperationsForLiveTreeWithWidgets>(std::cref(newWidgetOptions));
         auto updateErrOpt     = updateTree(oldTree, newTree, *updateOperations);
 
         SV_LOG(std::format("Updated old tree:\n{}\n", oldTree->toString()));
@@ -543,7 +544,8 @@ public:
     {
         auto emptyOptionsOld = MapOfWidgetOptionsForNodes();
         auto emptyOptionsNew = MapOfWidgetOptionsForNodes();
-        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(emptyOptionsOld, emptyOptionsNew);
+        auto operations = std::make_unique<UpdateOperationsForPlainTreeWithoutWidgets>(std::ref(emptyOptionsOld), 
+                                                                                       std::cref(emptyOptionsNew));
 
         return tryUpdateOldSubtreeFromNew(oldNode, newNode, {}, *operations);
     }

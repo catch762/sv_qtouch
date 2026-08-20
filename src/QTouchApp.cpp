@@ -117,7 +117,10 @@ bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
     if (auto updateErr = TreeUpdater::updateTreeAndWidgetsFromCode(rootNode, newCodeFilePaths, *widgetsView))
     {
         SV_MSGBOX_ERROR(*updateErr);
+        return false;
     }
+
+    return true;
 }
 
 bool QTouchApp::loadTreeAndWidgetsFromCode(const QStringVec &codeFilePaths)
