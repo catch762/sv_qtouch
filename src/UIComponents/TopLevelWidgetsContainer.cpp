@@ -110,7 +110,7 @@ void TopLevelWidgetsContainer::clearEverything(ExistingWidgetsPolicy existingWid
     std::vector<TabOfTopLevelWidgets*> extractedTabs;
     {
         QList<QWidget*> tabsAsQWidgets;
-        extractAllWidgetsFromLayoutAndDeleteNestedLayouts(tabsLayout, &tabsAsQWidgets);
+        extractAllWidgetsFromLayoutWithNoSublayouts(tabsLayout, &tabsAsQWidgets);
 
         for (QWidget* tabQWidget : tabsAsQWidgets)
         {
@@ -361,7 +361,7 @@ TabOfTopLevelWidgets::TabOfTopLevelWidgets(QWidget *parent) : QWidget(parent)
 
 void TabOfTopLevelWidgets::extractAllWidgets(QList<QWidget *> *outWidgets)
 {
-    extractAllWidgetsFromLayoutAndDeleteNestedLayouts(contentLayout, outWidgets);
+    extractAllWidgetsFromLayoutWithNoSublayouts(contentLayout, outWidgets);
 }
 
 void TabOfTopLevelWidgets::visitAllWidgets(const std::function<void(QWidget*)>& visitor)
