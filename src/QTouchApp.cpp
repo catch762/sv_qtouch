@@ -116,7 +116,8 @@ bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
 
     auto presetAbsPaths = getAllPresetsJsonAbsPaths();
 
-    QString message = QString("Do you want to update [%1] presets as well?")
+    QString message = QString("Do you want to update all [%1] existing presets now as well?\n"
+                              "(You can select presets, and update them via right-click menu later)")
                               .arg(presetAbsPaths.size());
 
     const auto userWantsToUpdatePresets = QMessageBox::question( nullptr,
@@ -205,81 +206,11 @@ bool QTouchApp::savePreset(const PresetNameString& presetName) const
 {
     if (!requireProjectIsOpenedFor("Preset saving")) return false;
 
-    if(!rootNode)
+    if (auto saveErr = Presets::savePreset(getPresetsSubdir().value(), presetName, rootNode))
     {
-        SV_ERROR("Save preset failed: rootNode is empty");
+        SV_MSGBOX_ERROR(*saveErr);
         return false;
     }
-
-    //if it existed, we already got confirmation to delete old files
-
-    // 1) .json
-    {
-        auto json = SerializerForDataNodeTreeAndItsWidgets::toJson(rootNode);
-        if (!json)
-        {
-            SV_ERROR("Save preset failed: serialization to json has failed")
-                return false;
-        }
-
-        bool saved = saveJsonValueToFile(*json, absPathForPresetJsonFile(presetName));
-        if (!saved)
-        {
-            SV_ERROR("Save preset failed: writing to json file has failed");
-            return false;
-        }
-    }
-
-    // 2) vec4 data file
-    {
-        TreeAsVec4Array treeAsVec4;
-        if (auto err = convertTreeToVec4Array(rootNode, treeAsVec4))
-        {
-            SV_ERROR(std::format("Save preset failed: convertTreeToVec4Array failed with {}", *err));
-            return false;
-        }
-
-        auto packet = Packets::makeTreeAsVec4Packet(treeAsVec4, 0, treeAsVec4.size()-1, presetName.toStdString());
-        if (!packet)
-        {
-            SV_ERROR("Save preset failed: couldnt makePacket from TreeAsVec4Array");
-            return false;
-        }
-
-        bool saved = writeByteArrayToFile(absPathForPresetVec4File(presetName), *packet);
-        if (!saved)
-        {
-            SV_ERROR("Save preset failed: writing to vec4 file has failed");
-            return false;
-        }
-    }
-
-    // 3) var names data file
-    {
-        TreeVarNames treeVarNames;
-        if (auto err = getVarNamesFromTree(rootNode, treeVarNames))
-        {
-            SV_ERROR(std::format("Save preset failed: getVarNamesFromTree failed with {}", *err));
-            return false;
-        }
-
-        auto section = Packets::makeTreeVarnamesSection(treeVarNames);
-        if (!section)
-        {
-            SV_ERROR("Save preset failed: couldnt make section from TreeVarNames");
-            return false;
-        }
-
-        bool saved = writeByteArrayToFile(absPathForPresetVarnamesFile(presetName), *section);
-        if (!saved)
-        {
-            SV_ERROR("Save preset failed: writing to varnames file has failed");
-            return false;
-        }
-    }
-
-
-    SV_LOG(std::format("Successfully saved preset {}", presetName));
 
     return true;
 }
@@ -494,7 +425,7 @@ QString QTouchApp::absPathForPresetJsonFile(const PresetNameString& presetName) 
         return "";
     }
 
-    return getPresetsSubdir()->absoluteFilePath(getPresetJsonFileName(presetName));
+    return getPresetsSubdir()->absoluteFilePath(Presets::getPresetJsonFileName(presetName));
 }
 
 QString QTouchApp::absPathForPresetVec4File(const PresetNameString& presetName) const
@@ -504,7 +435,7 @@ QString QTouchApp::absPathForPresetVec4File(const PresetNameString& presetName) 
         return "";
     }
 
-    return getPresetsSubdir()->absoluteFilePath(getPresetVec4FileName(presetName));
+    return getPresetsSubdir()->absoluteFilePath(Presets::getPresetVec4FileName(presetName));
 }
 
 QString QTouchApp::absPathForPresetVarnamesFile(const PresetNameString& presetName) const
@@ -514,7 +445,7 @@ QString QTouchApp::absPathForPresetVarnamesFile(const PresetNameString& presetNa
         return "";
     }
 
-    return getPresetsSubdir()->absoluteFilePath(getPresetVarnamesFileName(presetName));
+    return getPresetsSubdir()->absoluteFilePath(Presets::getPresetVarnamesFileName(presetName));
 }
 
 void QTouchApp::initMenuBar()

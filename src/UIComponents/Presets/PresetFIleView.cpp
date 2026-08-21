@@ -83,7 +83,7 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
 bool PresetFileView::presetNameExists(const PresetNameString& presetName)
 {
     bool exists = QFileInfo(
-        model->rootDirectory().absoluteFilePath(getPresetJsonFileName(presetName))
+        model->rootDirectory().absoluteFilePath(Presets::getPresetJsonFileName(presetName))
     ).isFile();
 
     return exists;

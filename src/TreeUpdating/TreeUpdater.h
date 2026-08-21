@@ -245,7 +245,7 @@ public:
     {
         auto showErr = [](const std::string &err)
         {
-            SV_MSGBOX_ERROR("updateTreeAndWidgetsFromCode failed: {}", err);
+            SV_MSGBOX_ERROR(std::format("updateTreeAndWidgetsFromCode failed: {}", err));
         };
 
         if (!oldTree)
