@@ -7,9 +7,19 @@ QString Presets::getPresetJsonFileName(const PresetNameString& presetName)
 	return presetName + ".json";
 }
 
+QString Presets::getPresetJsonFilePath(const PresetNameString& presetName, const QDir& presetDir)
+{
+    return presetDir.absoluteFilePath(getPresetJsonFileName(presetName));
+}
+
 QString Presets::getPresetVec4FileName(const PresetNameString& presetName)
 {
 	return presetName + ".vec4_packet";
+}
+
+QString Presets::getPresetVec4FilePath(const PresetNameString& presetName, const QDir& presetDir)
+{
+    return presetDir.absoluteFilePath(getPresetVec4FileName(presetName));
 }
 
 QString Presets::getPresetVarnamesFileName(const PresetNameString& presetName)
@@ -17,7 +27,12 @@ QString Presets::getPresetVarnamesFileName(const PresetNameString& presetName)
 	return presetName + ".varnames_section";
 }
 
-inline StringErrOpt Presets::savePreset(const QDir& presetDir, const PresetNameString& presetName, const DataNodeShared& rootNode)
+QString Presets::getPresetVarnamesFilePath(const PresetNameString& presetName, const QDir& presetDir)
+{
+    return presetDir.absoluteFilePath(getPresetVarnamesFileName(presetName));
+}
+
+StringErrOpt Presets::savePreset(const QDir& presetDir, const PresetNameString& presetName, const DataNodeShared& rootNode)
 {
     auto wrapErr = [&](const std::string& err)
     {
@@ -39,9 +54,7 @@ inline StringErrOpt Presets::savePreset(const QDir& presetDir, const PresetNameS
             return wrapErr("serialization to json has failed");
         }
 
-        auto filePath = presetDir.absoluteFilePath(getPresetJsonFileName(presetName));
-
-        bool saved = saveJsonValueToFile(*json, filePath);
+        bool saved = saveJsonValueToFile(*json, getPresetJsonFilePath(presetName, presetDir));
         if (!saved)
         {
             return wrapErr("writing to json file has failed");
@@ -62,9 +75,7 @@ inline StringErrOpt Presets::savePreset(const QDir& presetDir, const PresetNameS
             return wrapErr("couldnt makePacket from TreeAsVec4Array");
         }
 
-        auto filePath = presetDir.absoluteFilePath(getPresetVec4FileName(presetName));
-
-        bool saved = writeByteArrayToFile(filePath, *packet);
+        bool saved = writeByteArrayToFile(getPresetVec4FilePath(presetName, presetDir), *packet);
         if (!saved)
         {
             return wrapErr("writing to vec4 file has failed");
@@ -85,16 +96,35 @@ inline StringErrOpt Presets::savePreset(const QDir& presetDir, const PresetNameS
             return wrapErr("couldnt make section from TreeVarNames");
         }
 
-        auto filePath = presetDir.absoluteFilePath(getPresetVarnamesFileName(presetName));
-
-        bool saved = writeByteArrayToFile(filePath, *section);
+        bool saved = writeByteArrayToFile(getPresetVarnamesFilePath(presetName, presetDir), *section);
         if (!saved)
         {
             return wrapErr("writing to varnames file has failed");
         }
     }
 
-    SV_LOG(std::format("Successfully saved preset {}", presetName));
-
     return {};
+}
+
+std::vector<PresetNameString> Presets::getAllPresetNames(const QDir& presetDir)
+{
+    std::vector<PresetNameString> presetNames;
+
+    QDirIterator it(
+        presetDir.absolutePath(),
+        QStringList() << "*.json",
+        QDir::Files | QDir::Readable,
+        QDirIterator::NoIteratorFlags
+    );
+
+    while (it.hasNext())
+    {
+        it.next();
+
+        PresetNameString name = getFileNameWithoutLastExtension(it.filePath());
+
+        presetNames.push_back(name);
+    }
+
+    return presetNames;
 }

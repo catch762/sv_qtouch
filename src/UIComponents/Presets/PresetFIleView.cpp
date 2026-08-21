@@ -168,7 +168,7 @@ void PresetFileView::onContextMenu(const QPoint& pos)
     if (!firstSelectedIndex.isValid())
         return;
 
-    const PresetNameString presetName = getFileNameWithoutExtension( model->fileName(firstSelectedIndex) );
+    const PresetNameString presetName = getFileNameWithoutLastExtension( model->fileName(firstSelectedIndex) );
 
     QMenu menu(this);
 

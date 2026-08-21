@@ -8,6 +8,7 @@
 #include "WidgetLogic/WidgetMakerSystem.h"
 
 #include "UiComponents/TopLevelWidgetsContainer.h"
+#include "UiComponents/Presets/PresetUtils.h"
 
 //This struct represents parent of some other child node; it is used in context
 //of algorithm which needs to operate on (future) parent before its
@@ -240,7 +241,8 @@ public:
     static bool updateTreeAndWidgetsAndPresetsFromCode( DataNodeShared&             oldTree, 
                                                         const QStringVec&           newCodeFilePaths, 
                                                         TopLevelWidgetsContainer&   topLevelWidgetContainer,
-                                                        const QStringVec&           oldPresetsJsonAbsPathsToUpdate = {},
+                                                        const QDir&                 presetDir,
+                                                        const QStringVec&           presetNamesToUpdate = {},
                                                         OnPresetError               onPresetErr = OnPresetError::AskUserToContinueUpdating)
     {
         auto showErr = [](const std::string &err)
@@ -278,21 +280,22 @@ public:
 
         //Updating live tree and widgets succeeded. Now presets:
         
-        for (int presetIdx = 0; presetIdx < oldPresetsJsonAbsPathsToUpdate.size(); ++presetIdx)
+        for (int presetIdx = 0; presetIdx < presetNamesToUpdate.size(); ++presetIdx)
         {
-            const auto& oldPresetJsonAbsPath = oldPresetsJsonAbsPathsToUpdate[presetIdx];
-            const bool  isLast               = presetIdx == oldPresetsJsonAbsPathsToUpdate.size() - 1;
+            const auto& oldPresetName   = presetNamesToUpdate[presetIdx];
+            const bool  isLast          = presetIdx == presetNamesToUpdate.size() - 1;
 
-            if (auto presetUpdatingErr = updatePreset(oldPresetJsonAbsPath, newTree, newWidgetOptions))
+            if (auto presetUpdatingErr = updatePreset(presetDir, oldPresetName, newTree, newWidgetOptions))
             {
                 if (onPresetErr == OnPresetError::AskUserToContinueUpdating && !isLast)
                 {
-                    QString message = QString(  "Updating current tree and widgets succeeded, but updating preset "
-                                                "[%1/%2] at path [%3] resulted in error.\n"
-                                                "Do you want to continue loading presets? Btw error is:\n\n%4" )
+                    QString message = QString(  "Updating current tree and widgets succeeded, but updating preset [%1] "
+                                                "(%2/%3) at dir [%4] resulted in error.\n"
+                                                "Do you want to continue loading presets? Btw error is:\n\n%5" )
+                                                    .arg(oldPresetName)
                                                     .arg(presetIdx + 1)
-                                                    .arg(oldPresetsJsonAbsPathsToUpdate.size())
-                                                    .arg(oldPresetJsonAbsPath)
+                                                    .arg(presetNamesToUpdate.size())
+                                                    .arg(presetDir.absolutePath())
                                                     .arg(*presetUpdatingErr);
 
                     const auto userWantsToContinue = QMessageBox::critical( nullptr,
@@ -325,16 +328,19 @@ public:
         return {};
     }
 
-    static StringErrOpt updatePreset(   const QString&                      oldPresetJsonAbsPath,
+    static StringErrOpt updatePreset(   const QDir&                         presetDir, 
+                                        const PresetNameString&             presetName,
                                         const DataNodeShared&               newTree,
                                         const MapOfWidgetOptionsForNodes&   newWidgetOptions )
     {
         auto wrapErr = [&](const std::string& err)
         {
-            return std::format("updatePreset from file=[{}] failed: {}", oldPresetJsonAbsPath, err);
+            return std::format("updatePreset [{}] at [{}] failed: {}", presetName, presetDir.absolutePath(), err);
         };
 
-        auto oldPresetJson = loadJsonFromFile(oldPresetJsonAbsPath);
+        const auto presetJsonPath = Presets::getPresetJsonFilePath(presetName, presetDir);
+
+        auto oldPresetJson = loadJsonFromFile(presetJsonPath);
         if (!oldPresetJson)
         {
             return wrapErr("couldnt load json from file");
@@ -366,7 +372,7 @@ public:
             return wrapErr("couldnt serialize updated tree back to json");
         }
 
-        bool saved = saveJsonValueToFile(*updatedTreeJson, oldPresetJsonAbsPath);
+        bool saved = saveJsonValueToFile(*updatedTreeJson, presetJsonPath);
         if (!saved)
         {
             return wrapErr("couldnt save updated tree json to file");
