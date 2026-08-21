@@ -16,7 +16,7 @@ class QTouchApp : public QMainWindow
 public:
     QTouchApp(QWidget *parent = nullptr);
 
-    bool updateCurrentTreeFromCode                         (const QStringVec& codeFilePaths);
+    bool updateFromNewCode                         (const QStringVec& codeFilePaths);
     bool loadTreeAndWidgetsFromCode             (const QStringVec& codeFilePaths);
     bool loadTreeAndWidgetsFromPresetFile       (const QString& filePath);
     bool loadTreeAndWidgetsUsingPresetFileName  (const PresetNameString& presetName);
@@ -87,7 +87,7 @@ private:
     
 
     //returns same as 'projectIsOpened()' and if its not, prints error
-    bool requireProjectIsOpenedFor(const char* forOperation, bool withMsgBox = true) const;
+    bool requireProjectIsOpenedFor(const char* forOperation, bool withMsgBox = true, bool alsoRequireNonEmptyTree = false) const;
 
     StringErrOpt loadProjectJson(const QString& jsonFilePath);
 

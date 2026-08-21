@@ -26,6 +26,8 @@ signals:
     void presetWasSelectedForMixing (const PresetNameString& presetName, bool selectedForA);
     void presetLoadingRequested     (const PresetNameString& presetName);
 
+    void updatePresetsRequested     (const QStringVec& presetNames);
+
 private:
     void deleteSelectedFiles(const QModelIndexList& selectedRows);
 

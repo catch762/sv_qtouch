@@ -58,6 +58,15 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
                         loadTreeAndWidgetsFromPresetFile(getPresetsSubdir()->filePath(presetFilename));
                     });
 
+            connect(presetTab->getPresetView(), &PresetFileView::updatePresetsRequested,
+                    this, [this](const QStringVec& presetNames)
+                    {
+                        if (!requireProjectIsOpenedFor("Updating presets", true, true)) return;
+
+                        auto rootNodeOptions = SerializerForDataNodeTreeAndItsWidgets::getOptionsFromWidgetsOfTree(rootNode);
+                        TreeUpdater::updatePresets(getPresetsSubdir().value(), presetNames, rootNode, rootNodeOptions);
+                    });
+
             rightLayout->addWidget(presetTab);
         }
 
@@ -110,9 +119,9 @@ QTouchApp::QTouchApp(QWidget *parent) : QMainWindow(parent)
     else SV_UNREACHABLE();
 }
 
-bool QTouchApp::updateCurrentTreeFromCode(const QStringVec& newCodeFilePaths)
+bool QTouchApp::updateFromNewCode(const QStringVec& newCodeFilePaths)
 {
-    if (!requireProjectIsOpenedFor("updateCurrentTreeFromCode")) return false;
+    if (!requireProjectIsOpenedFor("updateFromNewCode")) return false;
 
     auto existingPresetsNames = Presets::getAllPresetNames(getPresetsSubdir().value());
 
@@ -502,7 +511,7 @@ void QTouchApp::initMenuBar()
                 return;
             }
 
-            updateCurrentTreeFromCode({codeFilePath});
+            updateFromNewCode({codeFilePath});
         });
 
         projectMenu->addAction(loadCodeAndUpgradeAction);
@@ -545,14 +554,17 @@ bool QTouchApp::projectIsOpened() const
     return projectDir.has_value();
 }
 
-bool QTouchApp::requireProjectIsOpenedFor(const char *forOperation, bool withMsgBox) const
+bool QTouchApp::requireProjectIsOpenedFor(const char *forOperation, bool withMsgBox, bool alsoRequireNonEmptyTree) const
 {
-    bool isOpened = projectIsOpened();
+    bool isOpened           = projectIsOpened();
+    bool treeRequirementOk  = alsoRequireNonEmptyTree ? bool(rootNode) : true;
 
-    if (!isOpened)
+    if (!isOpened || !treeRequirementOk)
     {
         auto err = std::format("Operation [{}] failed, because it requires "
-                               "project to be opened, and it is not.", forOperation);
+                               "project to be opened{} !",
+                                forOperation,
+                                alsoRequireNonEmptyTree ? " and tree loaded" : "");
         if (withMsgBox)
         {
             SV_MSGBOX_ERROR(err);

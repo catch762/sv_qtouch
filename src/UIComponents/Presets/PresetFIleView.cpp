@@ -21,6 +21,8 @@ PresetFileView::PresetFileView(const QString& rootPath, QWidget* parent) : QWidg
     view->setEditTriggers(QAbstractItemView::NoEditTriggers); // !
     view->setShowGrid(false);
 
+    //todo this breaks ctrl + a :
+
     //im only doing it because there are some fucking retarded rules on drawing borders
     //on focused fields of a row, that i cant remove via stylesheet or anything else.
     //i also dont see any fucking documentation on this.
@@ -161,8 +163,16 @@ void PresetFileView::onContextMenu(const QPoint& pos)
 {
     //we rely on index being at 0 column strictly. If we rightclicked on other column,
     //we wont be able to get data from that index with non-zero column.
-
     QModelIndexList selectedRows = view->selectionModel()->selectedRows(0);
+
+    QStringVec selectedPresetNames;
+    for (const auto& row : selectedRows)
+    {
+        if (row.isValid())
+        {
+            selectedPresetNames.push_back(getFileNameWithoutLastExtension(model->fileName(row)));
+        }
+    }
 
     const QModelIndex firstSelectedIndex = selectedRows.first();
     if (!firstSelectedIndex.isValid())
@@ -195,7 +205,25 @@ void PresetFileView::onContextMenu(const QPoint& pos)
         deleteSelectedFiles(selectedRows);
     });
 
-    // Custom actions
+    QAction* updateAction = menu.addAction("Update from current tree");
+    connect(updateAction, &QAction::triggered, this, [this, selectedPresetNames]()
+    {
+        auto message = QString("Are you sure you want to update [%1] presets from the current tree ?")
+            .arg(selectedPresetNames.size());
+
+        const auto userСonfirmedUpdate = QMessageBox::question(nullptr,
+            "Confirm update",
+            message,
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No
+            ) == QMessageBox::Yes;
+
+        if (userСonfirmedUpdate)
+        {
+            emit updatePresetsRequested(selectedPresetNames);
+        }
+    });
+
     QAction* selectAsA = menu.addAction("Select as mixing preset A");
     selectAsA->setEnabled(selectedRows.size() == 1);
     connect(selectAsA, &QAction::triggered, this, [this, presetName]

@@ -279,31 +279,39 @@ public:
         }
 
         //Updating live tree and widgets succeeded. Now presets:
-        
+        return updatePresets(presetDir, presetNamesToUpdate, newTree, newWidgetOptions, onPresetErr);
+    }
+
+    static bool updatePresets(  const QDir&                         presetDir, 
+                                const QStringVec&                   presetNamesToUpdate,
+                                const DataNodeShared&               newTree,
+                                const MapOfWidgetOptionsForNodes&   newWidgetOptions,
+                                OnPresetError                       onPresetErr = OnPresetError::AskUserToContinueUpdating)
+    {
         for (int presetIdx = 0; presetIdx < presetNamesToUpdate.size(); ++presetIdx)
         {
-            const auto& oldPresetName   = presetNamesToUpdate[presetIdx];
-            const bool  isLast          = presetIdx == presetNamesToUpdate.size() - 1;
+            const auto& oldPresetName = presetNamesToUpdate[presetIdx];
+            const bool  isLast = presetIdx == presetNamesToUpdate.size() - 1;
 
             if (auto presetUpdatingErr = updatePreset(presetDir, oldPresetName, newTree, newWidgetOptions))
             {
                 if (onPresetErr == OnPresetError::AskUserToContinueUpdating && !isLast)
                 {
-                    QString message = QString(  "Updating current tree and widgets succeeded, but updating preset [%1] "
-                                                "(%2/%3) at dir [%4] resulted in error.\n"
-                                                "Do you want to continue loading presets? Btw error is:\n\n%5" )
-                                                    .arg(oldPresetName)
-                                                    .arg(presetIdx + 1)
-                                                    .arg(presetNamesToUpdate.size())
-                                                    .arg(presetDir.absolutePath())
-                                                    .arg(*presetUpdatingErr);
+                    QString message = QString("Updating current tree and widgets succeeded, but updating preset [%1] "
+                        "(%2/%3) at dir [%4] resulted in error.\n"
+                        "Do you want to continue loading presets? Btw error is:\n\n%5")
+                        .arg(oldPresetName)
+                        .arg(presetIdx + 1)
+                        .arg(presetNamesToUpdate.size())
+                        .arg(presetDir.absolutePath())
+                        .arg(*presetUpdatingErr);
 
-                    const auto userWantsToContinue = QMessageBox::critical( nullptr,
-                                                                            "Error updating preset",
-                                                                            message,
-                                                                            QMessageBox::Yes | QMessageBox::No,
-                                                                            QMessageBox::No 
-                                                                          ) == QMessageBox::Yes;
+                    const auto userWantsToContinue = QMessageBox::critical(nullptr,
+                        "Error updating preset",
+                        message,
+                        QMessageBox::Yes | QMessageBox::No,
+                        QMessageBox::No
+                    ) == QMessageBox::Yes;
 
                     if (userWantsToContinue)
                     {
@@ -317,15 +325,14 @@ public:
                 }
                 else if (onPresetErr == OnPresetError::StopUpdatingPresetsAndReturnError)
                 {
-                    showErr(*presetUpdatingErr);
+                    SV_ERROR(*presetUpdatingErr);
                     return false;
                 }
                 else SV_UNREACHABLE();
             }
         }
 
-
-        return {};
+        return true;
     }
 
     static StringErrOpt updatePreset(   const QDir&                         presetDir, 
